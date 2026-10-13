@@ -61,6 +61,21 @@ by the state machine but unused until consent/triage steps exist. Transitions ou
 | Follow-up | `POST /encounters/{id}/follow-ups`, `POST /follow-ups/{id}/status` | `followup:write` |
 | | `GET /follow-ups` | `followup:read` |
 
+## Phase 4 endpoints
+| Area | Endpoints | Permission |
+|---|---|---|
+| Wording | `POST /consent-policies`, `POST /consent-policies/install-templates` (unreviewed templates) | `consent:manage` |
+| | `GET /consent-policies` | `consent:policy` |
+| Consent | `GET /patients/{id}/consents` (status per purpose + history), `POST /patients/{id}/consents`, `POST /consents/{id}/withdraw` | `consent:read` / `capture` / `withdraw` |
+| Policy | `GET/PUT /organisations/current/policy` | `org:read` / `org:manage` |
+| Languages | `GET /languages` | any signed-in user |
+| Sessions | `POST /interactions`, `/{id}/start`, `/pause`, `/resume`, `/stop`, `GET /interactions/{id}` | purpose permission; session owner |
+| Transcript | `GET /interactions/{id}/transcript?after_seq=`, `GET /interactions/{id}/events` (SSE), `PUT /interactions/{id}/speakers/{speaker_id}`, `GET /patients/{id}/interactions` | `transcript:read` / `speaker:assign` |
+| Audio | `WS /interactions/{id}/audio` (see SPEECH_ARCHITECTURE.md) | session owner |
+| Usage | `GET /usage/speech` | `usage:read` |
+
+Errors of note: `409 consent_required` carries `missing: [...]`; `503` when the speech provider is unavailable.
+
 Removed from Phase 2: `POST /appointments/{id}/start-consultation` and `/complete` and the `queue:call` permission,
 replaced by the encounter workflow above.
 

@@ -25,9 +25,14 @@ services:
       AAROGYA_DATABASE_URL: postgresql+psycopg://aarogya_app:${AAROGYA_APP_DB_PASSWORD}@db:5432/aarogya
       AAROGYA_JWT_SECRET: ${AAROGYA_JWT_SECRET:?set in .env}
       AAROGYA_FIELD_ENCRYPTION_KEY: ${AAROGYA_FIELD_ENCRYPTION_KEY:?set in .env}
+      AAROGYA_SPEECH_PROVIDER: ${AAROGYA_SPEECH_PROVIDER:-}
+      AAROGYA_AUDIO_STORE_PATH: /var/lib/aarogya/audio
+    volumes:
+      - audio:/var/lib/aarogya/audio
     depends_on:
       db: { condition: service_healthy }
     ports: ["8000:8000"]
 
 volumes:
   pgdata:
+  audio:

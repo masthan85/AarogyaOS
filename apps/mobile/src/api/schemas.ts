@@ -265,3 +265,94 @@ export type EncounterDetail = z.infer<typeof encounterDetailSchema>;
 export type Prescription = z.infer<typeof prescriptionSchema>;
 export type SafetyWarning = z.infer<typeof safetyWarningSchema>;
 export type ClinicalAlert = z.infer<typeof alertSchema>;
+
+// ---- Phase 4: consent, recording, transcripts -----------------------------------------
+
+export const languageSchema = z.object({
+  tag: z.string(),
+  name: z.string(),
+  native_name: z.string(),
+  script: z.string(),
+});
+export type Language = z.infer<typeof languageSchema>;
+
+export const purposeStatusSchema = z.object({
+  purpose: z.string(),
+  active: z.boolean(),
+  consent_id: z.string().nullable(),
+  policy_version: z.number().nullable(),
+  granted_by_type: z.string().nullable(),
+  blocked_by: z.string().nullable(),
+  wording_available: z.boolean(),
+});
+export const consentSchema = z.object({
+  id: z.string(),
+  purpose: z.string(),
+  status: z.string(),
+  granted_by_type: z.string(),
+  representative_name: z.string().nullable(),
+});
+export const patientConsentsSchema = z.object({
+  status: z.array(purposeStatusSchema),
+  history: z.array(consentSchema),
+  guardian_required: z.boolean(),
+});
+export const policySchema = z.object({
+  id: z.string(),
+  purpose: z.string(),
+  language: z.string(),
+  version: z.number(),
+  title: z.string(),
+  body: z.string(),
+  legally_reviewed: z.boolean(),
+});
+export type PurposeStatus = z.infer<typeof purposeStatusSchema>;
+export type PatientConsents = z.infer<typeof patientConsentsSchema>;
+export type ConsentPolicy = z.infer<typeof policySchema>;
+
+export const interactionSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  encounter_id: z.string().nullable(),
+  purpose: z.string(),
+  status: z.enum(['CREATED', 'ACTIVE', 'PAUSED', 'ENDED']),
+  ai_processing: z.boolean(),
+  speech_provider: z.string(),
+  is_development: z.boolean(),
+  language_hint: z.string(),
+  end_reason: z.string().nullable(),
+  pause_reason: z.string().nullable(),
+  audio_seconds: z.number(),
+});
+export const startInfoSchema = z.object({
+  interaction: interactionSchema,
+  gateway_path: z.string(),
+  audio_format: z.object({ encoding: z.string(), sample_rate: z.number(), channels: z.number(), max_frame_bytes: z.number() }),
+});
+export const segmentSchema = z.object({
+  id: z.string(),
+  seq: z.number(),
+  speaker_id: z.string().nullable(),
+  speaker_role: z.string(),
+  start_ms: z.number(),
+  end_ms: z.number(),
+  raw_text: z.string(),
+  normalised_text: z.string().nullable(),
+  language: z.string().nullable(),
+  secondary_language: z.string().nullable(),
+  confidence: z.number().nullable(),
+  code_switch_spans: z.array(z.object({ start: z.number(), end: z.number(), language: z.string() })),
+});
+export const transcriptSchema = z.object({
+  interaction_id: z.string(),
+  status: z.string(),
+  is_development: z.boolean(),
+  segments: z.array(segmentSchema),
+  speakers: z.array(z.object({ speaker_id: z.string(), role: z.string(), label: z.string().nullable() })),
+  partial: z.object({ text: z.string(), speaker_id: z.string().nullable(), language: z.string().nullable() }).nullable(),
+  last_seq: z.number(),
+});
+export type Interaction = z.infer<typeof interactionSchema>;
+export type StartInfo = z.infer<typeof startInfoSchema>;
+export type Segment = z.infer<typeof segmentSchema>;
+export type Transcript = z.infer<typeof transcriptSchema>;

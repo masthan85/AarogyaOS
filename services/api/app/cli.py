@@ -1,4 +1,4 @@
-"""Operational commands: `python -m app.cli seed` and `create-platform-admin`."""
+"""Operational commands: `seed`, `create-platform-admin`, `purge-audio` (run on a schedule)."""
 
 import getpass
 import sys
@@ -17,6 +17,16 @@ def main(argv: list[str]) -> int:
     sm = create_sessionmaker(create_db_engine(settings.database_url))
     command = argv[0] if argv else ""
     with sm() as session:
+        if command == "purge-audio":
+            from app.core.crypto import FieldCrypto
+            from app.modules.interactions.retention import purge_due_audio
+            from app.speech.audio_store import LocalEncryptedAudioStore
+
+            store = LocalEncryptedAudioStore(
+                settings.audio_store_path, FieldCrypto(settings.field_encryption_key)
+            )
+            print(f"Audio files removed: {purge_due_audio(session, store)}")
+            return 0
         if command == "seed":
             sync_reference_data(session)
             print("Reference data synced")
@@ -48,7 +58,7 @@ def main(argv: list[str]) -> int:
             session.commit()
             print("Platform administrator created")
             return 0
-    print("Usage: python -m app.cli [seed|create-platform-admin]")
+    print("Usage: python -m app.cli [seed|create-platform-admin|purge-audio]")
     return 2
 
 

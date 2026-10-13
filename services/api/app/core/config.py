@@ -24,9 +24,18 @@ class Settings(BaseSettings):
     lockout_minutes: int = Field(default=15, ge=1)
     cors_origins: list[str] = []
     log_level: str = "INFO"
+    # Speech. No default provider in production: a deployment must choose one deliberately.
+    speech_provider: str = ""
+    speech_fallback_provider: str = ""
+    speech_monitor_interval_seconds: float = Field(default=2.0, gt=0, le=30)
+    speech_max_session_seconds: int = Field(default=3600, ge=60, le=14400)
+    # Local development audio store only. Production uses encrypted S3-compatible storage (Phase 7).
+    audio_store_path: str = "/tmp/aarogya-audio"  # noqa: S108
 
     @model_validator(mode="after")
-    def _reject_unsafe_production(self) -> "Settings":
+    def _defaults_and_production_rules(self) -> "Settings":
+        if not self.speech_provider and self.environment != "production":
+            self.speech_provider = "development"
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")

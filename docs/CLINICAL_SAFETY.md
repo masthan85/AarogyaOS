@@ -29,5 +29,17 @@ Hazard log (initial)
 | H16 | Doctor edits another doctor's consultation | Clinical writes restricted to the encounter's own practitioner | Cover/handover workflow not built |
 | H17 | Offline duplicate or lost clinical writes | Clinical writes are never queued offline; the app says plainly when nothing was saved | Idempotency keys planned |
 
+## Phase 4 hazards (speech)
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H18 | Recording without valid consent | Server-side gate at create, start, resume, connect and on a timer; per-purpose consent; guardian required for minors | Consent *wording* is a template pending legal review; guardian rules need counsel |
+| H19 | Screen says "recording" when it is not (dropped link, crash) | Indicator derived from live+mic+socket; server pauses on drop; shielded cleanup; stale sessions auto-paused | Needs device testing on poor networks |
+| H20 | Wrong speaker attribution (e.g. family member answers) | Roles start UNKNOWN, set by a person, audited; never inferred from order | Humans may mislabel; diarisation quality unmeasured |
+| H21 | Mis-heard negation, dose, drug or allergy in a regional language / code-switched speech | Raw text kept; low-confidence lines flagged; transcript is NOT a clinical fact; extraction (Phase 5) must be reviewed | **No real ASR accuracy data exists yet.** Do not pilot clinically before measuring on reviewed recordings |
+| H22 | Synthetic transcript reaching a real record | Development provider refused in production; UI badge; DEVELOPMENT chip on every bar | Config discipline |
+| H23 | Audio kept longer than the patient agreed | Default discard; retention needs policy AND consent; encrypted; scheduled purge; withdrawal queues deletion | Purge job must actually be scheduled (Phase 7) |
+| H24 | Over-reliance on AI summaries | AI processing is a separate, optional consent and org switch; partials never stored | Phase 5 controls |
+| H25 | A reception conversation leaking clinical content into the record | Reception transcripts visible only to whoever recorded them; Phase 5 extraction must be purpose-limited | Not yet enforced in extraction (none exists) |
+
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

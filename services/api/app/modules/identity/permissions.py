@@ -51,6 +51,18 @@ PERMISSIONS: dict[str, str] = {
     "result:review": "Review investigation results",
     "followup:write": "Create and update follow-ups",
     "followup:read": "View follow-ups",
+    # Phase 4: consent, recording and transcripts.
+    "consent:read": "View a patient's consents",
+    "consent:capture": "Record a patient's consent decisions",
+    "consent:withdraw": "Record a withdrawal of consent",
+    "consent:manage": "Publish consent policy wording",
+    "consent:policy": "Read published consent wording (not patients' decisions)",
+    "interaction:reception": "Record reception conversations",
+    "interaction:triage": "Record triage and nursing conversations",
+    "interaction:consultation": "Record consultations",
+    "transcript:read": "Read transcripts of conversations you took part in",
+    "speaker:assign": "Assign roles to speakers in a transcript",
+    "usage:read": "View speech usage and cost",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -86,7 +98,15 @@ _CLINICAL_BASE = [
     "prescription:read",
     "followup:read",
 ]
-_NURSE = [*_CLINICAL_BASE, "encounter:triage"]
+_CONSENT = ["consent:read", "consent:capture", "consent:withdraw", "consent:policy"]
+_NURSE = [
+    *_CLINICAL_BASE,
+    "encounter:triage",
+    *_CONSENT,
+    "interaction:triage",
+    "transcript:read",
+    "speaker:assign",
+]
 _DOCTOR = [
     *_CLINICAL_BASE,
     "encounter:consult",
@@ -98,8 +118,12 @@ _DOCTOR = [
     "order:write",
     "result:review",
     "followup:write",
+    *_CONSENT,
+    "interaction:consultation",
+    "transcript:read",
+    "speaker:assign",
 ]
-_RECEPTION = [*_RECEPTION, "followup:read"]
+_RECEPTION = [*_RECEPTION, "followup:read", *_CONSENT, "interaction:reception", "transcript:read"]
 _LAB = [*_READ_STRUCTURE, "patient:search", "order:read", "result:enter"]
 _ADMIN = [
     *_READ_STRUCTURE,
@@ -112,6 +136,9 @@ _ADMIN = [
     "user:manage",
     "role:read",
     "audit:read",
+    "consent:manage",
+    "consent:policy",
+    "usage:read",
 ]
 
 # key -> (display name, is_platform, permissions)

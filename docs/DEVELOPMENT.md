@@ -28,3 +28,10 @@ reachable; otherwise pin to `~57.0.0` for `expo-*` packages.
 ## Docker
 `docker compose --env-file .env -f infrastructure/docker-compose.yml up --build`
 (untested in the Phase 1 build environment, which had no Docker daemon).
+
+## Speech development
+`AAROGYA_SPEECH_PROVIDER` defaults to `development` outside production (scripted synthetic transcripts; refused in
+production). To exercise the real WebSocket stack end to end against a running server:
+`python scripts/smoke_recording.py http://127.0.0.1:8765` (see the script header). Schedule
+`python -m app.cli purge-audio` wherever audio retention is enabled. In dev builds the app uses simulated audio
+(`EXPO_PUBLIC_SIMULATED_AUDIO=1` enables it in other builds); real microphone streaming is not implemented.

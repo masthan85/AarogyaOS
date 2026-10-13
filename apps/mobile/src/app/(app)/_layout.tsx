@@ -21,6 +21,7 @@ export default function AppLayout() {
       <Stack.Screen name="queue" options={{ title: 'Queue' }} />
       <Stack.Screen name="triage/[appointmentId]" options={{ title: 'Triage' }} />
       <Stack.Screen name="consultation/[id]" options={{ title: 'Consultation' }} />
+      <Stack.Screen name="consent/[patientId]" options={{ title: 'Consent' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

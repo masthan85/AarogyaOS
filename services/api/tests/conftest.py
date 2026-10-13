@@ -5,6 +5,7 @@ isolated database and a NON-superuser role, because superusers bypass row-level 
 import os
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from alembic import command
@@ -29,6 +30,8 @@ APP_ROLE = "aarogya_test_app"
 APP_PASSWORD = "aarogya_test_app"  # noqa: S105
 PASSWORD = "correct-horse-battery"  # noqa: S105
 TENANT_TABLES = (
+    "speech_usage, audio_assets, transcript_segments, interaction_speakers, clinical_interactions, "
+    "consents, consent_policies, "
     "follow_ups, investigation_results, service_requests, prescription_items, prescriptions, "
     "patient_medications, allergies, conditions, clinical_notes, observations, encounters, "
     "queue_entries, queue_counters, working_hours, appointments, practitioners, "
@@ -78,12 +81,15 @@ def clean_db(app_url: str, superuser_engine: Engine) -> Iterator[None]:
 
 
 @pytest.fixture
-def settings(app_url: str) -> Settings:
+def settings(app_url: str, tmp_path: Path) -> Settings:
     return Settings(
         environment="test",
         database_url=app_url,
         jwt_secret="test-secret-test-secret-test-secret-123",
         max_failed_logins=3,
+        speech_provider="development",
+        speech_monitor_interval_seconds=0.05,
+        audio_store_path=str(tmp_path / "audio"),
     )
 
 

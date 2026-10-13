@@ -1,5 +1,5 @@
-// Seed list for the registration form only. Language support is metadata, not code: this will
-// be replaced by server-provided language configuration (Phase 4) without changing screens.
+// Offline fallback only. The app asks the server for the organisation's languages (GET /languages);
+// language support is data, not code.
 export const LANGUAGE_OPTIONS: { tag: string; label: string }[] = [
   { tag: 'en-IN', label: 'English' },
   { tag: 'hi-IN', label: 'हिन्दी' },

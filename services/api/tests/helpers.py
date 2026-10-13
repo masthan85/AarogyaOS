@@ -35,9 +35,13 @@ def make_practitioner(
     r = client.post(
         "/api/v1/practitioners",
         headers=admin,
-        json={"user_id": user["id"], "facility_id": facility["id"], "specialty": "General Medicine",
-              "consultation_minutes": 15},
-    )  # fmt: skip
+        json={
+            "user_id": user["id"],
+            "facility_id": facility["id"],
+            "specialty": "General Medicine",
+            "consultation_minutes": 15,
+        },
+    )
     assert r.status_code == 201, r.text
     hours = [{"weekday": d, "start_time": "09:00:00", "end_time": "12:00:00"} for d in range(7)]
     r = client.put(
@@ -52,8 +56,14 @@ def make_practitioner(
 def make_patient(
     client: TestClient, headers: Headers, name: str = "Lakshmi Devi", **kw: Any
 ) -> dict[str, Any]:
-    body: dict[str, Any] = {"full_name": name, "age_years": 45, "administrative_gender": "female",
-                            "mobile": "98765 43210", "confirm_not_duplicate": True, **kw}  # fmt: skip
+    body: dict[str, Any] = {
+        "full_name": name,
+        "age_years": 45,
+        "administrative_gender": "female",
+        "mobile": "98765 43210",
+        "confirm_not_duplicate": True,
+        **kw,
+    }
     r = client.post("/api/v1/patients", headers=headers, json=body)
     assert r.status_code == 201, r.text
     return r.json()
@@ -66,8 +76,11 @@ def slot(
     index: int = 0,
     on: date | None = None,
 ) -> str:
-    r = client.get(f"/api/v1/practitioners/{practitioner_id}/slots", headers=headers,
-                   params={"on": (on or tomorrow()).isoformat()})  # fmt: skip
+    r = client.get(
+        f"/api/v1/practitioners/{practitioner_id}/slots",
+        headers=headers,
+        params={"on": (on or tomorrow()).isoformat()},
+    )
     assert r.status_code == 200, r.text
     return str(r.json()[index]["start_at"])
 

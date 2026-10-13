@@ -117,8 +117,15 @@ def test_duplicate_detection_flags_same_name_and_dob(
         "reasons",
     }
     # After review the user may proceed.
-    ok = client.post(BASE, headers=r, json={"full_name": "Muhammad Rafi", "date_of_birth": "1980-03-04",
-                                            "confirm_not_duplicate": True})  # fmt: skip
+    ok = client.post(
+        BASE,
+        headers=r,
+        json={
+            "full_name": "Muhammad Rafi",
+            "date_of_birth": "1980-03-04",
+            "confirm_not_duplicate": True,
+        },
+    )
     assert ok.status_code == 201
 
 
@@ -168,11 +175,29 @@ def test_same_abha_cannot_belong_to_two_patients(client: TestClient, org_a: dict
         BASE, headers=r, json={"full_name": "Someone Else", "age_years": 20, "identifiers": ids}
     )
     assert dup.status_code == 409 and "same ABHA_NUMBER" in dup.json()["candidates"][0]["reasons"]
-    forced = client.post(BASE, headers=r, json={"full_name": "Someone Else", "age_years": 20, "identifiers": ids,
-                                                "confirm_not_duplicate": True})  # fmt: skip
+    forced = client.post(
+        BASE,
+        headers=r,
+        json={
+            "full_name": "Someone Else",
+            "age_years": 20,
+            "identifiers": ids,
+            "confirm_not_duplicate": True,
+        },
+    )
     assert forced.status_code == 409 and forced.json()["title"] == "conflict"
-    assert client.post(BASE, headers=r, json={"full_name": "Bad Id", "age_years": 20,
-                       "identifiers": [{"system": "ABHA_NUMBER", "value": "123"}]}).status_code == 422  # fmt: skip
+    assert (
+        client.post(
+            BASE,
+            headers=r,
+            json={
+                "full_name": "Bad Id",
+                "age_years": 20,
+                "identifiers": [{"system": "ABHA_NUMBER", "value": "123"}],
+            },
+        ).status_code
+        == 422
+    )
 
 
 def test_update_uses_optimistic_concurrency_and_keeps_history(
@@ -214,8 +239,10 @@ def test_role_matrix_for_patient_data(client: TestClient, org_a: dict[str, str])
     r = reception(client, org_a, "alpha-clinic")
     p = make_patient(client, r)
     pid = p["id"]
-    users = {role: make_staff(client, org_a, f"{role}@alpha-clinic.example.com", role, "alpha-clinic")[0]
-             for role in ("doctor", "nurse", "lab_technician", "billing_staff", "pharmacist")}  # fmt: skip
+    users = {
+        role: make_staff(client, org_a, f"{role}@alpha-clinic.example.com", role, "alpha-clinic")[0]
+        for role in ("doctor", "nurse", "lab_technician", "billing_staff", "pharmacist")
+    }
 
     def status(h: dict[str, str], method: str, url: str, **kw: Any) -> int:
         return client.request(method, url, headers=h, **kw).status_code
@@ -284,8 +311,12 @@ def test_other_organisations_cannot_see_or_touch_patients(
         client.get(f"{BASE}/{p['id']}/timeline", headers=rb).status_code == 403
     )  # no permission at all
     assert client.get(f"{BASE}/search", headers=rb, params={"mobile": "9876543210"}).json() == []
-    assert client.post(f"{BASE}/{p['id']}/identifiers", headers=rb,
-                       json={"system": "OTHER", "value": "ABC123"}).status_code == 404  # fmt: skip
+    assert (
+        client.post(
+            f"{BASE}/{p['id']}/identifiers", headers=rb, json={"system": "OTHER", "value": "ABC123"}
+        ).status_code
+        == 404
+    )
     # Same person registering in the other organisation is NOT a duplicate across tenants.
     resp = client.post(
         BASE,

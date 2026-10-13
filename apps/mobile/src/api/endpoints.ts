@@ -9,7 +9,10 @@ import {
   clinicalStateSchema,
   encounterDetailSchema,
   encounterSchema,
+  consentSchema,
   facilitySchema,
+  interactionSchema,
+  languageSchema,
   meSchema,
   organisationSchema,
   patientHitSchema,
@@ -22,11 +25,15 @@ import {
   followUpSchema,
   prescriptionSchema,
   safetyCheckSchema,
+  patientConsentsSchema,
   patientSchema,
+  policySchema,
   practitionerSchema,
   queueItemSchema,
   slotSchema,
+  startInfoSchema,
   timelineEventSchema,
+  transcriptSchema,
   tokenPairSchema,
 } from './schemas';
 
@@ -204,3 +211,60 @@ export const voidPrescription = (rxId: string, reason: string) =>
 
 export const createFollowUp = (encId: string, body: { due_date: string; reason: string }) =>
   api.request(`/encounters/${encId}/follow-ups`, followUpSchema, { method: 'POST', body });
+
+// ---- Phase 4: languages, consent, recording ---------------------------------------------
+
+export const getLanguages = () => api.request('/languages', z.array(languageSchema));
+
+export const getPatientConsents = (patientId: string) =>
+  api.request(`/patients/${patientId}/consents`, patientConsentsSchema);
+export const getConsentPolicies = () => api.request('/consent-policies', z.array(policySchema));
+export type ConsentInput = {
+  purpose: string;
+  granted_by_type: 'PATIENT' | 'REPRESENTATIVE';
+  representative_name?: string;
+  representative_relationship?: string;
+  method: 'VERBAL_WITNESSED' | 'ON_DEVICE' | 'PAPER';
+  encounter_id?: string;
+};
+export const captureConsent = (patientId: string, body: ConsentInput) =>
+  api.request(`/patients/${patientId}/consents`, consentSchema, { method: 'POST', body });
+export const withdrawConsent = (consentId: string, reason?: string) =>
+  api.request(`/consents/${consentId}/withdraw`, consentSchema, { method: 'POST', body: { reason } });
+
+export type NewInteraction = {
+  patient_id: string;
+  purpose: 'RECEPTION' | 'TRIAGE' | 'CONSULTATION';
+  encounter_id?: string;
+  appointment_id?: string;
+  language_hint?: string;
+  ai_processing?: boolean;
+};
+export const createInteraction = (body: NewInteraction) =>
+  api.request('/interactions', interactionSchema, { method: 'POST', body });
+export const startInteraction = (id: string) =>
+  api.request(`/interactions/${id}/start`, startInfoSchema, { method: 'POST', body: {} });
+const control = (id: string, action: 'pause' | 'resume' | 'stop') =>
+  api.request(`/interactions/${id}/${action}`, interactionSchema, { method: 'POST', body: {} });
+export const pauseInteraction = (id: string) => control(id, 'pause');
+export const resumeInteraction = (id: string) => control(id, 'resume');
+export const stopInteraction = (id: string) => control(id, 'stop');
+export const getInteraction = (id: string) => api.request(`/interactions/${id}`, interactionSchema);
+export const getTranscript = (id: string, afterSeq = 0) =>
+  api.request(`/interactions/${id}/transcript${qs({ after_seq: String(afterSeq) })}`, transcriptSchema);
+export const assignSpeaker = (id: string, speakerId: string, role: string) =>
+  api.request(`/interactions/${id}/speakers/${encodeURIComponent(speakerId)}`, z.object({ speaker_id: z.string(), role: z.string() }), {
+    method: 'PUT',
+    body: { role },
+  });
+
+/** The gateway authenticates with an access token, so make sure the one we hold is fresh. */
+export async function freshAccessToken(): Promise<string> {
+  await getMe(); // a 401 here triggers the client's single-flight refresh
+  const tokens = await secureTokenStore.load();
+  if (!tokens) throw new Error('Not signed in');
+  return tokens.accessToken;
+}
+
+export const getPatientInteractions = (patientId: string) =>
+  api.request(`/patients/${patientId}/interactions`, z.array(interactionSchema));

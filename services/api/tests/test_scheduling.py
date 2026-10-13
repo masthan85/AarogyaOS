@@ -19,16 +19,25 @@ H = dict[str, str]
 def clinic(client: TestClient, org_a: H) -> dict[str, Any]:
     facility = make_facility(client, org_a)
     doctor, prac = make_practitioner(client, org_a, ORG, facility)
-    return {"admin": org_a, "facility": facility, "doctor": doctor, "prac": prac,
-            "recep": reception(client, org_a, ORG), "patient": None}  # fmt: skip
+    return {
+        "admin": org_a,
+        "facility": facility,
+        "doctor": doctor,
+        "prac": prac,
+        "recep": reception(client, org_a, ORG),
+        "patient": None,
+    }
 
 
 def book(
     client: TestClient, c: dict[str, Any], patient: dict[str, Any], index: int = 0
 ) -> dict[str, Any]:
     start = slot(client, c["recep"], c["prac"]["id"], index)
-    r = client.post("/api/v1/appointments", headers=c["recep"],
-                    json={"patient_id": patient["id"], "practitioner_id": c["prac"]["id"], "start_at": start})  # fmt: skip
+    r = client.post(
+        "/api/v1/appointments",
+        headers=c["recep"],
+        json={"patient_id": patient["id"], "practitioner_id": c["prac"]["id"], "start_at": start},
+    )
     assert r.status_code == 201, r.text
     return r.json()
 
@@ -60,24 +69,44 @@ def test_practitioner_needs_a_doctor_user(
     client: TestClient, clinic: dict[str, Any], org_a: H
 ) -> None:
     nurse, user = make_staff(client, org_a, "n@alpha-clinic.example.com", "nurse", ORG)
-    r = client.post("/api/v1/practitioners", headers=org_a,
-                    json={"user_id": user["id"], "facility_id": clinic["facility"]["id"], "specialty": "ENT"})  # fmt: skip
+    r = client.post(
+        "/api/v1/practitioners",
+        headers=org_a,
+        json={"user_id": user["id"], "facility_id": clinic["facility"]["id"], "specialty": "ENT"},
+    )
     assert r.status_code == 400
-    again = client.post("/api/v1/practitioners", headers=org_a,
-                        json={"user_id": clinic["prac"]["user_id"], "facility_id": clinic["facility"]["id"],
-                              "specialty": "ENT"})  # fmt: skip
+    again = client.post(
+        "/api/v1/practitioners",
+        headers=org_a,
+        json={
+            "user_id": clinic["prac"]["user_id"],
+            "facility_id": clinic["facility"]["id"],
+            "specialty": "ENT",
+        },
+    )
     assert again.status_code == 409
 
 
 def test_overlapping_working_hours_rejected(client: TestClient, clinic: dict[str, Any]) -> None:
-    hours = [{"weekday": 0, "start_time": "09:00:00", "end_time": "12:00:00"},
-             {"weekday": 0, "start_time": "11:00:00", "end_time": "13:00:00"}]  # fmt: skip
-    r = client.put(f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours", headers=clinic["admin"],
-                   json={"hours": hours})  # fmt: skip
+    hours = [
+        {"weekday": 0, "start_time": "09:00:00", "end_time": "12:00:00"},
+        {"weekday": 0, "start_time": "11:00:00", "end_time": "13:00:00"},
+    ]
+    r = client.put(
+        f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours",
+        headers=clinic["admin"],
+        json={"hours": hours},
+    )
     assert r.status_code == 400
     bad = [{"weekday": 0, "start_time": "12:00:00", "end_time": "09:00:00"}]
-    assert client.put(f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours", headers=clinic["admin"],
-                      json={"hours": bad}).status_code == 422  # fmt: skip
+    assert (
+        client.put(
+            f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours",
+            headers=clinic["admin"],
+            json={"hours": bad},
+        ).status_code
+        == 422
+    )
 
 
 def test_slots_follow_working_hours_and_hide_taken_ones(
@@ -112,9 +141,15 @@ def test_booking_lifecycle_and_double_booking_protection(
     appt = book(client, clinic, p1)
     assert appt["status"] == "BOOKED" and appt["patient_name"] == "Lakshmi Devi"
     assert appt["practitioner_name"] == "dr.rao"
-    again = client.post("/api/v1/appointments", headers=clinic["recep"],
-                        json={"patient_id": p2["id"], "practitioner_id": clinic["prac"]["id"],
-                              "start_at": appt["start_at"]})  # fmt: skip
+    again = client.post(
+        "/api/v1/appointments",
+        headers=clinic["recep"],
+        json={
+            "patient_id": p2["id"],
+            "practitioner_id": clinic["prac"]["id"],
+            "start_at": appt["start_at"],
+        },
+    )
     assert again.status_code == 409
 
 
@@ -126,13 +161,25 @@ def test_off_grid_and_out_of_hours_times_rejected(
         slot(client, clinic["recep"], clinic["prac"]["id"]).replace("Z", "+00:00")
     )
     for bad in (start + timedelta(minutes=5), start - timedelta(hours=8)):
-        r = client.post("/api/v1/appointments", headers=clinic["recep"],
-                        json={"patient_id": p["id"], "practitioner_id": clinic["prac"]["id"],
-                              "start_at": bad.isoformat()})  # fmt: skip
+        r = client.post(
+            "/api/v1/appointments",
+            headers=clinic["recep"],
+            json={
+                "patient_id": p["id"],
+                "practitioner_id": clinic["prac"]["id"],
+                "start_at": bad.isoformat(),
+            },
+        )
         assert r.status_code == 409, bad
-    naive = client.post("/api/v1/appointments", headers=clinic["recep"],
-                        json={"patient_id": p["id"], "practitioner_id": clinic["prac"]["id"],
-                              "start_at": "2030-01-01T09:00:00"})  # fmt: skip
+    naive = client.post(
+        "/api/v1/appointments",
+        headers=clinic["recep"],
+        json={
+            "patient_id": p["id"],
+            "practitioner_id": clinic["prac"]["id"],
+            "start_at": "2030-01-01T09:00:00",
+        },
+    )
     assert naive.status_code == 422
 
 
@@ -143,9 +190,14 @@ def test_database_itself_refuses_overlapping_appointments(
     p = make_patient(client, clinic["recep"])
     book(client, clinic, p)
     first = db.query(Appointment).one()
-    dup = Appointment(organisation_id=first.organisation_id, patient_id=first.patient_id,
-                      practitioner_id=first.practitioner_id, facility_id=first.facility_id,
-                      start_at=first.start_at + timedelta(minutes=5), end_at=first.end_at + timedelta(minutes=5))  # fmt: skip
+    dup = Appointment(
+        organisation_id=first.organisation_id,
+        patient_id=first.patient_id,
+        practitioner_id=first.practitioner_id,
+        facility_id=first.facility_id,
+        start_at=first.start_at + timedelta(minutes=5),
+        end_at=first.end_at + timedelta(minutes=5),
+    )
     db.add(dup)
     with pytest.raises(IntegrityError):
         db.flush()
@@ -160,8 +212,11 @@ def test_patient_cannot_be_booked_with_two_doctors_at_once(
     )
     p = make_patient(client, clinic["recep"])
     appt = book(client, clinic, p)
-    r = client.post("/api/v1/appointments", headers=clinic["recep"],
-                    json={"patient_id": p["id"], "practitioner_id": prac2["id"], "start_at": appt["start_at"]})  # fmt: skip
+    r = client.post(
+        "/api/v1/appointments",
+        headers=clinic["recep"],
+        json={"patient_id": p["id"], "practitioner_id": prac2["id"], "start_at": appt["start_at"]},
+    )
     assert r.status_code == 409
 
 
@@ -171,13 +226,21 @@ def test_reschedule_frees_old_slot_and_cancel_frees_slot(
     p = make_patient(client, clinic["recep"])
     appt = book(client, clinic, p, index=0)
     new_start = slot(client, clinic["recep"], clinic["prac"]["id"], index=3)
-    r = client.post(f"/api/v1/appointments/{appt['id']}/reschedule", headers=clinic["recep"],
-                    json={"start_at": new_start})  # fmt: skip
+    r = client.post(
+        f"/api/v1/appointments/{appt['id']}/reschedule",
+        headers=clinic["recep"],
+        json={"start_at": new_start},
+    )
     assert r.status_code == 200
     assert datetime.fromisoformat(r.json()["start_at"]) == datetime.fromisoformat(new_start)
-    offered = [s["start_at"] for s in client.get(
-        f"/api/v1/practitioners/{clinic['prac']['id']}/slots", headers=clinic["recep"],
-        params={"on": tomorrow().isoformat()}).json()]  # fmt: skip
+    offered = [
+        s["start_at"]
+        for s in client.get(
+            f"/api/v1/practitioners/{clinic['prac']['id']}/slots",
+            headers=clinic["recep"],
+            params={"on": tomorrow().isoformat()},
+        ).json()
+    ]
     assert appt["start_at"] in offered and new_start not in offered
     c = client.post(
         f"/api/v1/appointments/{appt['id']}/cancel",
@@ -185,9 +248,14 @@ def test_reschedule_frees_old_slot_and_cancel_frees_slot(
         json={"reason": "Travelling"},
     )
     assert c.status_code == 200 and c.json()["status"] == "CANCELLED"
-    assert new_start in [s["start_at"] for s in client.get(
-        f"/api/v1/practitioners/{clinic['prac']['id']}/slots", headers=clinic["recep"],
-        params={"on": tomorrow().isoformat()}).json()]  # fmt: skip
+    assert new_start in [
+        s["start_at"]
+        for s in client.get(
+            f"/api/v1/practitioners/{clinic['prac']['id']}/slots",
+            headers=clinic["recep"],
+            params={"on": tomorrow().isoformat()},
+        ).json()
+    ]
 
 
 def test_invalid_state_transitions_are_refused(client: TestClient, clinic: dict[str, Any]) -> None:
@@ -245,8 +313,11 @@ def test_walk_ins_queue_urgent_first_and_show_minimal_patient_data(
         make_patient(client, clinic["recep"], n) for n in ("Asha Rani", "Ravi Teja", "Sita Devi")
     )
     for p, prio in ((a, "ROUTINE"), (b, "ROUTINE"), (c, "URGENT")):
-        r = client.post("/api/v1/walk-ins", headers=clinic["recep"],
-                        json={"patient_id": p["id"], "facility_id": fid, "priority": prio})  # fmt: skip
+        r = client.post(
+            "/api/v1/walk-ins",
+            headers=clinic["recep"],
+            json={"patient_id": p["id"], "facility_id": fid, "priority": prio},
+        )
         assert r.status_code == 201, r.text
     q = client.get("/api/v1/queue", headers=clinic["doctor"], params={"facility_id": fid}).json()
     assert [(i["patient_name"], i["token_number"]) for i in q] == [
@@ -270,8 +341,13 @@ def test_doctor_calls_patient_one_consultation_at_a_time(
     ids = []
     for n in ("Asha Rani", "Ravi Teja"):
         p = make_patient(client, clinic["recep"], n)
-        ids.append(client.post("/api/v1/walk-ins", headers=clinic["recep"],
-                               json={"patient_id": p["id"], "facility_id": fid, "practitioner_id": prac}).json()["id"])  # fmt: skip
+        ids.append(
+            client.post(
+                "/api/v1/walk-ins",
+                headers=clinic["recep"],
+                json={"patient_id": p["id"], "facility_id": fid, "practitioner_id": prac},
+            ).json()["id"]
+        )
     d = clinic["doctor"]
 
     def consult(appt_id: str) -> Any:
@@ -301,8 +377,11 @@ def test_queue_is_scoped_to_the_selected_doctor(
         make_patient(client, clinic["recep"], "Ravi Teja"),
     )
     for p, prac in ((p1, clinic["prac"]), (p2, prac2)):
-        client.post("/api/v1/walk-ins", headers=clinic["recep"],
-                    json={"patient_id": p["id"], "facility_id": fid, "practitioner_id": prac["id"]})  # fmt: skip
+        client.post(
+            "/api/v1/walk-ins",
+            headers=clinic["recep"],
+            json={"patient_id": p["id"], "facility_id": fid, "practitioner_id": prac["id"]},
+        )
     mine = client.get(
         "/api/v1/queue",
         headers=clinic["doctor"],
@@ -320,8 +399,14 @@ def test_scheduling_role_matrix(client: TestClient, clinic: dict[str, Any], org_
     # Clinicians cannot book; admins and billing cannot book or run the queue.
     for h in (clinic["doctor"], nurse, billing, org_a):
         assert client.post("/api/v1/appointments", headers=h, json=booking).status_code == 403
-    assert client.post("/api/v1/walk-ins", headers=clinic["doctor"],
-                       json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]}).status_code == 403  # fmt: skip
+    assert (
+        client.post(
+            "/api/v1/walk-ins",
+            headers=clinic["doctor"],
+            json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]},
+        ).status_code
+        == 403
+    )
     assert (
         client.get(
             "/api/v1/queue", headers=billing, params={"facility_id": clinic["facility"]["id"]}
@@ -331,18 +416,33 @@ def test_scheduling_role_matrix(client: TestClient, clinic: dict[str, Any], org_
     assert client.get("/api/v1/appointments", headers=billing).status_code == 200
     assert client.get("/api/v1/appointments", headers=org_a).status_code == 403
     # Only the doctor starts a consultation: reception and nurses are refused.
-    walk = client.post("/api/v1/walk-ins", headers=clinic["recep"],
-                       json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]}).json()  # fmt: skip
+    walk = client.post(
+        "/api/v1/walk-ins",
+        headers=clinic["recep"],
+        json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]},
+    ).json()
     for h in (clinic["recep"], nurse, billing, org_a):
         r = client.post(
             "/api/v1/encounters/consultation", headers=h, json={"appointment_id": walk["id"]}
         )
         assert r.status_code == 403
-    assert client.post("/api/v1/encounters/consultation", headers=clinic["doctor"],
-                       json={"appointment_id": walk["id"]}).status_code == 200  # fmt: skip
+    assert (
+        client.post(
+            "/api/v1/encounters/consultation",
+            headers=clinic["doctor"],
+            json={"appointment_id": walk["id"]},
+        ).status_code
+        == 200
+    )
     # Only admins manage practitioners.
-    assert client.put(f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours", headers=clinic["recep"],
-                      json={"hours": []}).status_code == 403  # fmt: skip
+    assert (
+        client.put(
+            f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours",
+            headers=clinic["recep"],
+            json={"hours": []},
+        ).status_code
+        == 403
+    )
 
 
 def test_timeline_records_the_journey_without_demographics(
@@ -350,8 +450,11 @@ def test_timeline_records_the_journey_without_demographics(
 ) -> None:
     p = make_patient(client, clinic["recep"])
     book(client, clinic, p)
-    client.post("/api/v1/walk-ins", headers=clinic["recep"],
-                json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]})  # fmt: skip
+    client.post(
+        "/api/v1/walk-ins",
+        headers=clinic["recep"],
+        json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]},
+    )
     events = client.get(f"/api/v1/patients/{p['id']}/timeline", headers=clinic["doctor"]).json()
     kinds = [e["event_type"] for e in events]
     assert set(kinds) == {"PATIENT_REGISTERED", "APPOINTMENT_BOOKED", "PATIENT_CHECKED_IN"}
@@ -370,8 +473,14 @@ def test_scheduling_is_tenant_isolated(
         client.post(f"/api/v1/appointments/{appt['id']}/cancel", headers=rb, json={}).status_code
         == 404
     )
-    assert client.get(f"/api/v1/practitioners/{clinic['prac']['id']}/slots", headers=rb,
-                      params={"on": tomorrow().isoformat()}).status_code == 404  # fmt: skip
+    assert (
+        client.get(
+            f"/api/v1/practitioners/{clinic['prac']['id']}/slots",
+            headers=rb,
+            params={"on": tomorrow().isoformat()},
+        ).status_code
+        == 404
+    )
     fb = make_facility(client, org_b, "B1")
     assert (
         client.get(
@@ -380,9 +489,18 @@ def test_scheduling_is_tenant_isolated(
         == 404
     )
     assert client.get("/api/v1/queue", headers=rb, params={"facility_id": fb["id"]}).json() == []
-    assert client.post("/api/v1/appointments", headers=rb,
-                       json={"patient_id": p["id"], "practitioner_id": clinic["prac"]["id"],
-                             "start_at": appt["start_at"]}).status_code == 404  # fmt: skip
+    assert (
+        client.post(
+            "/api/v1/appointments",
+            headers=rb,
+            json={
+                "patient_id": p["id"],
+                "practitioner_id": clinic["prac"]["id"],
+                "start_at": appt["start_at"],
+            },
+        ).status_code
+        == 404
+    )
 
 
 def test_concurrent_bookings_of_one_slot_have_exactly_one_winner(

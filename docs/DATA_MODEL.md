@@ -43,6 +43,15 @@ reported results are likewise frozen by triggers; the only permitted change to a
 `audit_logs` is append-only by trigger. Codes (ICD/SNOMED/LOINC) are nullable and only accepted together with a code
 system; nothing is auto-coded.
 
+## Phase 4 tables (implemented)
+languages (global catalogue), consent_policies (versioned wording; frozen once published, can only be retired),
+consents (append-only decisions; only withdrawal fields may change; a withdrawn consent is final),
+clinical_interactions (recording sessions), interaction_speakers (provider label -> human-assigned role),
+transcript_segments (immutable), audio_assets (only when retention is allowed; storage_key NULL once deleted),
+speech_usage (metering, no content). Organisation settings gain a validated `policy` object (recording, AI,
+audio retention, enabled languages, guardian age). The brief's separate `transcripts` table is folded into
+`clinical_interactions` + `transcript_segments` (one transcript per session): see ADR-0006.
+
 ## Clinical fact mixin
 `source`, `verification_state`, `certainty`, `recorded_by`, `recorded_at`,
 `evidence_segment_ids`, `supersedes_id`.

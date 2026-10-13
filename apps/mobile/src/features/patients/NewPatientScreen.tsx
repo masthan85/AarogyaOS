@@ -11,8 +11,8 @@ import { type NewPatient, registerPatient } from '@/api/endpoints';
 import { type DuplicateCandidate, duplicateCandidateSchema } from '@/api/schemas';
 import { Button, Card, ChoiceChips, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
-import { LANGUAGE_OPTIONS } from '@/domain/languages';
 import { normaliseIndianMobile } from '@/domain/phone';
+import { useLanguages } from '@/features/languages/useLanguages';
 
 const schema = z
   .object({
@@ -41,6 +41,7 @@ type Form = z.infer<typeof schema>;
 export function NewPatientScreen() {
   const t = useTheme();
   const qc = useQueryClient();
+  const languages = useLanguages();
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
   const {
@@ -131,7 +132,7 @@ export function NewPatientScreen() {
       )} />
       <Controller control={control} name="language" render={({ field }) => (
         <ChoiceChips label="Preferred language" value={field.value} onChange={field.onChange}
-          options={LANGUAGE_OPTIONS.map((l) => ({ value: l.tag, label: l.label }))} />
+          options={languages.map((l) => ({ value: l.tag, label: l.label }))} />
       )} />
 
       {error ? <Text accessibilityRole="alert" style={{ color: t.danger }}>{error}</Text> : null}

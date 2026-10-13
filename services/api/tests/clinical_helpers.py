@@ -72,11 +72,16 @@ def get(client: TestClient, h: Headers, url: str, **params: Any) -> Any:
 def rx_body(*names: str, route: str = "ORAL") -> dict[str, Any]:
     return {
         "items": [
-            {"medicine_name": n, "dose": "1 tablet", "route": route, "frequency": "twice daily",
-             "duration_days": 5}
+            {
+                "medicine_name": n,
+                "dose": "1 tablet",
+                "route": route,
+                "frequency": "twice daily",
+                "duration_days": 5,
+            }
             for n in names
         ]
-    }  # fmt: skip
+    }
 
 
 def record_nka(client: TestClient, v: Visit) -> None:

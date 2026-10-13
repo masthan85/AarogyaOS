@@ -81,11 +81,8 @@ SystemDb = Annotated[Session, Depends(system_session)]
 TenantDb = Annotated[Session, Depends(tenant_session)]
 
 
-def current_principal(
-    db: TenantDb,
-    claims: Annotated[TokenClaims, Depends(get_claims)],
-    meta: MetaDep,
-) -> Principal:
+def build_principal(db: Session, claims: TokenClaims, meta: RequestMeta) -> Principal:
+    """Resolve token claims into a live principal. Shared by HTTP and WebSocket entry points."""
     user = db.get(User, claims.user_id)
     if user is None or not user.is_active or user.organisation_id != claims.org_id:
         raise Unauthorized("Account unavailable")
@@ -122,6 +119,14 @@ def current_principal(
         is_platform=is_platform,
         meta=meta,
     )
+
+
+def current_principal(
+    db: TenantDb,
+    claims: Annotated[TokenClaims, Depends(get_claims)],
+    meta: MetaDep,
+) -> Principal:
+    return build_principal(db, claims, meta)
 
 
 PrincipalDep = Annotated[Principal, Depends(current_principal)]

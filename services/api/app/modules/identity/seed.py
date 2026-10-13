@@ -34,3 +34,6 @@ def sync_reference_data(session: Session) -> None:
         for stale in granted - set(perms):
             session.delete(session.get(RolePermission, (role.id, stale)))
     session.commit()
+    from app.modules.languages.service import sync_languages
+
+    sync_languages(session)

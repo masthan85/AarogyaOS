@@ -56,6 +56,22 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
 - Known gaps: staff are not yet scoped to facilities or care teams (any clinician in the organisation can open any
   patient; all access is audited); no break-glass flow; no idempotency keys on clinical writes.
 
+## Consent, recording and audio (Phase 4)
+- Eight separate consent purposes; no purpose implies another. History is append-only (database triggers) and
+  each consent records who captured it, the wording version shown, the language, and any representative.
+- WebSocket: bearer token in the first message only (not the URL), 5 s auth deadline, 64 KiB frame limit, even
+  frame length, session time limit, one connection per session, consent and session status re-checked on a timer.
+- Transcripts are readable only by the person who recorded and, for clinical sessions, the encounter's doctor.
+  Opening a transcript is audited; polling is not (to avoid log flooding).
+- Logs, audit rows and events never contain transcript text or vendor error text (tested).
+- Audio at rest is encrypted per chunk; there is no download endpoint.
+- Third-party processing: sending audio to a speech vendor is a disclosure of health data. Before any real
+  provider is enabled: signed DPA, data-residency decision, retention/training opt-out in writing, security review.
+- Regulatory notes (from law-firm summaries of the DPDP Rules 2025, notified November 2025, most duties
+  phasing in to about May 2027; **verify against the gazette with counsel**): verifiable parental consent for
+  children's data, with a carve-out for health professionals that must be checked; notice and consent duties
+  still apply to health data; breach reporting; consent-manager provisions from November 2026.
+
 ## Audit
 Append-only `audit_logs`: actor, organisation, action, resource, outcome, ip,
 user agent, correlation id, before/after for sensitive changes, AI involvement.

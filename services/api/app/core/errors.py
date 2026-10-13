@@ -33,6 +33,11 @@ class Forbidden(AppError):
     code = "forbidden"
 
 
+class ServiceUnavailable(AppError):
+    status_code = 503
+    code = "service_unavailable"
+
+
 class Unauthorized(AppError):
     status_code = 401
     code = "unauthorized"

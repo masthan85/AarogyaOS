@@ -38,6 +38,14 @@ class FieldCrypto:
         raw = base64.urlsafe_b64decode(body)
         return AESGCM(self._enc).decrypt(raw[:12], raw[12:], context.encode()).decode()
 
+    def encrypt_bytes(self, data: bytes, *, context: str) -> bytes:
+        """Binary AES-256-GCM (used for audio chunks): nonce || ciphertext+tag."""
+        nonce = os.urandom(12)
+        return nonce + AESGCM(self._enc).encrypt(nonce, data, context.encode())
+
+    def decrypt_bytes(self, blob: bytes, *, context: str) -> bytes:
+        return AESGCM(self._enc).decrypt(blob[:12], blob[12:], context.encode())
+
     def blind_index(self, value: str, *, context: str) -> str:
         msg = f"{context}\x00{value}".encode()
         return hmac.new(self._idx, msg, hashlib.sha256).hexdigest()

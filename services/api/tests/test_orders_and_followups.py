@@ -356,8 +356,15 @@ def test_full_clinical_journey_end_to_end(client: TestClient, org_a: H) -> None:
         and len(detail["prescriptions"]) == 1
     )
     kinds = {e["event_type"] for e in get(client, v.doctor, f"/patients/{pid}/timeline").json()}
-    assert {"TRIAGE_STARTED", "VITAL_RECORDED", "ENCOUNTER_STARTED", "INVESTIGATION_ORDERED",
-            "PRESCRIPTION_SIGNED", "FOLLOWUP_CREATED", "ENCOUNTER_COMPLETED"} <= kinds  # fmt: skip
+    assert {
+        "TRIAGE_STARTED",
+        "VITAL_RECORDED",
+        "ENCOUNTER_STARTED",
+        "INVESTIGATION_ORDERED",
+        "PRESCRIPTION_SIGNED",
+        "FOLLOWUP_CREATED",
+        "ENCOUNTER_COMPLETED",
+    } <= kinds
     # Nothing in the audit trail was lost along the way
     assert get(client, v.admin, "/audit-logs", action="PRESCRIPTION_SIGNED").json()
 

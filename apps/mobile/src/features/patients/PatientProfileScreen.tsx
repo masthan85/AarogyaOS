@@ -61,6 +61,9 @@ export function PatientProfileScreen() {
       {can(me, 'appointment:manage') ? (
         <Button title="Book appointment" onPress={() => router.push({ pathname: '/appointments/book', params: { patientId: p.id, name: p.full_name } })} />
       ) : null}
+      {can(me, 'consent:read') ? (
+        <Button title="Consent" variant="secondary" onPress={() => router.push({ pathname: '/consent/[patientId]', params: { patientId: p.id } })} />
+      ) : null}
       {can(me, 'queue:manage') ? (
         <Button title="Walk-in check-in" variant="secondary" onPress={() => router.push({ pathname: '/queue', params: { walkInPatientId: p.id, walkInName: p.full_name } })} />
       ) : null}

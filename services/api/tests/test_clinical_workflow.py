@@ -34,10 +34,16 @@ def test_triage_is_idempotent_and_needs_a_checked_in_patient(
     assert again.json()["status"] == "TRIAGE"
     # A patient who is booked but has not arrived cannot be triaged.
     booked_patient = make_patient(client, visit.recep, "Ravi Teja", mobile="9123456780")
-    booked = post(client, visit.recep, "/appointments", {
-        "patient_id": booked_patient["id"], "practitioner_id": visit.prac["id"],
-        "start_at": slot(client, visit.recep, visit.prac["id"]),
-    })  # fmt: skip
+    booked = post(
+        client,
+        visit.recep,
+        "/appointments",
+        {
+            "patient_id": booked_patient["id"],
+            "practitioner_id": visit.prac["id"],
+            "start_at": slot(client, visit.recep, visit.prac["id"]),
+        },
+    )
     assert booked.status_code == 201
     not_arrived = post(
         client, visit.nurse, "/encounters/triage", {"appointment_id": booked.json()["id"]}
@@ -122,9 +128,20 @@ def test_encounter_must_be_in_the_callers_organisation(
 def test_vitals_convert_fahrenheit_flag_abnormal_and_keep_the_original(
     client: TestClient, visit: Visit
 ) -> None:
-    r = post(client, visit.nurse, f"/encounters/{visit.enc_id}/vitals", {
-        "temperature": {"value": 101.5, "unit": "F"}, "systolic_bp": 150, "diastolic_bp": 95,
-        "heart_rate": 88, "spo2": 92, "height_cm": 160, "weight_kg": 64})  # fmt: skip
+    r = post(
+        client,
+        visit.nurse,
+        f"/encounters/{visit.enc_id}/vitals",
+        {
+            "temperature": {"value": 101.5, "unit": "F"},
+            "systolic_bp": 150,
+            "diastolic_bp": 95,
+            "heart_rate": 88,
+            "spo2": 92,
+            "height_cm": 160,
+            "weight_kg": 64,
+        },
+    )
     assert r.status_code == 201, r.text
     by = {o["code"]: o for o in r.json()}
     assert by["TEMPERATURE_C"]["value"] == "38.61" and by["TEMPERATURE_C"]["original_unit"] == "°F"
@@ -242,8 +259,12 @@ def test_note_permissions_by_type_and_ownership(
 def test_patient_reported_source_survives_a_doctor_typing_it(
     client: TestClient, consult: Visit
 ) -> None:
-    r = post(client, consult.doctor, f"/encounters/{consult.enc_id}/notes",
-             {"note_type": "HPI", "content": "Says pain worse at night", "source": "PATIENT_REPORTED"})  # fmt: skip
+    r = post(
+        client,
+        consult.doctor,
+        f"/encounters/{consult.enc_id}/notes",
+        {"note_type": "HPI", "content": "Says pain worse at night", "source": "PATIENT_REPORTED"},
+    )
     assert (
         r.json()["source"] == "PATIENT_REPORTED"
         and r.json()["verification_state"] == "CLINICIAN_CONFIRMED"
@@ -271,9 +292,17 @@ def test_note_edit_creates_new_version(client: TestClient, consult: Visit) -> No
 def test_a_possible_allergy_is_never_recorded_as_confirmed(
     client: TestClient, visit: Visit
 ) -> None:
-    r = post(client, visit.nurse, f"/encounters/{visit.enc_id}/allergies", {
-        "substance": "Penicillin", "certainty": "POSSIBLE", "source": "PATIENT_REPORTED",
-        "reaction": "Rash as a child"})  # fmt: skip
+    r = post(
+        client,
+        visit.nurse,
+        f"/encounters/{visit.enc_id}/allergies",
+        {
+            "substance": "Penicillin",
+            "certainty": "POSSIBLE",
+            "source": "PATIENT_REPORTED",
+            "reaction": "Rash as a child",
+        },
+    )
     a = r.json()
     assert r.status_code == 201 and a["certainty"] == "POSSIBLE"
     assert a["source"] == "PATIENT_REPORTED" and a["verification_state"] == "UNVERIFIED"

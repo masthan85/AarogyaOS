@@ -156,11 +156,34 @@ def test_duplicates_within_prescription_and_with_current_medicines(
         f"/encounters/{v.enc_id}/medications",
         {"name": "Metformin 500 mg", "generic_name": "metformin"},
     )
-    r = post(client, v.doctor, f"/encounters/{v.enc_id}/prescriptions", {"items": [
-        {"medicine_name": "Metformin 850 mg", "generic_name": "metformin", "dose": "1", "route": "ORAL", "frequency": "BD"},
-        {"medicine_name": "Paracetamol 500 mg", "dose": "1", "route": "ORAL", "frequency": "SOS"},
-        {"medicine_name": "Paracetamol 650 mg", "dose": "1", "route": "ORAL", "frequency": "SOS"},
-    ]})  # fmt: skip
+    r = post(
+        client,
+        v.doctor,
+        f"/encounters/{v.enc_id}/prescriptions",
+        {
+            "items": [
+                {
+                    "medicine_name": "Metformin 850 mg",
+                    "generic_name": "metformin",
+                    "dose": "1",
+                    "route": "ORAL",
+                    "frequency": "BD",
+                },
+                {
+                    "medicine_name": "Paracetamol 500 mg",
+                    "dose": "1",
+                    "route": "ORAL",
+                    "frequency": "SOS",
+                },
+                {
+                    "medicine_name": "Paracetamol 650 mg",
+                    "dose": "1",
+                    "route": "ORAL",
+                    "frequency": "SOS",
+                },
+            ]
+        },
+    )
     codes = warning_codes(client, v, r.json()["id"])
     assert any(c.startswith("DUPLICATE_THERAPY:1:") for c in codes)
     assert "DUPLICATE_IN_PRESCRIPTION:2:3" in codes
