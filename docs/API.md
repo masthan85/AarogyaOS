@@ -17,5 +17,27 @@ Every response carries `X-Request-ID`; send one to correlate client and server l
 | `GET /roles` | `role:read` |
 | `GET /audit-logs` | `audit:read` |
 
+## Phase 2 endpoints
+| Method & path | Permission |
+|---|---|
+| `POST /patients` (409 `possible_duplicate` with candidates unless `confirm_not_duplicate`) | `patient:create` |
+| `GET /patients/search?name=&mobile=&mrn=` (minimal fields, max 20, name needs 3+ letters) | `patient:search` |
+| `GET /patients/{id}` | `patient:read` |
+| `PATCH /patients/{id}` (requires `expected_version`; 409 if stale) | `patient:update` |
+| `POST /patients/{id}/identifiers` | `patient:update` |
+| `POST /patients/{id}/identifiers/{iid}/reveal` (audited) | `patient:identifier` |
+| `GET /patients/{id}/timeline` | `patient:timeline` |
+| `POST /practitioners`, `PUT /practitioners/{id}/working-hours` | `practitioner:manage` |
+| `GET /practitioners`, `GET /practitioners/{id}/slots?on=YYYY-MM-DD` | `practitioner:read` / `appointment:read` |
+| `POST /appointments`, `/{id}/reschedule`, `/{id}/cancel`, `/{id}/confirm`, `/{id}/no-show` | `appointment:manage` |
+| `GET /appointments?on=&facility_id=&practitioner_id=&patient_id=&status=` | `appointment:read` |
+| `POST /appointments/{id}/check-in`, `POST /walk-ins` | `queue:manage` |
+| `POST /appointments/{id}/start-consultation`, `/{id}/complete` | `queue:call` |
+| `GET /queue?facility_id=&practitioner_id=` | `queue:read` |
+
+Appointment states: BOOKED → CONFIRMED → (ARRIVED/CHECKED_IN) → WAITING → IN_CONSULTATION → COMPLETED, with
+CANCELLED and NO_SHOW as exits. Check-in currently moves straight to WAITING; ARRIVED/CHECKED_IN are accepted
+by the state machine but unused until consent/triage steps exist. Transitions outside the table return 409.
+
 Planned conventions (not yet implemented): `Idempotency-Key` on mutating POSTs, cursor pagination,
 optimistic concurrency via `version`.

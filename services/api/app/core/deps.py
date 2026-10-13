@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
 from app.core.context import Principal, RequestMeta
+from app.core.crypto import FieldCrypto
 from app.core.db import set_tenant
 from app.core.errors import Forbidden, Unauthorized
 from app.core.security import InvalidToken, TokenClaims, decode_access_token
@@ -27,6 +28,11 @@ def get_sessionmaker(request: Request) -> "sessionmaker[Session]":
     return sm
 
 
+def get_crypto(request: Request) -> FieldCrypto:
+    crypto: FieldCrypto = request.app.state.crypto
+    return crypto
+
+
 def get_meta(request: Request) -> RequestMeta:
     return RequestMeta.from_request(request)
 
@@ -34,6 +40,7 @@ def get_meta(request: Request) -> RequestMeta:
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 SessionMakerDep = Annotated["sessionmaker[Session]", Depends(get_sessionmaker)]
 MetaDep = Annotated[RequestMeta, Depends(get_meta)]
+CryptoDep = Annotated[FieldCrypto, Depends(get_crypto)]
 
 
 def get_claims(

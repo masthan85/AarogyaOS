@@ -31,6 +31,21 @@ Tokens in Keychain/Keystore via secure store; no PHI in logs, analytics or push
 payloads; optional screenshot blocking on sensitive screens by org policy; biometric
 unlock gate; no clipboard of PHI; encrypted local drafts.
 
+## Patient data (Phase 2)
+- Least privilege: administrators have **no** patient permissions. Lab, pharmacy and billing can search
+  (name, age, sex, masked mobile) but cannot open records. Reception has no clinical timeline.
+- ABHA numbers and other identifiers are AES-256-GCM encrypted with a context-bound AAD; lookups use an
+  HMAC blind index with a separately derived key. Unmasking requires `patient:identifier` and is audited.
+  `AAROGYA_FIELD_ENCRYPTION_KEY` is required in production; rotation is supported by the `v1:` ciphertext
+  prefix but a re-encryption job is not built yet.
+- Every patient open, search (result count only, never the query), timeline view and identifier reveal is audited.
+  Audit rows and outbox events hold ids and field *names*, never demographics. Previous demographic values live in
+  `patient_revisions`.
+- Known gaps: no rate limiting on search (an authorised user can enumerate by 3-letter prefixes, 20 at a time —
+  mitigated only by audit; add rate limits and anomaly alerts in Phase 7); any user with `patient:read` can open
+  any patient in their organisation (care-team ABAC and break-glass are Phase 3+); mobile list caches are
+  short-lived (60 s) and cleared on sign-out but are not encrypted on disk because they are memory-only.
+
 ## Audit
 Append-only `audit_logs`: actor, organisation, action, resource, outcome, ip,
 user agent, correlation id, before/after for sensitive changes, AI involvement.

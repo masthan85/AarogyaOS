@@ -66,7 +66,7 @@ export function TextField({
   );
 }
 
-export function Card({ children, title }: { children: ReactNode; title?: string }) {
+export function Card({ children, title }: { children?: ReactNode; title?: string }) {
   const t = useTheme();
   return (
     <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
@@ -138,3 +138,45 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
   center: { padding: space.lg, alignItems: 'center', gap: space.sm },
 });
+
+export function ChoiceChips<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label?: string;
+  options: { value: T; label: string }[];
+  value: T | undefined;
+  onChange: (v: T) => void;
+}) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: space.xs }}>
+      {label ? <Text style={{ color: t.text, fontWeight: '600' }}>{label}</Text> : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+        {options.map((o) => {
+          const selected = o.value === value;
+          return (
+            <Pressable
+              key={o.value}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              onPress={() => onChange(o.value)}
+              style={{
+                minHeight: MIN_TOUCH,
+                paddingHorizontal: space.md,
+                justifyContent: 'center',
+                borderRadius: 999,
+                borderWidth: 1.5,
+                borderColor: t.primary,
+                backgroundColor: selected ? t.primary : 'transparent',
+              }}>
+              <Text style={{ color: selected ? t.primaryText : t.primary, fontWeight: '600' }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}

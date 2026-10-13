@@ -5,8 +5,8 @@ patient from arrival to follow-up, turning consented, clinician-supervised conve
 into structured, reviewable clinical information. AI supports clinicians; it never
 decides for them, and every workflow works with AI switched off.
 
-**Status:** Phase 0 (architecture) complete, Phase 1 (platform foundation) implemented.
-No patient or clinical features exist yet — see [docs/BACKLOG.md](docs/BACKLOG.md).
+**Status:** Phases 0-2 done: architecture, platform foundation, patient registration, scheduling and queue.
+No clinical (EMR, speech, AI) features exist yet — see [docs/BACKLOG.md](docs/BACKLOG.md).
 
 | Path | What |
 |---|---|

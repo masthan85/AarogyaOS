@@ -92,4 +92,14 @@ describe('ApiClient', () => {
     const c = new ApiClient({ baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl });
     await expect(c.request('/x', meSchema)).rejects.toMatchObject({ status: 403, message: 'Forbidden thing', correlationId: 'abc' });
   });
+
+  it('exposes the structured error body (e.g. duplicate candidates) on ApiError', async () => {
+    const fetchImpl = jest.fn(async () =>
+      new Response(JSON.stringify({ detail: 'Possible duplicate', candidates: [{ id: '1' }] }), { status: 409 }));
+    const c = new ApiClient({ baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl });
+    const err = await c.request('/patients', meSchema, { method: 'POST', body: {} }).catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.body?.candidates).toEqual([{ id: '1' }]);
+  });
 });

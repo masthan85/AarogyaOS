@@ -8,9 +8,14 @@ class AppError(Exception):
     status_code = 400
     code = "bad_request"
 
-    def __init__(self, detail: str) -> None:
+    def __init__(
+        self, detail: str, *, code: str | None = None, extra: dict[str, object] | None = None
+    ) -> None:
         super().__init__(detail)
         self.detail = detail
+        if code:
+            self.code = code
+        self.extra = extra or {}
 
 
 class NotFound(AppError):
@@ -33,10 +38,13 @@ class Unauthorized(AppError):
     code = "unauthorized"
 
 
-def _body(request: Request, status: int, code: str, detail: object) -> JSONResponse:
+def _body(
+    request: Request, status: int, code: str, detail: object, extra: dict[str, object] | None = None
+) -> JSONResponse:
     return JSONResponse(
         status_code=status,
         content={
+            **(extra or {}),
             "type": f"https://aarogyaos.example/errors/{code}",
             "title": code,
             "status": status,
@@ -50,7 +58,7 @@ def _body(request: Request, status: int, code: str, detail: object) -> JSONRespo
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _app_error(request: Request, exc: AppError) -> JSONResponse:
-        return _body(request, exc.status_code, exc.code, exc.detail)
+        return _body(request, exc.status_code, exc.code, exc.detail, exc.extra)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:

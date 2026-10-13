@@ -29,6 +29,8 @@ APP_ROLE = "aarogya_test_app"
 APP_PASSWORD = "aarogya_test_app"  # noqa: S105
 PASSWORD = "correct-horse-battery"  # noqa: S105
 TENANT_TABLES = (
+    "queue_entries, queue_counters, working_hours, appointments, practitioners, "
+    "patient_revisions, patient_languages, patient_identifiers, patients, mrn_counters, "
     "audit_logs, clinical_events, refresh_tokens, user_roles, users, departments, "
     "facilities, organisations"
 )

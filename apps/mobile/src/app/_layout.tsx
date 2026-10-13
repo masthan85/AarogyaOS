@@ -53,8 +53,9 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  // Short gcTime: cached lists can contain patient names, so they should not linger in memory.
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } }),
+    () => new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000, gcTime: 60_000 } } }),
   );
   return (
     <QueryClientProvider client={queryClient}>

@@ -66,7 +66,11 @@ def test_password_hashing() -> None:
 def test_production_rejects_default_secret() -> None:
     with pytest.raises(ValueError):
         Settings(environment="production")
-    Settings(environment="production", jwt_secret="x" * 40)
+    Settings(
+        environment="production",
+        jwt_secret="x" * 40,
+        field_encryption_key="azRrazRrazRrazRrazRrazRrazRrazRrazRrazRrazA=",
+    )
 
 
 def test_health_endpoints_and_error_shape(client: TestClient) -> None:

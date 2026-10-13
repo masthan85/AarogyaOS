@@ -9,6 +9,8 @@ export class ApiError extends Error {
     readonly status: number,
     message: string,
     readonly correlationId?: string,
+    /** Parsed error body, e.g. duplicate-patient candidates. Never log it: it may hold PHI. */
+    readonly body?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -101,13 +103,14 @@ export class ApiClient {
     const correlationId = res.headers.get('x-request-id') ?? undefined;
     if (!res.ok) {
       let detail = `Request failed (${res.status})`;
+      let parsed: Record<string, unknown> | undefined;
       try {
-        const body = (await res.json()) as { detail?: unknown };
-        if (typeof body.detail === 'string') detail = body.detail;
+        parsed = (await res.json()) as Record<string, unknown>;
+        if (typeof parsed.detail === 'string') detail = parsed.detail;
       } catch {
         /* non-JSON error body */
       }
-      throw new ApiError(res.status, detail, correlationId);
+      throw new ApiError(res.status, detail, correlationId, parsed);
     }
     if (res.status === 204) return schema.parse(undefined);
     return schema.parse(await res.json());

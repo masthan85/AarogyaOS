@@ -13,8 +13,6 @@ organisation/facility), roles, permissions, role_permissions, refresh_tokens
 (outbox).
 
 ## Planned (by phase)
-2 patients, patient_identifiers, patient_language_preferences, practitioners,
-appointments, queue_entries
 3 encounters, observations/vitals, conditions, allergies, medications,
 medication_requests/prescriptions, service_requests, diagnostic_reports,
 clinical_notes, follow_ups, documents
@@ -22,6 +20,16 @@ clinical_notes, follow_ups, documents
 transcript_segments, languages
 5 ai_extractions, ai_suggestions, ai_suggestion_actions, ai_usage
 7 invoices, payments, billing items
+
+## Phase 2 tables (implemented)
+patients, patient_identifiers (AES-GCM ciphertext + HMAC blind index; masked hint), patient_languages,
+patient_revisions (previous values of changed demographics), mrn_counters, practitioners, working_hours,
+appointments, queue_entries, queue_counters.
+
+Notes: mobile numbers are stored E.164 and are deliberately **not unique** (families share numbers);
+age-only registration stores 1 January of the implied birth year with `dob_is_estimated = true`;
+the database rejects overlapping scheduled appointments per practitioner with an `EXCLUDE USING gist`
+constraint; tokens are issued per facility per local day from a locked counter.
 
 ## Clinical fact mixin (Phase 3+)
 `source`, `verification_state`, `certainty`, `recorded_by`, `recorded_at`,
