@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     lockout_minutes: int = Field(default=15, ge=1)
     cors_origins: list[str] = []
     log_level: str = "INFO"
+    # Bearer token for GET /metrics. Empty: the endpoint is disabled in production and open in dev.
+    metrics_token: str = ""
+    max_request_bytes: int = Field(default=5_000_000, ge=10_000, le=50_000_000)
     # Speech. No default provider in production: a deployment must choose one deliberately.
     llm_provider: str = ""
     embedding_provider: str = ""
@@ -45,6 +48,10 @@ class Settings(BaseSettings):
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")
+            if "*" in self.cors_origins:
+                raise ValueError("AAROGYA_CORS_ORIGINS must list origins explicitly in production")
+            if self.database_url.startswith("postgresql+psycopg://aarogya_app:aarogya_app@"):
+                raise ValueError("AAROGYA_DATABASE_URL still uses the development password")
             if self.field_encryption_key == _DEV_FIELD_KEY:
                 raise ValueError("AAROGYA_FIELD_ENCRYPTION_KEY must be set in production")
         return self

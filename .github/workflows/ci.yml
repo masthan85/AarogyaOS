@@ -9,7 +9,7 @@ jobs:
     defaults: { run: { working-directory: services/api } }
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env: { POSTGRES_PASSWORD: postgres }
         ports: ["5432:5432"]
         options: >-
@@ -22,6 +22,8 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy app
+      - run: pip install pip-audit && pip-audit --skip-editable --progress-spinner off
+        continue-on-error: true  # advisory until triaged; see docs/OPERATIONS.md
       - run: pytest -q
         env:
           AAROGYA_TEST_ADMIN_URL: postgresql+psycopg://postgres:postgres@localhost:5432/postgres
@@ -36,5 +38,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test -- --ci
+      - run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
       - run: npx expo export --platform android --output-dir /tmp/export
         env: { CI: "1", EXPO_NO_TELEMETRY: "1" }

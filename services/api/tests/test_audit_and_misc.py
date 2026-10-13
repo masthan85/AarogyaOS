@@ -70,12 +70,13 @@ def test_production_rejects_default_secret() -> None:
         environment="production",
         jwt_secret="x" * 40,
         field_encryption_key="azRrazRrazRrazRrazRrazRrazRrazRrazRrazRrazA=",
+        database_url="postgresql+psycopg://aarogya_app:not-the-dev-password@db/aarogya",
     )
 
 
 def test_health_endpoints_and_error_shape(client: TestClient) -> None:
     assert client.get("/health").json() == {"status": "ok"}
-    assert client.get("/ready").json() == {"status": "ready"}
+    assert client.get("/ready").json() == {"status": "ready", "migrations": "ok"}
     r = client.get("/api/v1/auth/me")
     assert r.status_code == 401 and r.json()["status"] == 401 and "correlation_id" in r.json()
     assert r.headers["X-Request-ID"]

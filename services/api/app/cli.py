@@ -1,4 +1,4 @@
-"""Operational commands: `seed`, `create-platform-admin`, `purge-audio` (run on a schedule)."""
+"""Operational commands: `seed`, `create-platform-admin`, `run-job NAME` (see app/jobs.py)."""
 
 import getpass
 import sys
@@ -27,6 +27,16 @@ def main(argv: list[str]) -> int:
             )
             print(f"Audio files removed: {purge_due_audio(session, store)}")
             return 0
+        if command == "run-job":
+            from app.jobs import JOBS, run_job
+
+            name = argv[1] if len(argv) > 1 else ""
+            if name not in JOBS:
+                print(f"Unknown job. Choose one of: {', '.join(JOBS)}")
+                return 2
+            run = run_job(sm, settings, name)
+            print(f"{name}: {run.status} {run.result}")
+            return 0 if run.status in ("OK", "SKIPPED") else 1
         if command == "seed":
             sync_reference_data(session)
             print("Reference data synced")
@@ -58,7 +68,7 @@ def main(argv: list[str]) -> int:
             session.commit()
             print("Platform administrator created")
             return 0
-    print("Usage: python -m app.cli [seed|create-platform-admin|purge-audio]")
+    print("Usage: python -m app.cli [seed|create-platform-admin|purge-audio|run-job NAME]")
     return 2
 
 

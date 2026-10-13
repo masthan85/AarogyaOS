@@ -9,7 +9,7 @@ import asyncio
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.ai.knowledge import (
@@ -26,6 +26,22 @@ from app.modules.ai.schemas import KnowledgeDocIn, KnowledgeDocOut
 from app.modules.audit.service import record_audit
 
 MIN_SCORE = 0.12
+
+
+def vector_ready(session: Session) -> bool:
+    """True when the pgvector column exists, so similarity can be computed in the database."""
+    return bool(
+        session.scalar(
+            text(
+                "select 1 from information_schema.columns "
+                "where table_name = 'knowledge_chunks' and column_name = 'embedding_vec'"
+            )
+        )
+    )
+
+
+def _literal(vec: list[float]) -> str:
+    return "[" + ",".join(f"{x:.8g}" for x in vec) + "]"
 
 
 def get_embedder(name: str, *, environment: str) -> EmbeddingProvider:
@@ -86,16 +102,25 @@ def create_document(
     session.add(doc)
     session.flush()
     vectors = _embed(embedder, body.chunks)
-    for i, (text, vec) in enumerate(zip(body.chunks, vectors, strict=True)):
+    for i, (passage, vec) in enumerate(zip(body.chunks, vectors, strict=True)):
         session.add(
             KnowledgeChunk(
                 organisation_id=doc.organisation_id,
                 document_id=doc.id,
                 position=i,
-                text=text,
+                text=passage,
                 embedding=vec,
                 embedding_model=embedder.model,
             )
+        )
+    if vector_ready(session):
+        session.flush()
+        session.execute(
+            text(
+                "update knowledge_chunks set embedding_vec = embedding::vector "
+                "where document_id = :d"
+            ),
+            {"d": doc.id},
         )
     _audit(session, principal, "KNOWLEDGE_DOCUMENT_ADDED", doc)
     session.commit()
@@ -144,6 +169,47 @@ def retrieve(
     """Top-k chunks from approved, current documents. Empty when nothing is relevant enough."""
     if not query.strip():
         return []
+    q = _embed(embedder, [query])[0]
+    if not any(q):
+        return []
+    if vector_ready(session):
+        return _retrieve_sql(session, embedder, q, k)
+    return _retrieve_python(session, embedder, q, k)
+
+
+def _retrieve_sql(
+    session: Session, embedder: EmbeddingProvider, q: list[float], k: int
+) -> list[KnowledgeHit]:
+    # Exact (not approximate) search: the approved corpus is small and exactness keeps results
+    # identical to the Python path. Add an HNSW index per embedding model when it grows.
+    rows = session.execute(
+        text(
+            """
+            select c.id, d.id, d.title, d.publisher, d.version, c.text,
+                   1 - (c.embedding_vec <=> cast(:q as vector)) as score
+            from knowledge_chunks c join knowledge_documents d on d.id = c.document_id
+            where d.approved and d.retired_at is null
+              and (d.effective_date is null or d.effective_date <= current_date)
+              and c.embedding_model = :model
+              and c.embedding_vec is not null
+              and vector_dims(c.embedding_vec) = :dim
+              and vector_norm(c.embedding_vec) > 0
+            order by c.embedding_vec <=> cast(:q as vector)
+            limit :k
+            """
+        ),
+        {"q": _literal(q), "model": embedder.model, "dim": len(q), "k": k},
+    ).all()
+    return [
+        KnowledgeHit(str(r[0]), str(r[1]), r[2], r[3], r[4], r[5], round(float(r[6]), 4))
+        for r in rows
+        if float(r[6]) >= MIN_SCORE
+    ]
+
+
+def _retrieve_python(
+    session: Session, embedder: EmbeddingProvider, q: list[float], k: int
+) -> list[KnowledgeHit]:
     today = date.today()
     rows = session.execute(
         select(KnowledgeChunk, KnowledgeDocument)
@@ -156,9 +222,6 @@ def retrieve(
             KnowledgeChunk.embedding_model == embedder.model,
         )
     ).all()
-    if not rows:
-        return []
-    q = _embed(embedder, [query])[0]
     scored = sorted(
         ((cosine(q, c.embedding), c, d) for c, d in rows), key=lambda t: t[0], reverse=True
     )

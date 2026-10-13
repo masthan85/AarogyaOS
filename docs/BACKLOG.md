@@ -35,4 +35,10 @@ exclusions and audit. **Open (needs the ABDM IG and sandbox access):** profile c
 HL7 validator in CI, ABHA create/verify, consent manager and consent artefacts, HIP/HIU flows, HPR/HFR registration,
 terminology service for coded diagnoses and medicines, FHIR search/read for more resources, Provenance resources,
 registered identifier systems.
-P7 Hardening: observability, backup/DR, load, cost dashboards, admin, deployment.
+P7 Hardening (partly done, see OPERATIONS.md): readiness with migration check, Prometheus metrics without identifiers,
+security headers and request-size cap, production config rules, scheduled jobs with locking and a ledger, optional
+pgvector search, encrypted backup + restore drill (run), load-test script (run once), dependency scanning in CI,
+migrations moved out of container start. **Open:** Redis hub for multi-container audio/partials, S3-compatible encrypted
+audio store + KMS, field-key rotation, PITR/WAL archiving and RPO/RTO targets, tracing and log shipping, dashboards and
+alerts, AI cost configuration, Kubernetes/Terraform, image build verification, TLS/WAF, login rate limiting, pen test,
+Expo SDK upgrade to clear audit findings, admin console, capacity test on a production-like stack.

@@ -467,3 +467,33 @@ def test_approval_supersedes_and_freezes_the_summary(
 def test_nurses_and_receptionists_cannot_write_summaries(client: TestClient, v: Visit) -> None:
     assert post(client, v.recep, f"/encounters/{v.enc_id}/summaries", {}).status_code == 403
     assert post(client, v.nurse, f"/encounters/{v.enc_id}/summaries", {}).status_code == 403
+
+
+# ---- pgvector (runs only where the extension is installed) ------------------------------------
+
+
+def test_database_and_python_ranking_agree(client: TestClient, org_a: H, db: Session) -> None:
+    import asyncio
+
+    from app.ai.knowledge import HashingEmbeddingProvider
+    from app.core.db import set_tenant
+    from app.modules.ai import knowledge_service as ks
+
+    if not ks.vector_ready(db):
+        pytest.skip("pgvector is not installed on this database server")
+    doc = approved_guide(client, org_a)
+    emb = HashingEmbeddingProvider()
+    q = asyncio.run(emb.embed(["fever lasting three days in an adult"]))[0]
+    me = db.execute(
+        text("select organisation_id from knowledge_documents where id = :d"), {"d": doc}
+    ).scalar()
+    set_tenant(db, me)
+    via_sql = ks._retrieve_sql(db, emb, q, 4)  # noqa: SLF001
+    via_python = ks._retrieve_python(db, emb, q, 4)  # noqa: SLF001
+    assert via_sql and [h.chunk_id for h in via_sql] == [h.chunk_id for h in via_python]
+    assert [h.score for h in via_sql] == pytest.approx([h.score for h in via_python], abs=1e-3)
+    # the vector column can be filled, but the passage text stays immutable
+    with pytest.raises(DBAPIError):
+        db.execute(text("update knowledge_chunks set text = 'tampered'"))
+        db.commit()
+    db.rollback()

@@ -2,6 +2,7 @@
 isolated database and a NON-superuser role, because superusers bypass row-level security.
 """
 
+import contextlib
 import os
 import uuid
 from collections.abc import Iterator
@@ -56,6 +57,15 @@ def app_url() -> str:
                 text(f"create role {APP_ROLE} login password '{APP_PASSWORD}' nosuperuser")
             )
         conn.execute(text(f"create database {TEST_DB} owner {APP_ROLE}"))
+    # Optional: exercise the pgvector path when the server ships the extension.
+    ext = create_engine(
+        make_url(ADMIN_URL).set(database=TEST_DB).render_as_string(hide_password=False),
+        isolation_level="AUTOCOMMIT",
+    )
+    with ext.connect() as conn:
+        with contextlib.suppress(Exception):  # the extension may not be installed here
+            conn.execute(text("create extension if not exists vector"))
+    ext.dispose()
     admin.dispose()
     url = (
         make_url(ADMIN_URL)

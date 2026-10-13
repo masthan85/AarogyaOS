@@ -72,6 +72,13 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
   children's data, with a carve-out for health professionals that must be checked; notice and consent duties
   still apply to health data; breach reporting; consent-manager provisions from November 2026.
 
+## Runtime hardening (Phase 7)
+Security headers on every response; `Cache-Control: no-store` and a restrictive CSP on `/api/`; HSTS in production;
+request-size cap; production config refuses default secrets, default DB password and wildcard CORS; metrics labels carry
+no identifiers; job failures record only the exception class; backups refuse to be written unencrypted.
+Known gaps: no login rate limiting beyond account lockout, no WAF/TLS in this repo, no field-key rotation, access logs
+contain record ids in paths.
+
 ## Clinical AI (Phase 5)
 - Model output is untrusted input: strict parsing, schema validation, exact-quote grounding, whitelisted attributes.
   Transcript text is passed as data inside delimiters, never as instructions; prompt-injection text in a

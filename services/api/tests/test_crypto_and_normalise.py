@@ -51,7 +51,12 @@ def test_key_must_be_32_bytes() -> None:
 def test_production_requires_real_field_key() -> None:
     with pytest.raises(ValueError):
         Settings(environment="production", jwt_secret="x" * 40)
-    Settings(environment="production", jwt_secret="x" * 40, field_encryption_key=KEY)
+    Settings(
+        environment="production",
+        jwt_secret="x" * 40,
+        field_encryption_key=KEY,
+        database_url="postgresql+psycopg://aarogya_app:not-the-dev-password@db/aarogya",
+    )
 
 
 @pytest.mark.parametrize(
