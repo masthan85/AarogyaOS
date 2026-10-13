@@ -1,0 +1,32 @@
+# Local development stack. Production deployment is documented in docs/DEPLOYMENT.md.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?set in .env}
+      AAROGYA_APP_DB_PASSWORD: ${AAROGYA_APP_DB_PASSWORD:?set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init-app-role.sh:/docker-entrypoint-initdb.d/10-init-app-role.sh:ro
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  api:
+    build: ../services/api
+    environment:
+      AAROGYA_ENVIRONMENT: ${AAROGYA_ENVIRONMENT:-development}
+      AAROGYA_DATABASE_URL: postgresql+psycopg://aarogya_app:${AAROGYA_APP_DB_PASSWORD}@db:5432/aarogya
+      AAROGYA_JWT_SECRET: ${AAROGYA_JWT_SECRET:?set in .env}
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
