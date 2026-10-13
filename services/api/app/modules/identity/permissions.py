@@ -62,7 +62,15 @@ PERMISSIONS: dict[str, str] = {
     "interaction:consultation": "Record consultations",
     "transcript:read": "Read transcripts of conversations you took part in",
     "speaker:assign": "Assign roles to speakers in a transcript",
-    "usage:read": "View speech usage and cost",
+    "usage:read": "View speech and AI usage and cost",
+    # Phase 5: clinical AI. AI proposes; these permissions decide who may review it.
+    "ai:analyse": "Run AI analysis on a conversation you recorded",
+    "ai:review": "Accept, edit or reject AI-extracted candidates",
+    "ai:suggestions": "View and act on AI suggestions",
+    "knowledge:manage": "Add and approve reference documents for decision support",
+    "knowledge:read": "View approved reference documents",
+    "summary:write": "Draft, edit and approve patient visit summaries",
+    "summary:read": "Read patient visit summaries",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -99,8 +107,10 @@ _CLINICAL_BASE = [
     "followup:read",
 ]
 _CONSENT = ["consent:read", "consent:capture", "consent:withdraw", "consent:policy"]
+_AI = ["ai:analyse", "ai:review", "ai:suggestions", "knowledge:read", "summary:read"]
 _NURSE = [
     *_CLINICAL_BASE,
+    *_AI,
     "encounter:triage",
     *_CONSENT,
     "interaction:triage",
@@ -119,6 +129,8 @@ _DOCTOR = [
     "result:review",
     "followup:write",
     *_CONSENT,
+    *_AI,
+    "summary:write",
     "interaction:consultation",
     "transcript:read",
     "speaker:assign",
@@ -139,6 +151,8 @@ _ADMIN = [
     "consent:manage",
     "consent:policy",
     "usage:read",
+    "knowledge:manage",
+    "knowledge:read",
 ]
 
 # key -> (display name, is_platform, permissions)

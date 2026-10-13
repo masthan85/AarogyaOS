@@ -3,6 +3,7 @@ import os
 from alembic import context
 from sqlalchemy import create_engine
 
+import app.modules.ai.models
 import app.modules.audit.models
 import app.modules.clinical.models
 import app.modules.consent.models
@@ -11,6 +12,7 @@ import app.modules.interactions.models
 import app.modules.languages.models
 import app.modules.patients.models
 import app.modules.scheduling.models
+import app.modules.summaries.models
 import app.modules.tenancy.models  # noqa: F401  (register tables)
 from app.core.config import get_settings
 from app.core.db import Base

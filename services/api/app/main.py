@@ -7,6 +7,7 @@ from app.core.crypto import FieldCrypto
 from app.core.db import create_db_engine, create_sessionmaker
 from app.core.errors import install_error_handlers
 from app.core.logging import RequestContextMiddleware, configure_logging
+from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
@@ -61,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         languages_router,
         interactions_router,
         gateway_router,
+        ai_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

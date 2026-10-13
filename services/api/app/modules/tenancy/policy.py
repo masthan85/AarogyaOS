@@ -23,6 +23,10 @@ class OrgPolicy(BaseModel):
         "DISCARD_AFTER_TRANSCRIPTION"
     )
     retain_days: int = Field(default=30, ge=1, le=3650)
+    # Suggestions are a separate, optional layer on top of extraction.
+    ai_suggestions_enabled: bool = False
+    # When true, model suggestions without a cited, approved reference are dropped.
+    ai_suggestions_require_source: bool = True
     # None = every language in the catalogue is available to this organisation.
     enabled_languages: list[str] | None = None
     # Patients younger than this need a guardian's consent. Confirm the right value with counsel.
@@ -32,6 +36,8 @@ class OrgPolicy(BaseModel):
     def _consistent(self) -> "OrgPolicy":
         if self.audio_retention == "RETAIN_DAYS" and not self.recording_enabled:
             raise ValueError("Audio cannot be retained when recording is disabled")
+        if self.ai_suggestions_enabled and not self.ai_processing_enabled:
+            raise ValueError("AI suggestions need AI processing to be enabled")
         return self
 
 
