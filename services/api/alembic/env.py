@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy import create_engine
 
 import app.modules.audit.models
+import app.modules.clinical.models
 import app.modules.identity.models
 import app.modules.patients.models
 import app.modules.scheduling.models

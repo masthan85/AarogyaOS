@@ -29,7 +29,28 @@ PERMISSIONS: dict[str, str] = {
     "appointment:manage": "Book, reschedule and cancel appointments",
     "queue:read": "View the queue",
     "queue:manage": "Check patients in and manage tokens",
-    "queue:call": "Call patients and start or complete consultations",
+    # Phase 3: clinical record. Doctors and nurses hold different subsets on purpose.
+    "encounter:triage": "Start triage for a checked-in patient",
+    "encounter:consult": "Start, conduct and complete a consultation",
+    "encounter:read": "View encounters and their clinical content",
+    "patient:clinical": "View a patient's aggregated clinical state",
+    "vitals:record": "Record and correct vital signs",
+    "note:triage": "Write chief complaint and triage notes",
+    "note:clinical": "Write history, examination, assessment and plan notes",
+    "allergy:record": "Record and correct allergies",
+    "medication:record": "Record and correct a patient's medication history",
+    "condition:record": "Record problems and provisional diagnoses",
+    "condition:confirm": "Confirm a diagnosis",
+    "fact:verify": "Confirm, correct or reject recorded clinical information",
+    "prescription:write": "Draft and edit prescriptions",
+    "prescription:sign": "Sign (finalise) prescriptions",
+    "prescription:read": "View prescriptions",
+    "order:write": "Draft, place and cancel investigation orders",
+    "order:read": "View investigation orders",
+    "result:enter": "Enter investigation results",
+    "result:review": "Review investigation results",
+    "followup:write": "Create and update follow-ups",
+    "followup:read": "View follow-ups",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -46,16 +67,40 @@ _RECEPTION = [
     "queue:read",
     "queue:manage",
 ]
-_CLINICAL = [
+_CLINICAL_BASE = [
     *_READ_STRUCTURE,
     "patient:search",
     "patient:read",
     "patient:timeline",
+    "patient:clinical",
     "practitioner:read",
     "appointment:read",
     "queue:read",
-    "queue:call",
+    "encounter:read",
+    "vitals:record",
+    "note:triage",
+    "allergy:record",
+    "medication:record",
+    "fact:verify",
+    "order:read",
+    "prescription:read",
+    "followup:read",
 ]
+_NURSE = [*_CLINICAL_BASE, "encounter:triage"]
+_DOCTOR = [
+    *_CLINICAL_BASE,
+    "encounter:consult",
+    "note:clinical",
+    "condition:record",
+    "condition:confirm",
+    "prescription:write",
+    "prescription:sign",
+    "order:write",
+    "result:review",
+    "followup:write",
+]
+_RECEPTION = [*_RECEPTION, "followup:read"]
+_LAB = [*_READ_STRUCTURE, "patient:search", "order:read", "result:enter"]
 _ADMIN = [
     *_READ_STRUCTURE,
     "practitioner:read",
@@ -74,12 +119,12 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
     "super_admin": ("Super Administrator", True, ["platform:organisations"]),
     "hospital_admin": ("Hospital Administrator", False, _ADMIN),
     "clinic_admin": ("Clinic Administrator", False, _ADMIN),
-    "doctor": ("Doctor", False, _CLINICAL),
-    "nurse": ("Nurse", False, _CLINICAL),
+    "doctor": ("Doctor", False, _DOCTOR),
+    "nurse": ("Nurse", False, _NURSE),
     "receptionist": ("Receptionist", False, _RECEPTION),
-    "lab_technician": ("Lab Technician", False, [*_READ_STRUCTURE, "patient:search"]),
-    "radiology_technician": ("Radiology Technician", False, [*_READ_STRUCTURE, "patient:search"]),
-    "pharmacist": ("Pharmacist", False, [*_READ_STRUCTURE, "patient:search"]),
+    "lab_technician": ("Lab Technician", False, _LAB),
+    "radiology_technician": ("Radiology Technician", False, _LAB),
+    "pharmacist": ("Pharmacist", False, [*_READ_STRUCTURE, "patient:search", "prescription:read"]),
     "billing_staff": (
         "Billing Staff",
         False,

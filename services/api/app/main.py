@@ -8,6 +8,7 @@ from app.core.db import create_db_engine, create_sessionmaker
 from app.core.errors import install_error_handlers
 from app.core.logging import RequestContextMiddleware, configure_logging
 from app.modules.audit.router import router as audit_router
+from app.modules.clinical.router import router as clinical_router
 from app.modules.identity.router import auth_router, users_router
 from app.modules.patients.router import router as patients_router
 from app.modules.scheduling.router import router as scheduling_router
@@ -49,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         audit_router,
         patients_router,
         scheduling_router,
+        clinical_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 

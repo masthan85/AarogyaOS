@@ -180,3 +180,26 @@ export function ChoiceChips<T extends string>({
     </View>
   );
 }
+
+export function AlertBanner({ level, message }: { level: 'CRITICAL' | 'WARNING' | 'INFO'; message: string }) {
+  const t = useTheme();
+  const colour = level === 'CRITICAL' ? t.danger : level === 'WARNING' ? t.warning : t.textMuted;
+  return (
+    <View
+      accessibilityRole="alert"
+      style={{ borderLeftWidth: 5, borderLeftColor: colour, backgroundColor: t.surface, borderRadius: radius.md, padding: space.sm, borderWidth: 1, borderColor: t.border }}>
+      <Text style={{ color: colour, fontWeight: '700', fontSize: 12 }}>{level}</Text>
+      <Text style={{ color: t.text }}>{message}</Text>
+    </View>
+  );
+}
+
+/** Where a clinical fact came from and whether a clinician has checked it. */
+export function ProvenanceChip({ text, tone }: { text: string; tone: ChipTone }) {
+  return <StatusChip label={text} tone={tone} />;
+}
+
+export function SectionTitle({ children }: { children: ReactNode }) {
+  const t = useTheme();
+  return <Text style={{ color: t.textMuted, fontWeight: '700', textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.6 }}>{children}</Text>;
+}

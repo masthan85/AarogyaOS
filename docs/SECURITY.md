@@ -46,6 +46,16 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
   any patient in their organisation (care-team ABAC and break-glass are Phase 3+); mobile list caches are
   short-lived (60 s) and cleared on sign-out but are not encrypted on disk because they are memory-only.
 
+## Clinical record (Phase 3)
+- The record is append-only and enforced in the database (triggers), so a bug or a compromised application account
+  cannot rewrite history. Database superusers can still bypass triggers: restrict, monitor and never use them for
+  the application.
+- Clinical writes are limited to the encounter's own doctor (notes, diagnoses, prescriptions, orders, follow-ups);
+  nurses record triage-level information; lab and radiology technicians see only their own department's placed orders.
+- Audit rows and events contain ids, types and flags, never clinical text. Tests assert this.
+- Known gaps: staff are not yet scoped to facilities or care teams (any clinician in the organisation can open any
+  patient; all access is audited); no break-glass flow; no idempotency keys on clinical writes.
+
 ## Audit
 Append-only `audit_logs`: actor, organisation, action, resource, outcome, ip,
 user agent, correlation id, before/after for sensitive changes, AI involvement.

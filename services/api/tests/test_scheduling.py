@@ -273,22 +273,18 @@ def test_doctor_calls_patient_one_consultation_at_a_time(
         ids.append(client.post("/api/v1/walk-ins", headers=clinic["recep"],
                                json={"patient_id": p["id"], "facility_id": fid, "practitioner_id": prac}).json()["id"])  # fmt: skip
     d = clinic["doctor"]
-    assert (
-        client.post(f"/api/v1/appointments/{ids[0]}/start-consultation", headers=d).json()["status"]
-        == "IN_CONSULTATION"
-    )
-    assert (
-        client.post(f"/api/v1/appointments/{ids[1]}/start-consultation", headers=d).status_code
-        == 409
-    )
-    assert (
-        client.post(f"/api/v1/appointments/{ids[0]}/complete", headers=d).json()["status"]
-        == "COMPLETED"
-    )
-    assert (
-        client.post(f"/api/v1/appointments/{ids[1]}/start-consultation", headers=d).status_code
-        == 200
-    )
+
+    def consult(appt_id: str) -> Any:
+        return client.post(
+            "/api/v1/encounters/consultation", headers=d, json={"appointment_id": appt_id}
+        )
+
+    first = consult(ids[0])
+    assert first.status_code == 200 and first.json()["status"] == "IN_PROGRESS"
+    assert consult(ids[1]).status_code == 409  # still with the first patient
+    done = client.post(f"/api/v1/encounters/{first.json()['id']}/complete", headers=d)
+    assert done.status_code == 200 and done.json()["status"] == "COMPLETED"
+    assert consult(ids[1]).status_code == 200
     queue = client.get(
         "/api/v1/queue", headers=d, params={"facility_id": fid, "include_active": False}
     ).json()
@@ -334,21 +330,16 @@ def test_scheduling_role_matrix(client: TestClient, clinic: dict[str, Any], org_
     )
     assert client.get("/api/v1/appointments", headers=billing).status_code == 200
     assert client.get("/api/v1/appointments", headers=org_a).status_code == 403
-    # Reception cannot start consultations; only clinicians can.
+    # Only the doctor starts a consultation: reception and nurses are refused.
     walk = client.post("/api/v1/walk-ins", headers=clinic["recep"],
                        json={"patient_id": p["id"], "facility_id": clinic["facility"]["id"]}).json()  # fmt: skip
-    assert (
-        client.post(
-            f"/api/v1/appointments/{walk['id']}/start-consultation", headers=clinic["recep"]
-        ).status_code
-        == 403
-    )
-    assert (
-        client.post(
-            f"/api/v1/appointments/{walk['id']}/start-consultation", headers=nurse
-        ).status_code
-        == 200
-    )
+    for h in (clinic["recep"], nurse, billing, org_a):
+        r = client.post(
+            "/api/v1/encounters/consultation", headers=h, json={"appointment_id": walk["id"]}
+        )
+        assert r.status_code == 403
+    assert client.post("/api/v1/encounters/consultation", headers=clinic["doctor"],
+                       json={"appointment_id": walk["id"]}).status_code == 200  # fmt: skip
     # Only admins manage practitioners.
     assert client.put(f"/api/v1/practitioners/{clinic['prac']['id']}/working-hours", headers=clinic["recep"],
                       json={"hours": []}).status_code == 403  # fmt: skip

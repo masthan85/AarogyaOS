@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 
-import { getPatient, getTimeline } from '@/api/endpoints';
+import { getClinicalState, getPatient, getTimeline } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
-import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
+import { AlertBanner, Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { eventLabel } from '@/domain/events';
@@ -16,6 +16,8 @@ export function PatientProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   // Patient data is PHI: keep it in memory only while the screen is in use.
   const patient = useQuery({ queryKey: ['patient', id], queryFn: () => getPatient(id), gcTime: 0 });
+  const showClinical = can(me, 'patient:clinical');
+  const clinical = useQuery({ queryKey: ['clinical-state', id], queryFn: () => getClinicalState(id), enabled: showClinical, gcTime: 0 });
   const showTimeline = can(me, 'patient:timeline');
   const timeline = useQuery({
     queryKey: ['patient-timeline', id],
@@ -43,6 +45,8 @@ export function PatientProfileScreen() {
           ))}
         </View>
       </Card>
+
+      {clinical.data?.alerts.map((a) => <AlertBanner key={a.code + a.message} level={a.level} message={a.message} />)}
 
       <Card title="Contact">
         <Text style={{ color: t.text }}>{p.mobile ?? 'No mobile number'}</Text>

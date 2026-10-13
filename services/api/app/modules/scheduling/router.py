@@ -26,7 +26,6 @@ router = APIRouter(tags=["scheduling"])
 Manage = Annotated[Principal, Depends(require("appointment:manage"))]
 ReadAppt = Annotated[Principal, Depends(require("appointment:read"))]
 QueueManage = Annotated[Principal, Depends(require("queue:manage"))]
-QueueCall = Annotated[Principal, Depends(require("queue:call"))]
 
 
 @router.post("/practitioners", response_model=PractitionerOut, status_code=201)
@@ -131,18 +130,6 @@ def check_in(
 @router.post("/walk-ins", response_model=AppointmentOut, status_code=201)
 def walk_in(body: WalkInCreate, db: TenantDb, principal: QueueManage) -> AppointmentOut:
     return service.walk_in(db, principal, body)
-
-
-@router.post("/appointments/{appointment_id}/start-consultation", response_model=AppointmentOut)
-def start_consultation(
-    appointment_id: uuid.UUID, db: TenantDb, principal: QueueCall
-) -> AppointmentOut:
-    return service.set_simple_status(db, principal, appointment_id, "IN_CONSULTATION")
-
-
-@router.post("/appointments/{appointment_id}/complete", response_model=AppointmentOut)
-def complete(appointment_id: uuid.UUID, db: TenantDb, principal: QueueCall) -> AppointmentOut:
-    return service.set_simple_status(db, principal, appointment_id, "COMPLETED")
 
 
 @router.get("/queue", response_model=list[QueueItem])

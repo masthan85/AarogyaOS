@@ -31,7 +31,19 @@ age-only registration stores 1 January of the implied birth year with `dob_is_es
 the database rejects overlapping scheduled appointments per practitioner with an `EXCLUDE USING gist`
 constraint; tokens are issued per facility per local day from a locked counter.
 
-## Clinical fact mixin (Phase 3+)
+## Phase 3 tables (implemented)
+encounters (one per appointment; TRIAGE → IN_PROGRESS → COMPLETED), observations, clinical_notes, conditions,
+allergies, patient_medications, prescriptions + prescription_items, service_requests, investigation_results,
+follow_ups.
+
+Facts (observations, notes, conditions, allergies, medication history) share the provenance columns below and are
+**append-only**: a database trigger rejects any update except `is_current` and the verification bookkeeping columns,
+and any delete. Corrections insert a new row linked by `supersedes_id`. Signed prescriptions (and their items) and
+reported results are likewise frozen by triggers; the only permitted change to a signed prescription is voiding.
+`audit_logs` is append-only by trigger. Codes (ICD/SNOMED/LOINC) are nullable and only accepted together with a code
+system; nothing is auto-coded.
+
+## Clinical fact mixin
 `source`, `verification_state`, `certainty`, `recorded_by`, `recorded_at`,
 `evidence_segment_ids`, `supersedes_id`.
 

@@ -116,3 +116,5 @@ class QueueItem(BaseModel):
     practitioner_id: uuid.UUID | None
     practitioner_name: str | None
     waiting_since: datetime
+    # None = not yet triaged; TRIAGE / IN_PROGRESS / COMPLETED once an encounter exists.
+    encounter_status: str | None = None

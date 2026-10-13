@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, FlatList, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { completeConsultation, getQueue, startConsultation, walkIn } from '@/api/endpoints';
+import { getQueue, startConsultation, walkIn } from '@/api/endpoints';
 import type { QueueItem } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
@@ -26,15 +26,22 @@ export function QueueScreen() {
   });
   const refresh = () => void qc.invalidateQueries({ queryKey: ['queue'] });
   const fail = (e: unknown) => Alert.alert('Could not complete', e instanceof ApiError ? e.message : 'Check your connection.');
-  const start = useMutation({ mutationFn: startConsultation, onSuccess: refresh, onError: fail });
-  const finish = useMutation({ mutationFn: completeConsultation, onSuccess: refresh, onError: fail });
+  const consult = useMutation({
+    mutationFn: (appointmentId: string) => startConsultation(appointmentId),
+    onSuccess: (enc) => {
+      refresh();
+      router.push(`/consultation/${enc.id}`);
+    },
+    onError: fail,
+  });
   const addWalkIn = useMutation({
     mutationFn: (priority: 'ROUTINE' | 'URGENT') =>
       walkIn({ patient_id: walkInPatientId as string, facility_id: facilityId as string, priority }),
     onSuccess: refresh,
     onError: fail,
   });
-  const canCall = can(me, 'queue:call');
+  const canTriage = can(me, 'encounter:triage');
+  const canConsult = can(me, 'encounter:consult');
 
   const row = (q: QueueItem) => (
     <Card>
@@ -50,8 +57,25 @@ export function QueueScreen() {
         {q.patient_mrn} · {q.age_years ?? '?'} yrs · since {formatTime(q.waiting_since)}
         {q.practitioner_name ? ` · ${q.practitioner_name}` : ''}
       </Text>
-      {canCall && q.status !== 'IN_CONSULTATION' ? <Button title="Call patient" onPress={() => start.mutate(q.appointment_id)} loading={start.isPending && start.variables === q.appointment_id} /> : null}
-      {canCall && q.status === 'IN_CONSULTATION' ? <Button title="Complete visit" variant="secondary" onPress={() => finish.mutate(q.appointment_id)} /> : null}
+      {q.encounter_status === 'TRIAGE' || q.encounter_status === 'IN_PROGRESS' ? (
+        <StatusChip label={q.encounter_status === 'TRIAGE' ? 'Triage started' : 'Consultation open'} tone="success" />
+      ) : (
+        <StatusChip label="Not triaged" />
+      )}
+      {canTriage && q.status !== 'IN_CONSULTATION' ? (
+        <Button
+          title={q.encounter_status ? 'Continue triage' : 'Start triage'}
+          variant="secondary"
+          onPress={() => router.push({ pathname: '/triage/[appointmentId]', params: { appointmentId: q.appointment_id, name: q.patient_name } })}
+        />
+      ) : null}
+      {canConsult ? (
+        <Button
+          title={q.status === 'IN_CONSULTATION' ? 'Resume consultation' : 'Start consultation'}
+          loading={consult.isPending && consult.variables === q.appointment_id}
+          onPress={() => consult.mutate(q.appointment_id)}
+        />
+      ) : null}
     </Card>
   );
 

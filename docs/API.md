@@ -39,5 +39,30 @@ Appointment states: BOOKED → CONFIRMED → (ARRIVED/CHECKED_IN) → WAITING �
 CANCELLED and NO_SHOW as exits. Check-in currently moves straight to WAITING; ARRIVED/CHECKED_IN are accepted
 by the state machine but unused until consent/triage steps exist. Transitions outside the table return 409.
 
+## Phase 3 endpoints
+| Area | Endpoints | Permission |
+|---|---|---|
+| Encounter | `POST /encounters/triage` (idempotent), `PUT /encounters/{id}/triage-category` | `encounter:triage` |
+| | `POST /encounters/consultation` (takes over the triage encounter; moves the appointment), `POST /encounters/{id}/complete` | `encounter:consult` |
+| | `GET /encounters/{id}`, `GET /patients/{id}/encounters` | `encounter:read` |
+| Vitals | `POST /encounters/{id}/vitals` (°C/°F, plausibility checks), `PUT /observations/{id}` (correction) | `vitals:record` |
+| Notes | `POST /encounters/{id}/notes`, `PUT /notes/{id}` (triage types: `note:triage`; others: `note:clinical` and owning doctor) | `encounter:read` + per type |
+| Diagnoses | `POST /encounters/{id}/conditions`, `PUT /conditions/{id}` | `condition:record` (`condition:confirm` to confirm) |
+| Allergies / medicines | `POST /encounters/{id}/allergies`, `.../medications`, `PUT /allergies/{id}`, `PUT /medications/{id}` | `allergy:record`, `medication:record` |
+| Verification | `POST /clinical/{kind}/{id}/verify` (`confirm`/`reject` with reason; diagnoses need `condition:confirm`) | `fact:verify` |
+| State | `GET /patients/{id}/clinical-state`, `GET /patients/{id}/vitals?code=` | `patient:clinical` |
+| Prescriptions | `POST /encounters/{id}/prescriptions`, `PUT /prescriptions/{id}`, `POST .../safety-check`, `POST .../void` | `prescription:write` |
+| | `POST /prescriptions/{id}/sign` (409 `warnings_require_acknowledgement` lists warnings to acknowledge) | `prescription:sign` |
+| | `GET /prescriptions/{id}`, `GET /patients/{id}/prescriptions` (non-authors see signed only) | `prescription:read` |
+| Investigations | `POST /encounters/{id}/orders`, `POST /orders/{id}/place`, `POST /orders/{id}/cancel` | `order:write` |
+| | `GET /orders` (drafts hidden from non-authors; technicians see their department only) | `order:read` |
+| Results | `POST /orders/{id}/results` (interpreted against the lab-supplied range) | `result:enter` |
+| | `GET /results/awaiting-review`, `POST /results/{id}/review` | `result:review` |
+| Follow-up | `POST /encounters/{id}/follow-ups`, `POST /follow-ups/{id}/status` | `followup:write` |
+| | `GET /follow-ups` | `followup:read` |
+
+Removed from Phase 2: `POST /appointments/{id}/start-consultation` and `/complete` and the `queue:call` permission,
+replaced by the encounter workflow above.
+
 Planned conventions (not yet implemented): `Idempotency-Key` on mutating POSTs, cursor pagination,
 optimistic concurrency via `version`.

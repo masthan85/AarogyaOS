@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.context import Principal
 from app.core.errors import AppError, Conflict, NotFound
 from app.modules.audit.service import emit_event, record_audit
+from app.modules.clinical.models import Encounter
 from app.modules.identity.models import Role, User, UserRole
 from app.modules.patients.models import Patient
 from app.modules.patients.normalise import age_years
@@ -395,10 +396,19 @@ def cancel(
     return _appointment_out(session, appt.id)
 
 
-def set_simple_status(
-    session: Session, principal: Principal, appointment_id: uuid.UUID, to: str
-) -> AppointmentOut:
+def transition(
+    session: Session,
+    principal: Principal,
+    appointment_id: uuid.UUID,
+    to: str,
+    *,
+    assign_practitioner_id: uuid.UUID | None = None,
+) -> Appointment:
+    """Move an appointment along its lifecycle WITHOUT committing, so callers (the encounter
+    workflow) can make the visit change and the clinical change in one transaction."""
     appt = _lock_appointment(session, appointment_id)
+    if assign_practitioner_id and appt.practitioner_id is None:
+        appt.practitioner_id = assign_practitioner_id  # unassigned walk-in claimed by a doctor
     _move(session, principal, appt, to, "APPOINTMENT_STATUS_CHANGED")
     if to == "IN_CONSULTATION":
         if appt.practitioner_id:
@@ -414,6 +424,13 @@ def set_simple_status(
         _stamp_queue(session, appt.id, called=True)
     elif to == "COMPLETED":
         _stamp_queue(session, appt.id, completed=True)
+    return appt
+
+
+def set_simple_status(
+    session: Session, principal: Principal, appointment_id: uuid.UUID, to: str
+) -> AppointmentOut:
+    appt = transition(session, principal, appointment_id, to)
     session.commit()
     return _appointment_out(session, appt.id)
 
@@ -569,11 +586,12 @@ def queue(
     today = _now().astimezone(tz).date()
     statuses = ["WAITING", "CHECKED_IN"] + (["IN_CONSULTATION"] if include_active else [])
     stmt = (
-        select(QueueEntry, Appointment.status, Patient, User.full_name)
+        select(QueueEntry, Appointment.status, Patient, User.full_name, Encounter.status)
         .join(Appointment, Appointment.id == QueueEntry.appointment_id)
         .join(Patient, Patient.id == QueueEntry.patient_id)
         .outerjoin(Practitioner, Practitioner.id == QueueEntry.practitioner_id)
         .outerjoin(User, User.id == Practitioner.user_id)
+        .outerjoin(Encounter, Encounter.appointment_id == QueueEntry.appointment_id)
         .where(
             QueueEntry.facility_id == facility_id,
             QueueEntry.token_date == today,
@@ -602,6 +620,7 @@ def queue(
             practitioner_id=q.practitioner_id,
             practitioner_name=dname,
             waiting_since=q.created_at,
+            encounter_status=enc_status,
         )
-        for q, status, pt, dname in rows
+        for q, status, pt, dname, enc_status in rows
     ]
