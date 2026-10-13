@@ -74,7 +74,14 @@ by the state machine but unused until consent/triage steps exist. Transitions ou
 | Audio | `WS /interactions/{id}/audio` (see SPEECH_ARCHITECTURE.md) | session owner |
 | Usage | `GET /usage/speech` | `usage:read` |
 
-Errors of note: `409 consent_required` carries `missing: [...]`; `503` when the speech provider is unavailable.
+| AI analysis | `POST /interactions/{id}/ai/analyse`, `GET /interactions/{id}/ai/candidates`, `GET /encounters/{id}/ai/review` (candidates + suggestions + switches) | `ai:analyse` / `ai:review`; session owner or encounter doctor |
+| Candidate review | `POST /ai/candidates/{id}/review` `{action: accept\|edit\|reject, edited_text?, mode?: note\|prescription_draft}` | `ai:review`; doctor-only kinds need `note:clinical` and encounter ownership |
+| Suggestions | `POST/GET /encounters/{id}/ai/suggestions`, `POST /ai/suggestions/{id}/action` `{action: accept\|edit\|reject\|dismiss}` | `ai:suggestions`; encounter's doctor only |
+| Reference knowledge | `GET/POST /knowledge/documents`, `POST /knowledge/documents/{id}/approve`, `/retire` | `knowledge:read` / `knowledge:manage` (approver must differ from creator) |
+| Patient summary | `POST/GET /encounters/{id}/summaries`, `PUT /summaries/{id}`, `POST /summaries/{id}/approve` | `summary:write` / `summary:read`; encounter's doctor |
+| AI usage | `GET /usage/ai` | `usage:read` |
+
+Errors of note: `409 consent_required` carries `missing: [...]`; `503` when the speech provider is unavailable. AI endpoints report an unavailable model as `200 {status: FAILED, message}` rather than an error, so a client never treats it as a failed save.
 
 Removed from Phase 2: `POST /appointments/{id}/start-consultation` and `/complete` and the `queue:call` permission,
 replaced by the encounter workflow above.

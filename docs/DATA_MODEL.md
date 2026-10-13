@@ -52,6 +52,14 @@ speech_usage (metering, no content). Organisation settings gain a validated `pol
 audio retention, enabled languages, guardian age). The brief's separate `transcripts` table is folded into
 `clinical_interactions` + `transcript_segments` (one transcript per session): see ADR-0006.
 
+## Phase 5 tables (all tenant-scoped with forced RLS)
+`ai_extractions` (one row per model run: range of segments, prompt version, provider/model, kept/dropped counts,
+status; no text), `ai_candidates` (the review queue: kind, text, assertion, evidence quotes with segment ids,
+risk flags; only the review columns can change, and only once), `ai_suggestions` + `ai_suggestion_actions`
+(append-only decision history), `ai_usage` (metering, no content), `knowledge_documents` (only the approval and
+retirement columns change) + `knowledge_chunks` (embeddings as float arrays), `patient_summaries` (versioned;
+approved rows are frozen and may only become SUPERSEDED). Immutability is enforced by triggers, not only by code.
+
 ## Clinical fact mixin
 `source`, `verification_state`, `certainty`, `recorded_by`, `recorded_at`,
 `evidence_segment_ids`, `supersedes_id`.

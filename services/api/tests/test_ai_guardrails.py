@@ -341,3 +341,14 @@ def test_hashing_embeddings_are_deterministic_and_rank_by_overlap() -> None:
     )
     assert asyncio.run(e.embed(["chest pain on exertion"]))[0] == a
     assert cosine(a, b) > cosine(a, c) and cosine(a, a) == pytest.approx(1.0)
+
+
+def test_the_evaluation_harness_scores_the_bundled_fixtures() -> None:
+    import json
+
+    from app.ai.dev_llm import DevelopmentLLMProvider
+    from app.ai.eval import DEFAULT_FILE, score
+
+    result = score(json.loads(DEFAULT_FILE.read_text(encoding="utf-8")), DevelopmentLLMProvider())
+    assert result["cases"] == 3 and result["negation_accuracy"] is not None
+    assert set(result["per_kind"]) >= {"SYMPTOM", "ALLERGY"}

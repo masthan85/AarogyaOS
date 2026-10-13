@@ -5,6 +5,11 @@ import { secureTokenStore } from '@/services/token-store';
 
 import { ApiClient } from './client';
 import {
+  analyseSchema,
+  generateSchema,
+  reviewBundleSchema,
+  reviewResultSchema,
+  suggestionActionSchema,
   appointmentSchema,
   clinicalStateSchema,
   encounterDetailSchema,
@@ -268,3 +273,20 @@ export async function freshAccessToken(): Promise<string> {
 
 export const getPatientInteractions = (patientId: string) =>
   api.request(`/patients/${patientId}/interactions`, z.array(interactionSchema));
+
+// ---- Phase 5: AI review queue and suggestions --------------------------------------------
+
+export const analyseInteraction = (interactionId: string) =>
+  api.request(`/interactions/${interactionId}/ai/analyse`, analyseSchema, { method: 'POST', body: {} });
+export const getReviewBundle = (encId: string) =>
+  api.request(`/encounters/${encId}/ai/review`, reviewBundleSchema);
+export const reviewCandidate = (
+  id: string,
+  body: { action: 'accept' | 'edit' | 'reject'; edited_text?: string; mode?: 'note' | 'prescription_draft' },
+) => api.request(`/ai/candidates/${id}/review`, reviewResultSchema, { method: 'POST', body });
+export const generateSuggestions = (encId: string) =>
+  api.request(`/encounters/${encId}/ai/suggestions`, generateSchema, { method: 'POST', body: {} });
+export const actOnSuggestion = (
+  id: string,
+  body: { action: 'accept' | 'edit' | 'reject' | 'dismiss'; title?: string; explanation?: string; reason?: string },
+) => api.request(`/ai/suggestions/${id}/action`, suggestionActionSchema, { method: 'POST', body });

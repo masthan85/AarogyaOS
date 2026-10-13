@@ -150,3 +150,29 @@ class AiUsageRow(BaseModel):
     tokens_are_estimates: bool
     avg_latency_ms: float | None
     estimated_cost_paise: int | None
+
+
+class SummaryDraftIn(BaseModel):
+    language: str = Field(default="en-IN", min_length=2, max_length=35)
+    # What the doctor wants the patient told, in the doctor's own words. Always included verbatim.
+    instructions: str | None = Field(default=None, max_length=2000)
+
+
+class SummaryEditIn(BaseModel):
+    content: str = Field(min_length=1, max_length=8000)
+
+
+class SummaryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    encounter_id: uuid.UUID
+    version: int
+    language: str
+    content: str
+    source_content: str
+    translation_status: str
+    status: str
+    approved_by: uuid.UUID | None
+    approved_at: datetime | None
+    created_at: datetime

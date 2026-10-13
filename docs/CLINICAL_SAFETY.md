@@ -41,5 +41,21 @@ Hazard log (initial)
 | H24 | Over-reliance on AI summaries | AI processing is a separate, optional consent and org switch; partials never stored | Phase 5 controls |
 | H25 | A reception conversation leaking clinical content into the record | Reception transcripts visible only to whoever recorded them; Phase 5 extraction must be purpose-limited | Not yet enforced in extraction (none exists) |
 
+## Phase 5 hazards (clinical AI)
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H26 | Model invents a finding | Every candidate must quote the transcript exactly; ungrounded items are dropped; nothing enters the record unreviewed | A real quote can still be misunderstood; the clinician must read the quote shown |
+| H27 | Negation lost ("no chest pain" becomes "chest pain") | Assertion is explicit (PRESENT / ABSENT / POSSIBLE / HISTORICAL); negation-cue flag; UI shows "Patient denies"; absent allergy or medicine becomes a note, never an allergy or medicine fact | Negation in Indian languages is only covered by a small cue list. Measure on real transcripts |
+| H28 | Patient's uncertain statement recorded as fact | Hedged wording is downgraded to POSSIBLE; accepted facts carry source AI_EXTRACTED | Hedge cues are lexical |
+| H29 | Clinician's question or a relative's remark attributed to the patient | Clinician speech is not extracted as patient statements; unassigned speaker is flagged | Depends on speaker labels set by a person |
+| H30 | AI suggestion mistaken for an instruction or a diagnosis | Wording rules reject "prescribed/ordered/diagnosed"; diagnoses can only be SUSPECTED; investigations and prescription items only DRAFT; UI states what accepting does | Alert fatigue and automation bias remain; track acceptance by category |
+| H31 | Unsafe suggestion from the model (interaction, contraindication, allergy) | Model may not emit safety categories; those come only from deterministic rules; a model medicine matching an allergy becomes a warning | **No drug knowledge base is connected, so interactions and contraindications are not checked at all.** The UI must not imply they were |
+| H32 | Suggestion rests on stale, wrong or unlicensed guidance | Approved documents only, two-person approval, versions and dates shown with each citation, retirement | Content correctness is the approvers' responsibility; no clinical content is shipped |
+| H33 | Allergy cross-sensitivity missed | Name match only, and the warning says so | Drug-class checks need a medication knowledge provider |
+| H34 | Wrong or fabricated translation reaches a patient | No translation provider is connected; summaries are not translated and say so; a doctor approves final wording | When one is connected, translated medication instructions need a human check |
+| H35 | AI outage during care | Everything is optional; failures return a calm message; no clinical write depends on AI | — |
+| H36 | Cost or quota runaway | Per-session rate limit, hard timeout, per-call usage rows | Costs are NULL until a real price is configured |
+| H37 | Development extractor mistaken for a real model | Refused in production; `is_development` on every run; badge in the UI | Config discipline |
+
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

@@ -22,6 +22,13 @@ streaming module + device tests, real-language evaluation set, Redis for multi-w
 purge job, legal review of consent wording, transcript text-correction layer.
 P4 (original scope): consent, sessions, audio capture, gateway, SpeechProvider, Sarvam adapter
 (after verification), diarisation, transcript UI, speaker correction.
-P5 AI: extraction, clinical state, suggestions, safety checks, RAG, review UI, evals.
+P5 AI (done, provider-independent): extraction with guardrails, review queue, accept/edit/reject into facts with
+provenance, deterministic and model suggestions, approved-knowledge retrieval with two-person approval, patient
+summary, usage metering, evaluation harness, mobile Assist tab. **Open:** a real LLM adapter (needs DPA, residency
+decision and a clinician-labelled eval set first), real embeddings and pgvector, translation provider, terminology
+service, medication knowledge provider (interactions/contraindications/dose), consultation summary and
+patient-summary drafting by model, differential/medication suggestions evaluated against clinician-labelled cases,
+automatic prompt-injection test corpus, per-category suggestion thresholds, mobile jest/UI tests for the Assist
+screen beyond pure logic, device testing.
 P6 Interop: FHIR facade, ABDM adapters (after sandbox access).
 P7 Hardening: observability, backup/DR, load, cost dashboards, admin, deployment.

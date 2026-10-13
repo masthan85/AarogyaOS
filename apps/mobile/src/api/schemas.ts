@@ -356,3 +356,75 @@ export type Interaction = z.infer<typeof interactionSchema>;
 export type StartInfo = z.infer<typeof startInfoSchema>;
 export type Segment = z.infer<typeof segmentSchema>;
 export type Transcript = z.infer<typeof transcriptSchema>;
+
+// ---- Phase 5: AI-assisted documentation and decision support -----------------------------
+
+export const analyseSchema = z.object({
+  status: z.enum(['OK', 'FAILED', 'NOTHING_NEW']),
+  extraction_id: z.string().nullable().optional(),
+  new_candidates: z.number(),
+  dropped: z.record(z.string(), z.number()),
+  message: z.string().nullable().optional(),
+  is_development: z.boolean(),
+});
+export const candidateSchema = z.object({
+  id: z.string(),
+  interaction_id: z.string(),
+  encounter_id: z.string().nullable(),
+  kind: z.string(),
+  text: z.string(),
+  assertion: z.string(),
+  subject: z.string(),
+  attributes: z.record(z.string(), z.string()),
+  original_term: z.string().nullable(),
+  evidence: z.array(z.object({ segment_id: z.string(), seq: z.number(), quote: z.string(), speaker_role: z.string() })),
+  risk_flags: z.array(z.string()),
+  status: z.string(),
+  edited_text: z.string().nullable(),
+  result_kind: z.string().nullable(),
+  created_at: z.string(),
+});
+export const suggestionSchema = z.object({
+  id: z.string(),
+  encounter_id: z.string(),
+  category: z.string(),
+  title: z.string(),
+  explanation: z.string(),
+  uncertainty: z.string(),
+  uncertainty_note: z.string().nullable(),
+  supporting_context: z.array(z.record(z.string(), z.string())),
+  evidence_sources: z.array(z.record(z.string(), z.string())),
+  payload: z.record(z.string(), z.string()),
+  warnings: z.array(z.string()),
+  origin: z.string(),
+  provider: z.string().nullable(),
+  model: z.string().nullable(),
+  status: z.string(),
+  created_at: z.string(),
+});
+export const reviewBundleSchema = z.object({
+  candidates: z.array(candidateSchema),
+  suggestions: z.array(suggestionSchema),
+  ai_enabled: z.boolean(),
+  suggestions_enabled: z.boolean(),
+});
+export const reviewResultSchema = z.object({
+  candidate: candidateSchema,
+  result_kind: z.string().nullable(),
+  result_id: z.string().nullable(),
+});
+export const generateSchema = z.object({
+  created: z.number(),
+  dropped: z.record(z.string(), z.number()),
+  model_used: z.boolean(),
+  message: z.string().nullable().optional(),
+});
+export const suggestionActionSchema = z.object({
+  suggestion: suggestionSchema,
+  result_kind: z.string().nullable().optional(),
+  result_id: z.string().nullable().optional(),
+});
+export type Analyse = z.infer<typeof analyseSchema>;
+export type Candidate = z.infer<typeof candidateSchema>;
+export type Suggestion = z.infer<typeof suggestionSchema>;
+export type ReviewBundle = z.infer<typeof reviewBundleSchema>;

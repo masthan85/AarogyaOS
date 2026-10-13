@@ -72,6 +72,18 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
   children's data, with a carve-out for health professionals that must be checked; notice and consent duties
   still apply to health data; breach reporting; consent-manager provisions from November 2026.
 
+## Clinical AI (Phase 5)
+- Model output is untrusted input: strict parsing, schema validation, exact-quote grounding, whitelisted attributes.
+  Transcript text is passed as data inside delimiters, never as instructions; prompt-injection text in a
+  conversation cannot create a candidate that is not grounded in a quote, and cannot create a safety suggestion.
+- Purpose limitation: reception sessions cannot produce clinical facts; AI needs its own consent, re-checked on every run.
+- Minimum necessary: the model receives the transcript window and, for suggestions, coded record items and approved
+  passages. The record's names, phone numbers, addresses and identifiers are not sent; what people say aloud in the conversation (which may include a name) is, so this is a reason for the separate AI_PROCESSING consent and the vendor agreement.
+- No clinical text in logs, events or usage rows. Candidate and suggestion rows are PHI and live behind RLS.
+- Separation of duties: reference documents are approved by someone other than their creator.
+- Vendor use of data: no real LLM adapter exists. Before one is added: data-processing agreement, no training on
+  our data, residency decision, retention terms.
+
 ## Audit
 Append-only `audit_logs`: actor, organisation, action, resource, outcome, ip,
 user agent, correlation id, before/after for sensitive changes, AI involvement.

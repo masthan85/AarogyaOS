@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { getPatientInteractions } from '@/api/endpoints';
+import { analyseInteraction, getPatientInteractions } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
 import { Card, ChoiceChips, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
@@ -12,6 +12,7 @@ import { ConversationPanel } from '@/features/recording/ConversationPanel';
 import { RecordingBar } from '@/features/recording/RecordingBar';
 import { useRecordingSession } from '@/features/recording/useRecordingSession';
 
+import { AssistPanel } from './AssistPanel';
 import { ContextPanel } from './ContextPanel';
 import { DiagnosisPanel } from './DiagnosisPanel';
 import { FinishPanel } from './FinishPanel';
@@ -21,10 +22,11 @@ import { OrdersPanel } from './OrdersPanel';
 import { PrescriptionPanel } from './PrescriptionPanel';
 import { type EncounterData, useEncounterData } from './useEncounterData';
 
-type Tab = 'context' | 'conversation' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'finish';
+type Tab = 'context' | 'conversation' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'finish';
 const TABS: { value: Tab; label: string }[] = [
   { value: 'context', label: 'Patient' },
   { value: 'conversation', label: 'Conversation' },
+  { value: 'assist', label: 'Assist' },
   { value: 'notes', label: 'Notes' },
   { value: 'diagnosis', label: 'Diagnosis' },
   { value: 'orders', label: 'Tests' },
@@ -50,7 +52,8 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
   const canRecord = can(me, 'interaction:consultation');
   const [ai, setAi] = useState(false);
   const rec = useRecordingSession({ patientId, encounterId: id, languageHint: data.patient?.preferred_language, ai });
-  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && !(wide && x.value === 'context'));
+  const canAssist = can(me, 'ai:review');
+  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && (x.value !== 'assist' || canAssist) && !(wide && x.value === 'context'));
   const [tab, setTab] = useState<Tab>(wide ? 'notes' : 'context');
   const closed = data.detail?.encounter.status === 'COMPLETED';
 
@@ -61,6 +64,20 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
     if (open && rec.phase === 'idle') void rec.adopt(open);
   }, [existing.data, id, rec]);
 
+  // While a consented AI recording is live, look for new candidates every 30 seconds. This is a
+  // convenience only: failures are ignored, nothing waits on it, and manual analysis is always there.
+  const qc = useQueryClient();
+  const liveId = rec.phase === 'live' && ai ? rec.interaction?.id : undefined;
+  useEffect(() => {
+    if (!liveId) return;
+    const timer = setInterval(() => {
+      analyseInteraction(liveId)
+        .then(() => qc.invalidateQueries({ queryKey: ['ai-review', id] }))
+        .catch(() => undefined);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [liveId, id, qc]);
+
   const detail = data.detail;
   if (!detail) return null;
   const p = data.patient;
@@ -69,6 +86,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
     <>
       {tab === 'context' ? <ContextPanel data={data} /> : null}
       {tab === 'conversation' ? <ConversationPanel rec={rec} patientId={patientId} closed={!!closed} ai={ai} onAiChange={setAi} /> : null}
+      {tab === 'assist' ? <AssistPanel encId={id} data={data} rec={rec} isDoctor={can(me, 'note:clinical')} /> : null}
       {tab === 'notes' ? <NotesPanel encId={id} data={data} /> : null}
       {tab === 'diagnosis' ? <DiagnosisPanel encId={id} data={data} /> : null}
       {tab === 'orders' ? <OrdersPanel encId={id} data={data} /> : null}
