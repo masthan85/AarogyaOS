@@ -30,5 +30,9 @@ service, medication knowledge provider (interactions/contraindications/dose), co
 patient-summary drafting by model, differential/medication suggestions evaluated against clinician-labelled cases,
 automatic prompt-injection test corpus, per-category suggestion thresholds, mobile jest/UI tests for the Assist
 screen beyond pure logic, device testing.
-P6 Interop: FHIR facade, ABDM adapters (after sandbox access).
+P6 Interop (FHIR part done): read-only base-R4 export of a completed visit as a document Bundle, with provenance tags,
+exclusions and audit. **Open (needs the ABDM IG and sandbox access):** profile conformance and `meta.profile`,
+HL7 validator in CI, ABHA create/verify, consent manager and consent artefacts, HIP/HIU flows, HPR/HFR registration,
+terminology service for coded diagnoses and medicines, FHIR search/read for more resources, Provenance resources,
+registered identifier systems.
 P7 Hardening: observability, backup/DR, load, cost dashboards, admin, deployment.

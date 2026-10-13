@@ -5,7 +5,7 @@ patient from arrival to follow-up, turning consented, clinician-supervised conve
 into structured, reviewable clinical information. AI supports clinicians; it never
 decides for them, and every workflow works with AI switched off.
 
-**Status:** Phases 0-5 done: architecture, platform, patients, scheduling and queue, the clinical record, the consent-and-recording pipeline, and clinician-reviewed clinical AI. No real speech vendor and no real LLM is integrated yet (synthetic development providers drive both pipelines, and are refused in production), and no drug or terminology database is connected.
+**Status:** Phases 0-6 (FHIR export only; no ABDM integration) done: architecture, platform, patients, scheduling and queue, the clinical record, the consent-and-recording pipeline, clinician-reviewed clinical AI, and a read-only FHIR R4 export. No real speech vendor and no real LLM is integrated yet (synthetic development providers drive both pipelines, and are refused in production), and no drug or terminology database is connected.
 No AI extraction or suggestions exist yet — see [docs/BACKLOG.md](docs/BACKLOG.md).
 
 | Path | What |

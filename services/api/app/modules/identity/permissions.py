@@ -71,6 +71,7 @@ PERMISSIONS: dict[str, str] = {
     "knowledge:read": "View approved reference documents",
     "summary:write": "Draft, edit and approve patient visit summaries",
     "summary:read": "Read patient visit summaries",
+    "fhir:export": "Export a visit or patient as FHIR (read-only)",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -131,6 +132,7 @@ _DOCTOR = [
     *_CONSENT,
     *_AI,
     "summary:write",
+    "fhir:export",
     "interaction:consultation",
     "transcript:read",
     "speaker:assign",

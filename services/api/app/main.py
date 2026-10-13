@@ -14,6 +14,7 @@ from app.modules.consent.router import router as consent_router
 from app.modules.identity.router import auth_router, users_router
 from app.modules.interactions.gateway import router as gateway_router
 from app.modules.interactions.router import router as interactions_router
+from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
 from app.modules.scheduling.router import router as scheduling_router
@@ -65,6 +66,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         gateway_router,
         ai_router,
         summaries_router,
+        fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 
