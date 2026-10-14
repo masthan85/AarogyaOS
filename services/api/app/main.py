@@ -32,6 +32,8 @@ from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.tenancy.router import router as tenancy_router
 from app.speech.audio_store import LocalEncryptedAudioStore
+from app.speech.registry import register, unregister
+from app.speech.sarvam import SarvamSpeechProvider
 
 API_PREFIX = "/api/v1"
 
@@ -48,6 +50,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.settings = settings
+    key = settings.sarvam_api_key.get_secret_value()
+    if key:
+        register(
+            "sarvam",
+            lambda: SarvamSpeechProvider(
+                key, model=settings.sarvam_model, mode=settings.sarvam_mode, url=settings.sarvam_url
+            ),
+        )
+    else:
+        unregister("sarvam")
     app.state.engine = engine
     app.state.crypto = FieldCrypto(settings.field_encryption_key)
     app.state.audio_store = LocalEncryptedAudioStore(settings.audio_store_path, app.state.crypto)
