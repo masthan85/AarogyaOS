@@ -5,6 +5,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.ai.anthropic_llm import AnthropicLLMProvider
+from app.ai.registry import register as register_llm
+from app.ai.registry import unregister as unregister_llm
 from app.core.config import Settings, get_settings
 from app.core.crypto import FieldCrypto
 from app.core.db import create_db_engine, create_sessionmaker
@@ -50,6 +53,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.settings = settings
+    llm_key = settings.anthropic_api_key.get_secret_value()
+    if llm_key:
+        register_llm(
+            "anthropic",
+            lambda: AnthropicLLMProvider(
+                llm_key,
+                model=settings.anthropic_model,
+                timeout_seconds=settings.llm_timeout_seconds,
+            ),
+        )
+    else:
+        unregister_llm("anthropic")
     key = settings.sarvam_api_key.get_secret_value()
     if key:
         register(

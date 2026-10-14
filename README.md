@@ -5,7 +5,7 @@ patient from arrival to follow-up, turning consented, clinician-supervised conve
 into structured, reviewable clinical information. AI supports clinicians; it never
 decides for them, and every workflow works with AI switched off.
 
-**Status:** Phases 0-7 done to the extent possible without infrastructure (FHIR export only, no ABDM integration; see docs/OPERATIONS.md for what is not done): architecture, platform, patients, scheduling and queue, the clinical record, the consent-and-recording pipeline, clinician-reviewed clinical AI, and a read-only FHIR R4 export. No real speech vendor and no real LLM is integrated yet (synthetic development providers drive both pipelines, and are refused in production), and no drug or terminology database is connected.
+**Status:** Phases 0-7 done to the extent possible without infrastructure (FHIR export only, no ABDM integration; see docs/OPERATIONS.md for what is not done): architecture, platform, patients, scheduling and queue, the clinical record, the consent-and-recording pipeline, clinician-reviewed clinical AI, and a read-only FHIR R4 export. A Sarvam speech adapter, a Claude LLM adapter and microphone streaming are written but have never been run against the live services or on a device (see docs/DEVICE_TEST_PLAN.md); synthetic development providers remain the default and are refused in production, and no drug or terminology database is connected.
 No AI extraction or suggestions exist yet — see [docs/BACKLOG.md](docs/BACKLOG.md).
 
 | Path | What |

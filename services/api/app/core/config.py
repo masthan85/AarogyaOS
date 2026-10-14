@@ -29,8 +29,11 @@ class Settings(BaseSettings):
     max_request_bytes: int = Field(default=5_000_000, ge=10_000, le=50_000_000)
     # Speech. No default provider in production: a deployment must choose one deliberately.
     llm_provider: str = ""
+    # Anthropic (Claude), official SDK (app/ai/anthropic_llm.py). Registered only with a key.
+    anthropic_api_key: SecretStr = SecretStr("")
+    anthropic_model: str = "claude-opus-5-5"
     embedding_provider: str = ""
-    llm_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
+    llm_timeout_seconds: float = Field(default=60.0, gt=0, le=120)
     ai_analyses_per_minute: int = Field(default=6, ge=1, le=60)
     speech_provider: str = ""
     # Sarvam AI streaming speech-to-text (see app/speech/sarvam.py). Registered only with a key.

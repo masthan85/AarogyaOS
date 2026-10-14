@@ -24,8 +24,8 @@ P4 (original scope): consent, sessions, audio capture, gateway, SpeechProvider, 
 (after verification), diarisation, transcript UI, speaker correction.
 P5 AI (done, provider-independent): extraction with guardrails, review queue, accept/edit/reject into facts with
 provenance, deterministic and model suggestions, approved-knowledge retrieval with two-person approval, patient
-summary, usage metering, evaluation harness, mobile Assist tab. **Open:** a real LLM adapter (needs DPA, residency
-decision and a clinician-labelled eval set first), real embeddings and pgvector, translation provider, terminology
+summary, usage metering, evaluation harness, mobile Assist tab. Anthropic adapter built (stub-tested, not run live). **Open:** run the LLM adapter live, DPA, residency
+decision and a clinician-labelled eval set, real embeddings and pgvector, translation provider, terminology
 service, medication knowledge provider (interactions/contraindications/dose), consultation summary and
 patient-summary drafting by model, differential/medication suggestions evaluated against clinician-labelled cases,
 automatic prompt-injection test corpus, per-category suggestion thresholds, mobile jest/UI tests for the Assist
