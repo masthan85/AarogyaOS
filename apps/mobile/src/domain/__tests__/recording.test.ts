@@ -91,3 +91,12 @@ describe('consent helpers', () => {
     expect(extras?.purposes).toContain('AI_MODEL_IMPROVEMENT');
   });
 });
+
+import { describeInterruption } from '../recording';
+
+describe('describeInterruption', () => {
+  it('says plainly why recording stopped', () => {
+    expect(describeInterruption('phoneCall')).toMatch(/phone call/);
+    expect(describeInterruption('something-new')).toMatch(/Nothing is being recorded/);
+  });
+});

@@ -126,12 +126,22 @@ Choose `AAROGYA_SARVAM_MODE` deliberately (`codemix` may suit English drug names
 keeps spoken numbers un-normalised) and evaluate, do not assume.
 
 ## Mobile microphone capture
-Streaming PCM from a phone microphone needs a native module. Candidates seen on npm: `@siteed/audio-studio`
-and `react-native-live-audio-stream`; neither was added because neither could be verified on a device here.
-`services/audio/capture.ts` defines the interface; `MicrophoneCapture` refuses with an explanation and
-`SimulatedCapture` (silence at real-time pace, dev builds only, labelled in the UI) drives the pipeline. Before
-release: choose and test a module on target Android devices (background behaviour, interruptions, noise
-handling, battery), and add a device test plan.
+`MicrophoneCapture` (`apps/mobile/src/services/audio/capture.ts`) streams 16 kHz mono PCM16 through
+`@siteed/audio-studio` **3.2.1 (pinned exactly)**, read from its published source. Privacy settings that matter:
+* The library writes a WAV file by default; we turn that off (`output.primary.enabled: false`), so **audio is not
+  kept on the phone**. A test locks this.
+* The config plugin defaults enable notifications, background audio, Bluetooth/USB detection and the phone-state
+  permission. All are disabled in `app.json`; `expo prebuild` confirms Android asks only for `RECORD_AUDIO` (plus
+  internet, biometric, vibrate) and iOS has no background modes. Recording therefore works only while the
+  consultation screen is in the foreground.
+* If the OS takes the microphone (call, another app, device loss) the capture reports it, the indicator drops
+  immediately, the session pauses on the server and the clinician sees why.
+* Without the native module (Expo Go, web) it refuses with an explanation and the clinician documents manually.
+Events come from the module's internal `AudioData` / `onRecordingInterrupted` emitter names (as read from 3.2.1),
+which is why the version is pinned: re-verify them on every upgrade.
+**Tested only against a fake backend and by `expo prebuild`; never run on a device.** Work through
+`docs/DEVICE_TEST_PLAN.md` before clinical use. Development builds still use simulated audio unless
+`EXPO_PUBLIC_USE_MICROPHONE=1`.
 
 ## Known limits
 * The mobile app polls the transcript every second; SSE exists server-side for web/tablet clients.

@@ -17,7 +17,7 @@ FHIR mapping of the clinical record.
 P4 Speech (done, provider-independent): consent (8 purposes, versioned wording, guardians), recording sessions,
 authenticated audio gateway, SpeechProvider + registry + fallback + development provider, immutable transcripts
 with language/code-switch/speaker metadata, speaker assignment, audio retention + purge, usage metering, speech
-eval tools, mobile consent/recording UI. Sarvam adapter built from the vendor SDK (fake-server tested; live run pending). **Open:** native microphone
+eval tools, mobile consent/recording UI. Sarvam adapter built from the vendor SDK (fake-server tested; live run pending). Microphone streaming module integrated (fake-backend tested; device test plan written). **Open:** device run of the microphone
 streaming module + device tests, real-language evaluation set, Redis for multi-worker partials/guards, scheduled
 purge job, legal review of consent wording, transcript text-correction layer.
 P4 (original scope): consent, sessions, audio capture, gateway, SpeechProvider, Sarvam adapter

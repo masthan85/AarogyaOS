@@ -21,7 +21,7 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
   const t = useTheme();
   const consents = useQuery({ queryKey: ['patient-consents', patientId], queryFn: () => getPatientConsents(patientId), gcTime: 0 });
   const missing = consents.data ? missingForRecording(consents.data.status, ai) : [];
-  const canStartHere = rec.captureKind === 'simulated';
+  const simulated = rec.captureKind === 'simulated';
   const idle = rec.phase === 'idle' || rec.phase === 'error';
 
   return (
@@ -44,17 +44,17 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
             <Text style={{ color: t.text, flex: 1 }}>Let software suggest notes (needs separate consent)</Text>
             <Switch value={ai} onValueChange={onAiChange} accessibilityLabel="AI assistance" />
           </View>
-          {!canStartHere ? (
-            <Text style={{ color: t.warning }}>
-              Live microphone streaming is not available in this build, so recording cannot start. Continue by documenting manually.
-            </Text>
-          ) : (
+          {simulated ? (
             <Text style={{ color: t.textMuted, fontSize: 12 }}>
               Development build: audio is simulated and the transcript is a scripted sample, not your conversation.
             </Text>
+          ) : (
+            <Text style={{ color: t.textMuted, fontSize: 12 }}>
+              The microphone is used only between Start and Stop, only while this screen is open, and the audio is not saved on this phone.
+            </Text>
           )}
           {rec.message ? <Text style={{ color: t.danger }}>{rec.message}</Text> : null}
-          <Button title="Start AI consultation" disabled={closed || missing.length > 0 || consents.isPending || !canStartHere || rec.phase === 'starting'} onPress={() => void rec.begin()} />
+          <Button title="Start AI consultation" disabled={closed || missing.length > 0 || consents.isPending || rec.phase === 'starting'} onPress={() => void rec.begin()} />
         </Card>
       ) : null}
 
