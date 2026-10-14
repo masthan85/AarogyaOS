@@ -151,7 +151,7 @@ def test_unavailable_providers_give_a_clear_error_not_a_silent_fallback(
 ) -> None:
     client.app.state.settings.speech_provider = "sarvam"  # type: ignore[attr-defined]
     r = create_session(client, v)
-    assert r.status_code == 503 and "could not be read" in r.json()["detail"]
+    assert r.status_code == 503 and "not configured" in r.json()["detail"]
     client.app.state.settings.speech_provider = ""  # type: ignore[attr-defined]
     assert create_session(client, v).status_code == 503
 
