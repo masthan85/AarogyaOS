@@ -1,0 +1,37 @@
+[
+  {
+    "id": "fever-chest-pain-allergy",
+    "purpose": "CONSULTATION",
+    "segments": [
+      {"seq": 1, "role": "DOCTOR", "text": "What brings you in today?"},
+      {"seq": 2, "role": "PATIENT", "text": "I have had fever for three days."},
+      {"seq": 3, "role": "DOCTOR", "text": "Do you have chest pain?"},
+      {"seq": 4, "role": "PATIENT", "text": "No, I do not have chest pain. I am allergic to penicillin."}
+    ],
+    "gold": [
+      {"kind": "SYMPTOM", "text": "fever", "assertion": "PRESENT"},
+      {"kind": "SYMPTOM", "text": "chest pain", "assertion": "ABSENT"},
+      {"kind": "ALLERGY", "text": "allergy to penicillin", "assertion": "PRESENT"}
+    ]
+  },
+  {
+    "id": "question-only",
+    "purpose": "CONSULTATION",
+    "segments": [
+      {"seq": 1, "role": "DOCTOR", "text": "Do you have cough or fever?"},
+      {"seq": 2, "role": "PATIENT", "text": "Let me think."}
+    ],
+    "gold": []
+  },
+  {
+    "id": "mixed-language",
+    "purpose": "CONSULTATION",
+    "segments": [
+      {"seq": 1, "role": "PATIENT", "text": "Mujhe teen din se bukhar hai aur cough bhi hai."}
+    ],
+    "gold": [
+      {"kind": "SYMPTOM", "text": "fever", "assertion": "PRESENT"},
+      {"kind": "SYMPTOM", "text": "cough", "assertion": "PRESENT"}
+    ]
+  }
+]
