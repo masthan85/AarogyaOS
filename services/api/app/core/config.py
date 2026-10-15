@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     sarvam_model: str = "saaras:v4"
     sarvam_mode: Literal["transcribe", "verbatim", "translit", "codemix"] = "transcribe"
     sarvam_url: str = "wss://api.sarvam.ai/speech-to-text/ws"
+    # The same key serves Sarvam's REST services. Each is chosen explicitly: nothing is sent to
+    # Sarvam unless its provider is set to "sarvam".
+    sarvam_rest_url: str = "https://api.sarvam.ai"
+    sarvam_llm_model: str = "sarvam-105b"
+    translation_provider: str = ""  # "" (off) or "sarvam"
+    tts_provider: str = ""  # "" (off) or "sarvam"
     speech_fallback_provider: str = ""
     speech_monitor_interval_seconds: float = Field(default=2.0, gt=0, le=30)
     speech_max_session_seconds: int = Field(default=3600, ge=60, le=14400)
@@ -56,6 +62,8 @@ class Settings(BaseSettings):
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")
+            if not self.sarvam_rest_url.startswith("https://"):
+                raise ValueError("AAROGYA_SARVAM_REST_URL must be https:// in production")
             if not self.sarvam_url.startswith("wss://"):
                 raise ValueError("AAROGYA_SARVAM_URL must be a wss:// URL in production")
             if "*" in self.cors_origins:

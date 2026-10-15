@@ -49,3 +49,5 @@ Considered and NOT built, with the reason: **coding suggestions** (ICD/SNOMED) n
 mode / MedASR** needs an evaluation on your English audio first (MedASR is English-only, trained on dictation) and a purpose-limited
 recording type; **AI-written notes or letters** (kept code-built on purpose for safety); **letter sending/printing/PDF**; **translation
 of summaries** (needs a translation provider); **radiology reporting**; **nurse flowsheet extraction** beyond the existing vitals.
+
+Sarvam breadth (docs/SARVAM.md): translation, read-aloud and chat adapters added. Not yet: batch transcription with speaker labels, document digitisation and translation of outside reports (both need a live run and stored files), pronunciation dictionary for drug names.

@@ -94,7 +94,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       {tab === 'orders' ? <OrdersPanel encId={id} data={data} /> : null}
       {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} /> : null}
       {tab === 'followup' ? <FollowUpPanel encId={id} data={data} /> : null}
-      {tab === 'documents' ? <DocumentsPanel encId={id} /> : null}
+      {tab === 'documents' ? <DocumentsPanel encId={id} patientLanguage={data.patient?.preferred_language} /> : null}
       {tab === 'finish' ? <FinishPanel encId={id} data={data} /> : null}
     </>
   );

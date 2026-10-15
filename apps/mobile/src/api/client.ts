@@ -55,6 +55,20 @@ export class ApiClient {
     return this.parse(res, schema);
   }
 
+  /** Like `request`, for endpoints that return a file (for example audio) instead of JSON. */
+  async requestBytes(path: string, init: RequestInitLite = {}): Promise<ArrayBuffer> {
+    let tokens = await this.opts.tokenStore.load();
+    if (!tokens) throw new ApiError(401, 'Not signed in');
+    let res = await this.send(path, init, tokens.accessToken);
+    if (res.status === 401) {
+      tokens = await this.refreshOnce(tokens);
+      if (!tokens) throw new ApiError(401, 'Session expired');
+      res = await this.send(path, init, tokens.accessToken);
+    }
+    if (!res.ok) throw await this.errorFrom(res);
+    return res.arrayBuffer();
+  }
+
   private async send(path: string, init: RequestInitLite, accessToken?: string): Promise<Response> {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (init.body !== undefined) headers['Content-Type'] = 'application/json';
@@ -99,19 +113,21 @@ export class ApiClient {
     }
   }
 
-  private async parse<S extends z.ZodType>(res: Response, schema: S): Promise<z.infer<S>> {
+  private async errorFrom(res: Response): Promise<ApiError> {
     const correlationId = res.headers.get('x-request-id') ?? undefined;
-    if (!res.ok) {
-      let detail = `Request failed (${res.status})`;
-      let parsed: Record<string, unknown> | undefined;
-      try {
-        parsed = (await res.json()) as Record<string, unknown>;
-        if (typeof parsed.detail === 'string') detail = parsed.detail;
-      } catch {
-        /* non-JSON error body */
-      }
-      throw new ApiError(res.status, detail, correlationId, parsed);
+    let detail = `Request failed (${res.status})`;
+    let parsed: Record<string, unknown> | undefined;
+    try {
+      parsed = (await res.json()) as Record<string, unknown>;
+      if (typeof parsed.detail === 'string') detail = parsed.detail;
+    } catch {
+      /* non-JSON error body */
     }
+    return new ApiError(res.status, detail, correlationId, parsed);
+  }
+
+  private async parse<S extends z.ZodType>(res: Response, schema: S): Promise<z.infer<S>> {
+    if (!res.ok) throw await this.errorFrom(res);
     if (res.status === 204) return schema.parse(undefined);
     return schema.parse(await res.json());
   }

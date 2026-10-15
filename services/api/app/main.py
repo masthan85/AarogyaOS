@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.ai.anthropic_llm import AnthropicLLMProvider
 from app.ai.registry import register as register_llm
 from app.ai.registry import unregister as unregister_llm
+from app.ai.sarvam import SarvamLLMProvider
 from app.core.config import Settings, get_settings
 from app.core.crypto import FieldCrypto
 from app.core.db import create_db_engine, create_sessionmaker
@@ -66,6 +67,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     else:
         unregister_llm("anthropic")
+    sarvam_key = settings.sarvam_api_key.get_secret_value()
+    if sarvam_key:
+        register_llm(
+            "sarvam",
+            lambda: SarvamLLMProvider(
+                sarvam_key,
+                model=settings.sarvam_llm_model,
+                base_url=settings.sarvam_rest_url,
+                timeout=settings.llm_timeout_seconds,
+            ),
+        )
+    else:
+        unregister_llm("sarvam")
     key = settings.sarvam_api_key.get_secret_value()
     if key:
         register(

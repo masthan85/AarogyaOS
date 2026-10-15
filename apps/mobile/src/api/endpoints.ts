@@ -311,3 +311,5 @@ export const approveDocument = (id: string) =>
   api.request(`/summaries/${id}/approve`, documentSchema, { method: 'POST', body: {} });
 export const askChart = (patientId: string, question: string) =>
   api.request(`/patients/${patientId}/ai/ask`, askSchema, { method: 'POST', body: { question } });
+export const getDocumentSpeech = (id: string) =>
+  api.requestBytes(`/summaries/${id}/speech`, { method: 'POST', body: {} });

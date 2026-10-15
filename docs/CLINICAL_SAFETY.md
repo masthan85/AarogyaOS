@@ -66,5 +66,12 @@ Hazard log (initial)
 | H41 | Unreviewed AI output treated as chart fact | Candidates and suggestions are excluded from the searchable chart (tested) | — |
 | H42 | Stale or superseded entries answer a question | Only current, non-rejected versions are searched, each with its date | Very old entries are still returned if they match |
 
+## Translation and read-aloud (Sarvam)
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H43 | A machine translation changes a dose, drug or instruction and the patient follows it | Always a draft until a doctor approves; digits requested in 0-9 and compared with the English (mismatch flagged `NUMBERS_MISMATCH`); the English source is kept; editing marks it clinician-edited | **Not clinically evaluated.** Numbers are checked, words are not. A doctor who cannot read the language cannot check it: use a reader for each language you offer |
+| H44 | Audio of text nobody approved, or in the wrong language, is played to a patient | Only APPROVED text is spoken; the document's own language is used; unsupported languages are refused; audio is not stored | Pronunciation of drug names and numbers is unverified; the voice is synthetic and says nothing about who approved it |
+| H45 | Patient text sent to a vendor without permission | Needs the organisation's AI switch, the patient's AI-processing consent and the provider switch; checked per call; nothing sent when any is missing (tested) | Vendor retention and residency terms are not yet agreed |
+
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

@@ -38,6 +38,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Decision support for the treating doctor: rule-based checks (missing allergy status, abnormal results, allergy clashes) plus model suggestions that must cite approved reference material. Accepting an investigation suggestion creates only a draft order.
 - Reference knowledge supplied by the organisation, with two-person approval, versions and retirement.
 - **Ask the chart**: ask a question about one patient and get an answer that cites the recorded entries it rests on, or "not found". A plain keyword search over the chart always works, even with AI off.
+- Sarvam services (optional, each off until chosen): speech-to-text, translation of patient summaries into the patient's language, reading approved documents aloud, and a Sarvam chat model option.
 - Evaluation harness, usage metering, per-organisation switches, and a Claude (Anthropic) adapter alongside a development stand-in.
 
 **Interoperability**
@@ -61,7 +62,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 | Drug interactions, contraindications, dose checks | Not checked at all (allergy matching is by name only). Needs a licensed drug knowledge provider |
 | ICD / SNOMED / LOINC coding | Not built; needs a licensed terminology service |
 | ABDM (ABHA, consent manager, health information exchange) | Not built; the FHIR export is base R4, not ABDM profile-conformant. Needs the ABDM guide version and sandbox credentials |
-| Translation of patient documents | Not built (documents stay in English and say so) |
+| Sarvam translation, read-aloud and chat | Written and tested against a local fake; never run live. Translations are drafts a doctor must check. See [docs/SARVAM.md](docs/SARVAM.md) for everything Sarvam is used for, and what is deliberately not |
 | Letter sending, printing, PDF | Not built |
 | Deployment | Not deployed. Docker, Kubernetes, TLS, WAF, managed Postgres, encrypted audio store and Redis (for multi-container audio) are not done |
 | Accuracy | AI quality and speech accuracy are unmeasured on real clinical data; the bundled evaluation fixtures are tiny and synthetic |
