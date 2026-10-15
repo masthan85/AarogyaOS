@@ -39,6 +39,9 @@ import {
   medicationSchema,
   orderSchema,
   followUpSchema,
+  reportedResultSchema,
+  worklistFollowUpSchema,
+  worklistOrderSchema,
   prescriptionSchema,
   safetyCheckSchema,
   patientConsentsSchema,
@@ -375,3 +378,34 @@ export const retireKnowledgeDoc = (id: string) =>
 export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
 export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
 export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
+
+// ---- worklists ----------------------------------------------------------------------------
+
+export const getOrders = (params: { status?: string; category?: string; patient_id?: string }) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  return api.request(`/orders?${q.toString()}`, z.array(worklistOrderSchema));
+};
+export type ResultInput = {
+  test_name: string;
+  value_numeric?: number;
+  value_text?: string;
+  unit?: string;
+  ref_low?: number;
+  ref_high?: number;
+  critical_low?: number;
+  critical_high?: number;
+  comment?: string;
+};
+export const enterResult = (orderId: string, body: ResultInput) =>
+  api.request(`/orders/${orderId}/results`, reportedResultSchema, { method: 'POST', body });
+export const getResultsAwaitingReview = () => api.request('/results/awaiting-review', z.array(reportedResultSchema));
+export const reviewResult = (id: string) =>
+  api.request(`/results/${id}/review`, reportedResultSchema, { method: 'POST', body: {} });
+export const getFollowUps = (params: { due_on_or_before?: string; status?: string }) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  return api.request(`/follow-ups?${q.toString()}`, z.array(worklistFollowUpSchema));
+};
+export const setFollowUpStatus = (id: string, status: 'COMPLETED' | 'CANCELLED') =>
+  api.request(`/follow-ups/${id}/status`, worklistFollowUpSchema, { method: 'POST', body: { status } });

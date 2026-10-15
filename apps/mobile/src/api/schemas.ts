@@ -558,3 +558,49 @@ export type Role = z.infer<typeof roleSchema>;
 export type PractitionerFull = z.infer<typeof practitionerFullSchema>;
 export type KnowledgeDoc = z.infer<typeof knowledgeDocSchema>;
 export type AuditLog = z.infer<typeof auditLogSchema>;
+
+// ---- worklists: orders, results, follow-ups ------------------------------------------------
+
+export const worklistOrderSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  encounter_id: z.string(),
+  category: z.string(),
+  name: z.string(),
+  priority: z.string(),
+  status: z.string(),
+  reason: z.string().nullable(),
+  ordered_at: z.string().nullable(),
+  patient_name: z.string().nullable(),
+  patient_mrn: z.string().nullable(),
+});
+
+export const reportedResultSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  service_request_id: z.string(),
+  test_name: z.string(),
+  value_numeric: z.coerce.number().nullable(),
+  value_text: z.string().nullable(),
+  unit: z.string().nullable(),
+  ref_low: z.coerce.number().nullable(),
+  ref_high: z.coerce.number().nullable(),
+  interpretation: z.string(),
+  comment: z.string().nullable(),
+  reported_at: z.string(),
+  reviewed_at: z.string().nullable(),
+});
+
+export const worklistFollowUpSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  encounter_id: z.string(),
+  due_date: z.string(),
+  kind: z.string(),
+  reason: z.string(),
+  status: z.string(),
+});
+
+export type WorklistOrder = z.infer<typeof worklistOrderSchema>;
+export type ReportedResult = z.infer<typeof reportedResultSchema>;
+export type WorklistFollowUp = z.infer<typeof worklistFollowUpSchema>;

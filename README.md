@@ -53,6 +53,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
 
 **Mobile app (Expo / React Native)**
+- Worklists: results awaiting a doctor's review (critical first), follow-ups due (overdue, today, this week), and a lab/radiology order list with result entry for technicians. The result view only shows investigations the signed-in doctor ordered.
 - Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
 - Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
 
