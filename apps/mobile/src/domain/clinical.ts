@@ -74,3 +74,18 @@ export function parseNumber(text: string | undefined): number | undefined {
   const n = Number(t);
   return Number.isFinite(n) ? n : Number.NaN;
 }
+
+/** Puts a saved draft's lines back into the editable shape so a doctor can correct it before signing. */
+export function itemsFromPrescription(rx: {
+  items: { medicine_name: string; strength: string | null; dose: string; route: string; frequency: string; duration_days: number | null; instructions?: string | null }[];
+}): import('@/api/endpoints').RxItemInput[] {
+  return rx.items.map((i) => ({
+    medicine_name: i.medicine_name,
+    strength: i.strength ?? undefined,
+    dose: i.dose,
+    route: i.route,
+    frequency: i.frequency,
+    duration_days: i.duration_days ?? undefined,
+    instructions: i.instructions ?? undefined,
+  }));
+}

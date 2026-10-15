@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { createPrescription, signPrescription, voidPrescription, type RxItemInput } from '@/api/endpoints';
+import { createPrescription, signPrescription, updatePrescription, voidPrescription, type RxItemInput } from '@/api/endpoints';
 import { type Prescription, type SafetyWarning, safetyWarningSchema } from '@/api/schemas';
 import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
-import { parseNumber } from '@/domain/clinical';
+import { itemsFromPrescription, parseNumber } from '@/domain/clinical';
 import { prescriptionHtml, type Letterhead } from '@/domain/print';
 import { printHtml, sharePdf } from '@/services/print';
 
@@ -21,6 +21,8 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
   const [f, setF] = useState(BLANK);
   const [items, setItems] = useState<RxItemInput[]>([]);
   // Warnings the server returned when signing; each must be acknowledged explicitly.
+  // The draft being corrected, if any; saving then replaces its lines instead of writing a new prescription.
+  const [editing, setEditing] = useState<string | null>(null);
   const [pending, setPending] = useState<{ rxId: string; warnings: SafetyWarning[] } | null>(null);
   const done = () => void data.refresh();
 
@@ -33,7 +35,10 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
     }]);
     setF(BLANK);
   };
-  const save = useAction(() => createPrescription(encId, items), () => { setItems([]); done(); });
+  const save = useAction(
+    () => (editing ? updatePrescription(editing, items) : createPrescription(encId, items)),
+    () => { setItems([]); setEditing(null); done(); },
+  );
   const share = useAction(async (html: string) => sharePdf(html, 'Prescription'));
   const print = useAction(async (html: string) => printHtml(html));
   const void_ = useAction((id: string) => voidPrescription(id, 'Voided by doctor'), done);
@@ -87,6 +92,9 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
                 onPress={() => { const h = prescriptionHtml(rx, letterhead); if (h) void print.run(h); }} />
             </View>
           ) : null}
+          {rx.status === 'DRAFT' ? (
+            <Button title="Edit draft" variant="secondary" onPress={() => { setItems(itemsFromPrescription(rx)); setEditing(rx.id); setPending(null); }} />
+          ) : null}
           {rx.status !== 'VOIDED' ? (
             <Button title={rx.status === 'SIGNED' ? 'Void prescription' : 'Discard draft'} variant="secondary"
               onPress={() => Alert.alert(rx.status === 'SIGNED' ? 'Void this prescription?' : 'Discard this draft?', 'This cannot be undone.', [
@@ -96,9 +104,12 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
         </Card>
       ))}
 
-      <Card title="Write a prescription">
+      <Card title={editing ? 'Edit draft prescription' : 'Write a prescription'}>
         {items.map((i, n) => (
-          <Text key={n} style={{ color: t.text }}>{n + 1}. {i.medicine_name} — {i.dose}, {i.route.toLowerCase()}, {i.frequency}</Text>
+          <View key={n} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm }}>
+            <Text style={{ color: t.text, flex: 1 }}>{n + 1}. {i.medicine_name}{i.strength ? ` ${i.strength}` : ''} — {i.dose}, {i.route.toLowerCase()}, {i.frequency}{i.duration_days ? ` for ${i.duration_days} days` : ''}</Text>
+            <Button title="Remove" variant="secondary" onPress={() => setItems((p) => p.filter((_, k) => k !== n))} />
+          </View>
         ))}
         <TextField label="Medicine" value={f.medicine_name} onChangeText={(v) => setF({ ...f, medicine_name: v })} />
         <View style={{ flexDirection: 'row', gap: space.md }}>
@@ -112,7 +123,8 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
         </View>
         <TextField label="Instructions" value={f.instructions} onChangeText={(v) => setF({ ...f, instructions: v })} />
         <Button title="Add medicine to prescription" variant="secondary" disabled={!valid} onPress={addItem} />
-        <Button title={`Save draft (${items.length})`} disabled={items.length === 0} loading={save.pending} onPress={() => void save.run()} />
+        {editing ? <Button title="Stop editing" variant="secondary" onPress={() => { setEditing(null); setItems([]); }} /> : null}
+        <Button title={editing ? `Save changes (${items.length})` : `Save draft (${items.length})`} disabled={items.length === 0} loading={save.pending} onPress={() => void save.run()} />
         <Text style={{ color: t.textMuted, fontSize: 12 }}>
           Only you can sign. Safety checks cover allergy name matches and duplicates only — interactions, contraindications and doses are not checked.
         </Text>

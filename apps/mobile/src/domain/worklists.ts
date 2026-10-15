@@ -108,3 +108,15 @@ export const KIND_LABEL: Record<string, string> = {
   REFERRAL: 'Referral',
   OTHER: 'Other',
 };
+
+/** Cover windows are checked here to save a round trip; the server applies the same limits. */
+export const MAX_COVER_DAYS = 31;
+export function coverProblem(startsOn: string, endsOn: string, today: string): string | null {
+  const ok = /^\d{4}-\d{2}-\d{2}$/;
+  if (!ok.test(startsOn) || !ok.test(endsOn)) return 'Enter dates as YYYY-MM-DD.';
+  if (endsOn < startsOn) return 'The end date is before the start date.';
+  if (endsOn < today) return 'That period has already ended.';
+  const days = (Date.parse(endsOn) - Date.parse(startsOn)) / 86_400_000;
+  if (days >= MAX_COVER_DAYS) return `Cover can last at most ${MAX_COVER_DAYS} days.`;
+  return null;
+}

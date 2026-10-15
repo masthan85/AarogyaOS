@@ -38,6 +38,8 @@ import {
   conditionSchema,
   medicationSchema,
   orderSchema,
+  colleagueSchema,
+  coverSchema,
   followUpSchema,
   reportedResultSchema,
   worklistFollowUpSchema,
@@ -218,6 +220,10 @@ export type RxItemInput = {
 };
 export const createPrescription = (encId: string, items: RxItemInput[]) =>
   api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items } });
+export const getPatientPrescriptions = (patientId: string) =>
+  api.request(`/patients/${patientId}/prescriptions`, z.array(prescriptionSchema));
+export const updatePrescription = (rxId: string, items: RxItemInput[]) =>
+  api.request(`/prescriptions/${rxId}`, prescriptionSchema, { method: 'PUT', body: { items } });
 export const safetyCheck = (rxId: string) =>
   api.request(`/prescriptions/${rxId}/safety-check`, safetyCheckSchema, { method: 'POST', body: {} });
 export const signPrescription = (rxId: string, acknowledged: string[]) =>
@@ -409,3 +415,9 @@ export const getFollowUps = (params: { due_on_or_before?: string; status?: strin
 };
 export const setFollowUpStatus = (id: string, status: 'COMPLETED' | 'CANCELLED') =>
   api.request(`/follow-ups/${id}/status`, worklistFollowUpSchema, { method: 'POST', body: { status } });
+
+export const getColleagues = () => api.request('/cover/colleagues', z.array(colleagueSchema));
+export const getCover = () => api.request('/cover', z.array(coverSchema));
+export const arrangeCover = (body: { to_user_id: string; starts_on: string; ends_on: string }) =>
+  api.request('/cover', coverSchema, { method: 'POST', body });
+export const endCover = (id: string) => api.request(`/cover/${id}/end`, coverSchema, { method: 'POST', body: {} });

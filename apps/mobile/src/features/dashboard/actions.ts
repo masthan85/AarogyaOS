@@ -17,6 +17,7 @@ export const DASHBOARD_ACTIONS: DashboardAction[] = [
   { key: 'results', title: 'Results to review', description: 'Investigation results you ordered, critical first', permission: 'result:review', href: '/results' },
   { key: 'follow-ups', title: 'Follow-ups', description: 'Patients due to be seen again', permission: 'followup:read', href: '/follow-ups' },
   { key: 'lab', title: 'Orders and results', description: 'Pending lab and radiology orders; enter results', permission: 'result:enter', href: '/lab' },
+  { key: 'pharmacy', title: 'Pharmacy', description: 'Look up a patient\'s signed prescriptions', permission: 'prescription:read', href: '/pharmacy' },
   { key: 'facilities', title: 'Facilities', description: 'Sites and departments', permission: 'facility:read', href: '/facilities' },
   { key: 'admin', title: 'Administration', description: 'Settings, staff, doctors, note layouts, reference library, usage and audit', permission: 'user:read', href: '/admin' },
 ];

@@ -1,4 +1,4 @@
-import { formatVital, interpretationLabel, interpretationTone, needsVerification, parseNumber, provenance } from '../clinical';
+import { itemsFromPrescription, formatVital, interpretationLabel, interpretationTone, needsVerification, parseNumber, provenance } from '../clinical';
 
 describe('provenance wording keeps humans and AI visibly distinct', () => {
   it('flags unverified staff entries', () => {
@@ -42,5 +42,16 @@ describe('vitals formatting and parsing', () => {
     expect(parseNumber('  ')).toBeUndefined();
     expect(parseNumber('98.6')).toBe(98.6);
     expect(Number.isNaN(parseNumber('abc'))).toBe(true);
+  });
+});
+
+describe('itemsFromPrescription', () => {
+  it('turns a saved draft back into editable lines without inventing values', () => {
+    const items = itemsFromPrescription({
+      items: [{ medicine_name: 'Paracetamol', strength: null, dose: '1 tablet', route: 'ORAL', frequency: 'twice daily', duration_days: null, instructions: null }],
+    });
+    expect(items).toEqual([
+      { medicine_name: 'Paracetamol', strength: undefined, dose: '1 tablet', route: 'ORAL', frequency: 'twice daily', duration_days: undefined, instructions: undefined },
+    ]);
   });
 });

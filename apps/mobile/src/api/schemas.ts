@@ -589,6 +589,7 @@ export const reportedResultSchema = z.object({
   comment: z.string().nullable(),
   reported_at: z.string(),
   reviewed_at: z.string().nullable(),
+  covering_for: z.string().nullable().optional(),
 });
 
 export const worklistFollowUpSchema = z.object({
@@ -604,3 +605,17 @@ export const worklistFollowUpSchema = z.object({
 export type WorklistOrder = z.infer<typeof worklistOrderSchema>;
 export type ReportedResult = z.infer<typeof reportedResultSchema>;
 export type WorklistFollowUp = z.infer<typeof worklistFollowUpSchema>;
+
+export const colleagueSchema = z.object({ user_id: z.string(), name: z.string(), specialty: z.string() });
+export const coverSchema = z.object({
+  id: z.string(),
+  from_user_id: z.string(),
+  from_name: z.string(),
+  to_user_id: z.string(),
+  to_name: z.string(),
+  starts_on: z.string(),
+  ends_on: z.string(),
+  active: z.boolean(),
+});
+export type Colleague = z.infer<typeof colleagueSchema>;
+export type Cover = z.infer<typeof coverSchema>;

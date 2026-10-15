@@ -96,3 +96,14 @@ replaced by the encounter workflow above.
 
 Planned conventions (not yet implemented): `Idempotency-Key` on mutating POSTs, cursor pagination,
 optimistic concurrency via `version`.
+
+## Cover (migration 0008)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `GET /cover/colleagues` | `result:review` | Other active doctors in the organisation |
+| `GET /cover` | `result:review` | Arrangements I made or that name me (ended ones for 30 days) |
+| `POST /cover` | `result:review` | `{to_user_id, starts_on, ends_on}`; at most 31 days, not more than a year ahead |
+| `POST /cover/{id}/end` | `result:review` | Either side may end it |
+
+While an arrangement is active, `GET /results/awaiting-review` for the covering doctor also returns the other doctor's results, each marked `covering_for`. Reviews are audited with `on_behalf_of`.

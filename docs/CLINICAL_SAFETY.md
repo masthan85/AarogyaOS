@@ -26,7 +26,7 @@ Hazard log (initial)
 | H13 | Unsigned/half-made decisions leaking into care | Drafts (prescriptions, orders) are invisible to pharmacy, lab and nurses; a visit cannot be completed with drafts outstanding | — |
 | H14 | Silent alteration of the record | Facts append-only (database triggers); corrections supersede; signed prescriptions and reported results frozen; audit log append-only | A database superuser could still bypass triggers; restrict and monitor superuser access |
 | H15 | Unverified information treated as confirmed | Every fact carries source + verification state; a patient's uncertain statement is stored as POSSIBLE; only a doctor confirms diagnoses | AI-generated facts (Phase 5) must enter as AI_GENERATED / REQUIRES_REVIEW |
-| H16 | Doctor edits another doctor's consultation | Clinical writes restricted to the encounter's own practitioner | Cover/handover workflow not built |
+| H16 | Doctor edits another doctor's consultation | Clinical writes restricted to the encounter's own practitioner | Short-term cover exists for reviewing results only (`/cover`, max 31 days, either side can end it, reviews audited with `on_behalf_of`). Cover does not let anyone write to another doctor's encounter; a full handover of encounters is not built |
 | H17 | Offline duplicate or lost clinical writes | Clinical writes are never queued offline; the app says plainly when nothing was saved | Idempotency keys planned |
 
 ## Phase 4 hazards (speech)

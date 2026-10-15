@@ -26,6 +26,7 @@ from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
+from app.modules.cover.router import router as cover_router
 from app.modules.identity.router import auth_router, users_router
 from app.modules.interactions.gateway import router as gateway_router
 from app.modules.interactions.router import router as interactions_router
@@ -127,6 +128,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ai_router,
         summaries_router,
         templates_router,
+        cover_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

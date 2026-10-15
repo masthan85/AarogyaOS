@@ -1,6 +1,6 @@
 import type { ReportedResult, WorklistFollowUp } from '@/api/schemas';
 
-import { buildResult, byPriority, describeValue, emptyResultForm, groupFollowUps, isCritical, reviewOrder } from '../worklists';
+import { buildResult, coverProblem, byPriority, describeValue, emptyResultForm, groupFollowUps, isCritical, reviewOrder } from '../worklists';
 
 const form = (o: Partial<ReturnType<typeof emptyResultForm>>) => ({ ...emptyResultForm('Haemoglobin'), ...o });
 const res = (o: Partial<ReportedResult>): ReportedResult => ({
@@ -66,5 +66,15 @@ describe('groupFollowUps', () => {
       ['overdue', ['b']], ['today', ['c']], ['week', ['a']], ['later', ['d']],
     ]);
     expect(groupFollowUps([], '2026-03-05', '2026-03-11')).toEqual([]);
+  });
+});
+
+describe('coverProblem', () => {
+  it('accepts a short window and names what is wrong otherwise', () => {
+    expect(coverProblem('2026-03-05', '2026-03-08', '2026-03-05')).toBeNull();
+    expect(coverProblem('2026-03-05', '2026-03-01', '2026-03-05')).toMatch(/before/);
+    expect(coverProblem('2026-01-01', '2026-01-03', '2026-03-05')).toMatch(/already ended/);
+    expect(coverProblem('2026-03-05', '2026-05-05', '2026-03-05')).toMatch(/at most/);
+    expect(coverProblem('5 March', '2026-03-08', '2026-03-05')).toMatch(/YYYY/);
   });
 });
