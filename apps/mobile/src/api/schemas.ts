@@ -142,6 +142,7 @@ export const encounterSchema = z.object({
   id: z.string(),
   patient_id: z.string(),
   appointment_id: z.string(),
+  facility_id: z.string(),
   practitioner_id: z.string().nullable(),
   status: z.string(),
   triage_category: z.string().nullable(),
@@ -218,10 +219,12 @@ export const prescriptionItemSchema = z.object({
   route: z.string(),
   frequency: z.string(),
   duration_days: z.number().nullable(),
+  instructions: z.string().nullable().optional(),
 });
 export const prescriptionSchema = z.object({
   id: z.string(),
   status: z.string(),
+  signed_at: z.string().nullable().optional(),
   items: z.array(prescriptionItemSchema),
 });
 export const orderSchema = z.object({
@@ -471,3 +474,87 @@ export const askSchema = z.object({
 export type NoteTemplate = z.infer<typeof templateSchema>;
 export type ClinicalDocument = z.infer<typeof documentSchema>;
 export type AskResult = z.infer<typeof askSchema>;
+
+// ---- Administration ------------------------------------------------------------------------------
+
+export const orgPolicySchema = z.object({
+  recording_enabled: z.boolean(),
+  ai_processing_enabled: z.boolean(),
+  audio_retention: z.enum(['DISCARD_AFTER_TRANSCRIPTION', 'RETAIN_DAYS']),
+  retain_days: z.number(),
+  ai_suggestions_enabled: z.boolean(),
+  ai_suggestions_require_source: z.boolean(),
+  enabled_languages: z.array(z.string()).nullable(),
+  guardian_consent_under_age: z.number(),
+});
+export const userSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  full_name: z.string(),
+  is_active: z.boolean(),
+  preferred_language: z.string(),
+  mfa_enabled: z.boolean(),
+  last_login_at: z.string().nullable(),
+  roles: z.array(z.string()),
+});
+export const roleSchema = z.object({ key: z.string(), name: z.string(), permissions: z.array(z.string()) });
+export const practitionerFullSchema = practitionerSchema.extend({
+  user_id: z.string(),
+  registration_number: z.string().nullable(),
+  status: z.string(),
+  working_hours: z.array(z.object({ weekday: z.number(), start_time: z.string(), end_time: z.string() })),
+});
+export const knowledgeDocSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  publisher: z.string(),
+  source: z.string(),
+  version: z.string(),
+  country: z.string(),
+  specialty: z.string().nullable(),
+  licence: z.string(),
+  approved: z.boolean(),
+  retired_at: z.string().nullable(),
+  created_by: z.string().nullable(),
+  chunk_count: z.number(),
+});
+export const auditLogSchema = z.object({
+  id: z.string(),
+  occurred_at: z.string(),
+  actor_user_id: z.string().nullable(),
+  action: z.string(),
+  resource_type: z.string(),
+  outcome: z.string(),
+  reason: z.string().nullable(),
+  ai_involved: z.boolean(),
+});
+export const speechUsageSchema = z.object({
+  provider: z.string(),
+  model: z.string(),
+  sessions: z.number(),
+  audio_seconds: z.number(),
+  segments: z.number(),
+  errors: z.number(),
+  fallbacks: z.number(),
+  avg_first_segment_latency_ms: z.number().nullable(),
+  estimated_cost_paise: z.number().nullable(),
+});
+export const aiUsageSchema = z.object({
+  feature: z.string(),
+  provider: z.string(),
+  model: z.string(),
+  calls: z.number(),
+  ok: z.number(),
+  failed: z.number(),
+  input_tokens: z.number(),
+  output_tokens: z.number(),
+  tokens_are_estimates: z.boolean(),
+  avg_latency_ms: z.number().nullable(),
+  estimated_cost_paise: z.number().nullable(),
+});
+export type OrgPolicy = z.infer<typeof orgPolicySchema>;
+export type StaffUser = z.infer<typeof userSchema>;
+export type Role = z.infer<typeof roleSchema>;
+export type PractitionerFull = z.infer<typeof practitionerFullSchema>;
+export type KnowledgeDoc = z.infer<typeof knowledgeDocSchema>;
+export type AuditLog = z.infer<typeof auditLogSchema>;

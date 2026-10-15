@@ -48,6 +48,10 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Strict tenant isolation (PostgreSQL row-level security, tested), backend-enforced roles and permissions, short-lived tokens with rotation and reuse detection, field-level encryption.
 - Audit log and event outbox with no clinical content; readiness check that waits for migrations; Prometheus metrics without identifiers; security headers and request limits; scheduled maintenance jobs; encrypted backup and a restore drill; optional pgvector search.
 
+**Administration (mobile, role-gated)**
+- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts; the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
+- Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
+
 **Mobile app (Expo / React Native)**
 - Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
 - Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
@@ -63,7 +67,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 | ICD / SNOMED / LOINC coding | Not built; needs a licensed terminology service |
 | ABDM (ABHA, consent manager, health information exchange) | Not built; the FHIR export is base R4, not ABDM profile-conformant. Needs the ABDM guide version and sandbox credentials |
 | Sarvam translation, read-aloud and chat | Written and tested against a local fake; never run live. Translations are drafts a doctor must check. See [docs/SARVAM.md](docs/SARVAM.md) for everything Sarvam is used for, and what is deliberately not |
-| Letter sending, printing, PDF | Not built |
+| Sending letters to other providers | Not built. Documents and prescriptions can be shared or printed as PDF from the phone (untested on a device) |
 | Deployment | Not deployed. Docker, Kubernetes, TLS, WAF, managed Postgres, encrypted audio store and Redis (for multi-container audio) are not done |
 | Accuracy | AI quality and speech accuracy are unmeasured on real clinical data; the bundled evaluation fixtures are tiny and synthetic |
 | Reviews | Clinical safety officer review, CDSCO (SaMD) status, DPDP legal review and a penetration test have not happened |

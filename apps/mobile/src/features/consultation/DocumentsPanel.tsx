@@ -8,6 +8,8 @@ import { Button, Card, ChoiceChips, EmptyState, SectionTitle, StatusChip, TextFi
 import { space, useTheme } from '@/design-system/tokens';
 import { canReadAloud, currentDocuments, documentTitle, translationNote } from '@/domain/documents';
 import { LANGUAGE_OPTIONS } from '@/domain/languages';
+import { documentHtml, type Letterhead } from '@/domain/print';
+import { printHtml, sharePdf } from '@/services/print';
 import { type Playback, playWav } from '@/services/audio/playback';
 
 import { useAction } from './useAction';
@@ -17,7 +19,7 @@ import { useAction } from './useAction';
  * from recorded, non-rejected data plus the doctor's own words (no model writes them), then the
  * doctor edits and approves. An approved document cannot be changed; a new draft replaces it.
  */
-export function DocumentsPanel({ encId, patientLanguage }: { encId: string; patientLanguage?: string }) {
+export function DocumentsPanel({ encId, patientLanguage, letterhead }: { encId: string; patientLanguage?: string; letterhead: Letterhead | null }) {
   const t = useTheme();
   const qc = useQueryClient();
   const docs = useQuery({ queryKey: ['documents', encId], queryFn: () => getDocuments(encId), gcTime: 0 });
@@ -38,7 +40,7 @@ export function DocumentsPanel({ encId, patientLanguage }: { encId: string; pati
     <View style={{ gap: space.md }}>
       <SectionTitle>Documents</SectionTitle>
       {list.length === 0 && !docs.isPending ? <EmptyState message="No documents yet for this visit." /> : null}
-      {list.map((d) => <DocumentCard key={d.id} doc={d} onChanged={refresh} />)}
+      {list.map((d) => <DocumentCard key={d.id} doc={d} letterhead={letterhead} onChanged={refresh} />)}
 
       <Card title="New visit summary for the patient">
         <TextField label="Advice in your own words" value={advice} onChangeText={setAdvice} multiline />
@@ -64,13 +66,16 @@ export function DocumentsPanel({ encId, patientLanguage }: { encId: string; pati
   );
 }
 
-function DocumentCard({ doc, onChanged }: { doc: ClinicalDocument; onChanged: () => void }) {
+function DocumentCard({ doc, letterhead, onChanged }: { doc: ClinicalDocument; letterhead: Letterhead | null; onChanged: () => void }) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(doc.content);
   const save = useAction(() => editDocument(doc.id, text), () => { setEditing(false); onChanged(); });
   const approve = useAction(() => approveDocument(doc.id), onChanged);
   const draft = doc.status === 'DRAFT';
+  const html = letterhead ? documentHtml(doc, letterhead, letterhead.doctor) : null;
+  const share = useAction(async () => { if (html) await sharePdf(html, documentTitle(doc)); });
+  const print = useAction(async () => { if (html) await printHtml(html); });
   const [playing, setPlaying] = useState<Playback | null>(null);
   const listen = useAction(
     async () => playWav(await getDocumentSpeech(doc.id), () => setPlaying(null)),
@@ -109,6 +114,12 @@ function DocumentCard({ doc, onChanged }: { doc: ClinicalDocument; onChanged: ()
           />
         </View>
       ) : null}
+      {html ? (
+        <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+          <Button title="Share as PDF" variant="secondary" loading={share.pending} onPress={() => void share.run()} />
+          <Button title="Print" variant="secondary" loading={print.pending} onPress={() => void print.run()} />
+        </View>
+      ) : null}
       {canReadAloud(doc) ? (
         playing ? (
           <Button title="Stop" variant="secondary" onPress={() => { playing.stop(); setPlaying(null); }} />
@@ -116,7 +127,7 @@ function DocumentCard({ doc, onChanged }: { doc: ClinicalDocument; onChanged: ()
           <Button title="Listen" variant="secondary" loading={listen.pending} onPress={() => void listen.run()} />
         )
       ) : null}
-      {!draft ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Approved. Sending or printing is not built yet. Reading aloud uses the AI service and needs the patient's consent.</Text> : null}
+      {!draft ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Approved. Sharing and printing use this phone only; nothing is sent from the server. Reading aloud uses the AI service and needs the patient's consent.</Text> : null}
     </Card>
   );
 }

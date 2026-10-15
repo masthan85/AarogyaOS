@@ -7,6 +7,8 @@ import { type Prescription, type SafetyWarning, safetyWarningSchema } from '@/ap
 import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { parseNumber } from '@/domain/clinical';
+import { prescriptionHtml, type Letterhead } from '@/domain/print';
+import { printHtml, sharePdf } from '@/services/print';
 
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
@@ -14,7 +16,7 @@ import type { EncounterData } from './useEncounterData';
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'TOPICAL', 'INHALED', 'SUBLINGUAL', 'OTHER'] as const;
 const BLANK = { medicine_name: '', strength: '', dose: '', route: 'ORAL', frequency: '', days: '', instructions: '' };
 
-export function PrescriptionPanel({ encId, data }: { encId: string; data: EncounterData }) {
+export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; data: EncounterData; letterhead: Letterhead | null }) {
   const t = useTheme();
   const [f, setF] = useState(BLANK);
   const [items, setItems] = useState<RxItemInput[]>([]);
@@ -32,6 +34,8 @@ export function PrescriptionPanel({ encId, data }: { encId: string; data: Encoun
     setF(BLANK);
   };
   const save = useAction(() => createPrescription(encId, items), () => { setItems([]); done(); });
+  const share = useAction(async (html: string) => sharePdf(html, 'Prescription'));
+  const print = useAction(async (html: string) => printHtml(html));
   const void_ = useAction((id: string) => voidPrescription(id, 'Voided by doctor'), done);
 
   const sign = useAction(async (rx: Prescription, acknowledged: string[]) => {
@@ -74,6 +78,14 @@ export function PrescriptionPanel({ encId, data }: { encId: string; data: Encoun
           ) : null}
           {rx.status === 'DRAFT' && pending?.rxId !== rx.id ? (
             <Button title="Review and sign" loading={sign.pending} onPress={() => void sign.run(rx, [])} />
+          ) : null}
+          {rx.status === 'SIGNED' && letterhead ? (
+            <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+              <Button title="Share as PDF" variant="secondary" loading={share.pending}
+                onPress={() => { const h = prescriptionHtml(rx, letterhead); if (h) void share.run(h); }} />
+              <Button title="Print" variant="secondary" loading={print.pending}
+                onPress={() => { const h = prescriptionHtml(rx, letterhead); if (h) void print.run(h); }} />
+            </View>
           ) : null}
           {rx.status !== 'VOIDED' ? (
             <Button title={rx.status === 'SIGNED' ? 'Void prescription' : 'Discard draft'} variant="secondary"

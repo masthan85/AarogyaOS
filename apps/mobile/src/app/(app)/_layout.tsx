@@ -23,6 +23,12 @@ export default function AppLayout() {
       <Stack.Screen name="consultation/[id]" options={{ title: 'Consultation' }} />
       <Stack.Screen name="consent/[patientId]" options={{ title: 'Consent' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="admin/index" options={{ title: 'Administration' }} />
+      <Stack.Screen name="admin/policy" options={{ title: 'Organisation settings' }} />
+      <Stack.Screen name="admin/staff" options={{ title: 'Staff and doctors' }} />
+      <Stack.Screen name="admin/templates" options={{ title: 'Note layouts' }} />
+      <Stack.Screen name="admin/knowledge" options={{ title: 'Reference library' }} />
+      <Stack.Screen name="admin/activity" options={{ title: 'Usage and audit' }} />
     </Stack>
   );
 }

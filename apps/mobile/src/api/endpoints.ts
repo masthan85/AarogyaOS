@@ -5,6 +5,14 @@ import { secureTokenStore } from '@/services/token-store';
 
 import { ApiClient } from './client';
 import {
+  aiUsageSchema,
+  auditLogSchema,
+  knowledgeDocSchema,
+  orgPolicySchema,
+  practitionerFullSchema,
+  roleSchema,
+  speechUsageSchema,
+  userSchema,
   askSchema,
   documentSchema,
   templateSchema,
@@ -313,3 +321,57 @@ export const askChart = (patientId: string, question: string) =>
   api.request(`/patients/${patientId}/ai/ask`, askSchema, { method: 'POST', body: { question } });
 export const getDocumentSpeech = (id: string) =>
   api.requestBytes(`/summaries/${id}/speech`, { method: 'POST', body: {} });
+
+// ---- Administration --------------------------------------------------------------------------------
+
+export const getOrgPolicy = () => api.request('/organisations/current/policy', orgPolicySchema);
+export const saveOrgPolicy = (body: z.infer<typeof orgPolicySchema>) =>
+  api.request('/organisations/current/policy', orgPolicySchema, { method: 'PUT', body });
+export const installConsentWording = (language = 'en-IN') =>
+  api.request(`/consent-policies/install-templates${qs({ language })}`, z.array(policySchema), { method: 'POST', body: {} });
+
+export const getUsers = () => api.request('/users', z.array(userSchema));
+export const getRoles = () => api.request('/roles', z.array(roleSchema));
+export const createUser = (body: { email: string; full_name: string; password: string; roles: string[]; preferred_language?: string }) =>
+  api.request('/users', userSchema, { method: 'POST', body });
+export const deactivateUser = (id: string) => api.request(`/users/${id}/deactivate`, userSchema, { method: 'POST', body: {} });
+export const getPractitionersFull = () => api.request('/practitioners', z.array(practitionerFullSchema));
+export const createPractitioner = (body: {
+  user_id: string;
+  facility_id: string;
+  specialty: string;
+  registration_number?: string;
+  consultation_minutes?: number;
+}) => api.request('/practitioners', practitionerFullSchema, { method: 'POST', body });
+export const setWorkingHours = (id: string, hours: { weekday: number; start_time: string; end_time: string }[]) =>
+  api.request(`/practitioners/${id}/working-hours`, practitionerFullSchema, { method: 'PUT', body: { hours } });
+
+export type TemplateBody = {
+  name: string;
+  specialty?: string | null;
+  sections: { note_type: string; title: string; hint: string }[];
+  active: boolean;
+};
+export const getAllTemplates = () => api.request('/note-templates/all', z.array(templateSchema));
+export const createTemplate = (body: TemplateBody) => api.request('/note-templates', templateSchema, { method: 'POST', body });
+export const updateTemplate = (id: string, body: TemplateBody) =>
+  api.request(`/note-templates/${id}`, templateSchema, { method: 'PUT', body });
+
+export const getKnowledgeDocs = () => api.request('/knowledge/documents', z.array(knowledgeDocSchema));
+export const createKnowledgeDoc = (body: {
+  title: string;
+  publisher: string;
+  source: string;
+  version: string;
+  licence: string;
+  specialty?: string;
+  chunks: string[];
+}) => api.request('/knowledge/documents', knowledgeDocSchema, { method: 'POST', body });
+export const approveKnowledgeDoc = (id: string) =>
+  api.request(`/knowledge/documents/${id}/approve`, knowledgeDocSchema, { method: 'POST', body: {} });
+export const retireKnowledgeDoc = (id: string) =>
+  api.request(`/knowledge/documents/${id}/retire`, knowledgeDocSchema, { method: 'POST', body: {} });
+
+export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
+export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
+export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
