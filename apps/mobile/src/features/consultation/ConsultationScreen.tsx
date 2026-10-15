@@ -13,6 +13,7 @@ import { RecordingBar } from '@/features/recording/RecordingBar';
 import { useRecordingSession } from '@/features/recording/useRecordingSession';
 
 import { AssistPanel } from './AssistPanel';
+import { DocumentsPanel } from './DocumentsPanel';
 import { ContextPanel } from './ContextPanel';
 import { DiagnosisPanel } from './DiagnosisPanel';
 import { FinishPanel } from './FinishPanel';
@@ -22,7 +23,7 @@ import { OrdersPanel } from './OrdersPanel';
 import { PrescriptionPanel } from './PrescriptionPanel';
 import { type EncounterData, useEncounterData } from './useEncounterData';
 
-type Tab = 'context' | 'conversation' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'finish';
+type Tab = 'context' | 'conversation' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
 const TABS: { value: Tab; label: string }[] = [
   { value: 'context', label: 'Patient' },
   { value: 'conversation', label: 'Conversation' },
@@ -32,6 +33,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'orders', label: 'Tests' },
   { value: 'prescription', label: 'Prescription' },
   { value: 'followup', label: 'Follow-up' },
+  { value: 'documents', label: 'Documents' },
   { value: 'finish', label: 'Finish' },
 ];
 
@@ -53,7 +55,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
   const [ai, setAi] = useState(false);
   const rec = useRecordingSession({ patientId, encounterId: id, languageHint: data.patient?.preferred_language, ai });
   const canAssist = can(me, 'ai:review');
-  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && (x.value !== 'assist' || canAssist) && !(wide && x.value === 'context'));
+  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && (x.value !== 'assist' || canAssist) && (x.value !== 'documents' || can(me, 'summary:write')) && !(wide && x.value === 'context'));
   const [tab, setTab] = useState<Tab>(wide ? 'notes' : 'context');
   const closed = data.detail?.encounter.status === 'COMPLETED';
 
@@ -92,6 +94,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       {tab === 'orders' ? <OrdersPanel encId={id} data={data} /> : null}
       {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} /> : null}
       {tab === 'followup' ? <FollowUpPanel encId={id} data={data} /> : null}
+      {tab === 'documents' ? <DocumentsPanel encId={id} /> : null}
       {tab === 'finish' ? <FinishPanel encId={id} data={data} /> : null}
     </>
   );

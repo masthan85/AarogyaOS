@@ -42,3 +42,10 @@ migrations moved out of container start. **Open:** Redis hub for multi-container
 audio store + KMS, field-key rotation, PITR/WAL archiving and RPO/RTO targets, tracing and log shipping, dashboards and
 alerts, AI cost configuration, Kubernetes/Terraform, image build verification, TLS/WAF, login rate limiting, pen test,
 Expo SDK upgrade to clear audit findings, admin console, capacity test on a production-like stack.
+
+Added after the Dragon Copilot / MedASR review: note templates (organisation layouts, structure only), referral letters (code-built
+from the record, doctor-approved), cited chart question-and-answer with a no-AI keyword fallback.
+Considered and NOT built, with the reason: **coding suggestions** (ICD/SNOMED) need a licensed terminology service; **doctor dictation
+mode / MedASR** needs an evaluation on your English audio first (MedASR is English-only, trained on dictation) and a purpose-limited
+recording type; **AI-written notes or letters** (kept code-built on purpose for safety); **letter sending/printing/PDF**; **translation
+of summaries** (needs a translation provider); **radiology reporting**; **nurse flowsheet extraction** beyond the existing vitals.

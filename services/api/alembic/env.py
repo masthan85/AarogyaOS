@@ -14,6 +14,7 @@ import app.modules.ops.models
 import app.modules.patients.models
 import app.modules.scheduling.models
 import app.modules.summaries.models
+import app.modules.templates.models
 import app.modules.tenancy.models  # noqa: F401  (register tables)
 from app.core.config import get_settings
 from app.core.db import Base

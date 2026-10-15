@@ -158,6 +158,13 @@ class SummaryDraftIn(BaseModel):
     instructions: str | None = Field(default=None, max_length=2000)
 
 
+class LetterDraftIn(BaseModel):
+    recipient: str = Field(min_length=2, max_length=200)
+    reason: str = Field(min_length=3, max_length=1500)
+    # The doctor's own additional words, always included as written.
+    instructions: str | None = Field(default=None, max_length=2000)
+
+
 class SummaryEditIn(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
 
@@ -167,6 +174,8 @@ class SummaryOut(BaseModel):
 
     id: uuid.UUID
     encounter_id: uuid.UUID
+    kind: str
+    recipient: str | None
     version: int
     language: str
     content: str
@@ -176,3 +185,34 @@ class SummaryOut(BaseModel):
     approved_by: uuid.UUID | None
     approved_at: datetime | None
     created_at: datetime
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=3, max_length=300)
+
+
+class CitationOut(BaseModel):
+    ref: str
+    label: str
+    date: str | None = None
+
+
+class StatementOut(BaseModel):
+    text: str
+    citations: list[CitationOut]
+
+
+class MatchOut(BaseModel):
+    ref: str
+    text: str
+    date: str | None = None
+
+
+class AskOut(BaseModel):
+    # None when AI answering is off or unavailable; `matches` is a plain search and always present.
+    answer: list[StatementOut] | None
+    answered: bool
+    matches: list[MatchOut]
+    used_ai: bool
+    message: str | None = None
+    is_development: bool = False

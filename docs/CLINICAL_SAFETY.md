@@ -57,5 +57,14 @@ Hazard log (initial)
 | H36 | Cost or quota runaway | Per-session rate limit, hard timeout, per-call usage rows | Costs are NULL until a real price is configured |
 | H37 | Development extractor mistaken for a real model | Refused in production; `is_development` on every run; badge in the UI | Config discipline |
 
+## Templates, letters and chart questions
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H38 | A template puts words in a record the doctor did not write | Templates hold headings and hints only; nothing is pre-filled; each saved section is an ordinary doctor-entered note | A doctor can still type carelessly into a familiar layout |
+| H39 | A referral letter states a suspicion as a diagnosis, or hides uncertainty | Built by code from recorded data: certainty is printed with each diagnosis and allergy; unverified or patient-reported items are labelled; allergy status is always stated (none / unknown); doctor edits and approves; no model writes it | The letter reflects the record: wrong data in gives wrong letter out. Sending is not built, so a printed or copied letter has no further controls |
+| H40 | The chart answer invents or misattributes a fact | Answer comes only from listed chart entries; every statement must cite entries that exist, else it is dropped; "not found" instead of a guess; the matching entries are shown beside it; the model cannot claim actions | A cited entry can still be misread by the model; the clinician sees the cited source text and should check it |
+| H41 | Unreviewed AI output treated as chart fact | Candidates and suggestions are excluded from the searchable chart (tested) | — |
+| H42 | Stale or superseded entries answer a question | Only current, non-rejected versions are searched, each with its date | Very old entries are still returned if they match |
+
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

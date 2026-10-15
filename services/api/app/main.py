@@ -33,6 +33,7 @@ from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
+from app.modules.templates.router import router as templates_router
 from app.modules.tenancy.router import router as tenancy_router
 from app.speech.audio_store import LocalEncryptedAudioStore
 from app.speech.registry import register, unregister
@@ -111,6 +112,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         gateway_router,
         ai_router,
         summaries_router,
+        templates_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

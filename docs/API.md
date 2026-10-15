@@ -83,6 +83,10 @@ by the state machine but unused until consent/triage steps exist. Transitions ou
 
 | FHIR export | `GET /fhir/metadata`, `/fhir/Patient/{id}`, `/fhir/Encounter/{id}`, `/fhir/Encounter/{id}/$export-document` (see INTEROPERABILITY.md; `application/fhir+json`, errors as OperationOutcome) | `fhir:export`; encounter's doctor |
 
+| Note templates | `GET /note-templates` (built-in + organisation, active only), `GET /note-templates/all`, `POST /note-templates`, `PUT /note-templates/{id}` | read: `note:clinical`; write: `org:manage` |
+| Referral letters | `POST /encounters/{id}/letters` (draft); listing, `PUT /summaries/{id}` (edit) and `POST /summaries/{id}/approve` are shared with visit summaries, which carry a `kind` | `summary:write`; encounter's doctor |
+| Chart question | `POST /patients/{id}/ai/ask` `{question}` -> cited answer (when AI is on and consented) plus matching entries (always) | `ai:suggestions` + `patient:clinical` |
+
 Errors of note: `409 consent_required` carries `missing: [...]`; `503` when the speech provider is unavailable. AI endpoints report an unavailable model as `200 {status: FAILED, message}` rather than an error, so a client never treats it as a failed save.
 
 Removed from Phase 2: `POST /appointments/{id}/start-consultation` and `/complete` and the `queue:call` permission,

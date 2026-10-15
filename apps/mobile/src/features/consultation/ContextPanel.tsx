@@ -5,6 +5,7 @@ import { AlertBanner, Card, SectionTitle, StatusChip } from '@/design-system/com
 import { space, useTheme } from '@/design-system/tokens';
 import { formatVital, interpretationLabel, interpretationTone, VITAL_LABELS } from '@/domain/clinical';
 
+import { AskChartCard } from './AskChartCard';
 import { FactRow } from './FactRow';
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
@@ -22,6 +23,7 @@ export function ContextPanel({ data }: { data: EncounterData }) {
   return (
     <View style={{ gap: space.md }}>
       {s.alerts.map((a) => <AlertBanner key={a.code + a.message} level={a.level} message={a.message} />)}
+      {data.detail ? <AskChartCard patientId={data.detail.encounter.patient_id} /> : null}
 
       <SectionTitle>Allergies</SectionTitle>
       <Card>

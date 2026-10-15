@@ -8,11 +8,13 @@ from app.ai.knowledge import NotAvailable
 from app.core.context import Principal
 from app.core.deps import SettingsDep, TenantDb, require
 from app.core.errors import Conflict, Forbidden
-from app.modules.ai import extraction, knowledge_service, review, suggestions
+from app.modules.ai import chartqa, extraction, knowledge_service, review, suggestions
 from app.modules.ai.models import AiUsage
 from app.modules.ai.schemas import (
     AiUsageRow,
     AnalyseOut,
+    AskIn,
+    AskOut,
     CandidateOut,
     GenerateOut,
     KnowledgeDocIn,
@@ -198,3 +200,15 @@ def ai_usage(
         )
         for r in rows
     ]
+
+
+@router.post("/patients/{patient_id}/ai/ask", response_model=AskOut)
+def ask_chart(
+    patient_id: uuid.UUID,
+    body: AskIn,
+    db: TenantDb,
+    principal: Annotated[Principal, Depends(require("ai:suggestions"))],
+    _chart: Annotated[Principal, Depends(require("patient:clinical"))],
+    settings: SettingsDep,
+) -> AskOut:
+    return chartqa.ask(db, principal, settings, patient_id, body.question)

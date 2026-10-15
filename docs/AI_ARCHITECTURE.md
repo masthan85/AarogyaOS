@@ -94,6 +94,14 @@ instructions. Unreviewed AI output is never included. Translation goes through `
 none connected the summary stays in the clinician's language and is marked `NOT_AVAILABLE`. A doctor edits
 and approves; an approved summary is frozen by a trigger and superseded by newer approvals.
 
+## Chart question and answer
+`POST /patients/{id}/ai/ask` (`app/modules/ai/chartqa.py`). The chart is flattened into citable entries (current, non-rejected
+diagnoses, allergies, medicines, vitals, notes, results, signed prescriptions, pending follow-ups; never AI candidates or
+suggestions). The model sees the question and those entries without the patient's name. Its JSON answer is vetted: each
+statement needs citations that exist, anything claiming an action is dropped, and if nothing survives the reply is "could not
+be answered from the recorded chart". A keyword search over the same entries is always returned, so the feature works with AI
+off, unconsented or failing. Rate-limited per user; audited (no question text) and metered like other AI calls.
+
 ## Control of automation
 Per organisation: `ai_processing_enabled`, `ai_suggestions_enabled`, `ai_suggestions_require_source`.
 Per session: `ai_processing` (needs the separate AI_PROCESSING consent, re-checked on every run). Per run:
