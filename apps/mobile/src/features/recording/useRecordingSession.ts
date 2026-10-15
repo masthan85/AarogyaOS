@@ -13,8 +13,8 @@ import {
 } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
 import type { Interaction, Segment, Transcript } from '@/api/schemas';
-import { describeClose, mergeSegments, type Phase, recordingIndicator } from '@/domain/recording';
-import { type AudioCapture, CaptureUnavailableError, createCapture, simulatedAudioAllowed } from '@/services/audio/capture';
+import { describeClose, describeInterruption, mergeSegments, type Phase, recordingIndicator } from '@/domain/recording';
+import { type AudioCapture, CaptureUnavailableError, captureKind, createCapture } from '@/services/audio/capture';
 import { GatewayClient, GatewayRefused, toWebSocketUrl } from '@/services/audio/gateway';
 
 type Options = {
@@ -50,6 +50,7 @@ export function useRecordingSession(opts: Options) {
   const idRef = useRef<string | null>(null);
   const pathRef = useRef<string | null>(null);
   const lastSeq = useRef(0);
+  const pauseRef = useRef<() => Promise<void>>(async () => undefined);
 
   const move = useCallback((next: Phase) => {
     phaseRef.current = next;
@@ -88,12 +89,21 @@ export function useRecordingSession(opts: Options) {
       gateway.current = client;
       await client.connect();
       setConnected(true);
-      await cap.start((frame) => {
-        if (!client.sendAudio(frame)) {
+      await cap.start(
+        (frame) => {
+          if (!client.sendAudio(frame)) {
+            setCapturing(false);
+            setConnected(false);
+          }
+        },
+        (reason) => {
+          // The OS took the microphone (a call, another app). Say so at once and pause: the
+          // session must not keep claiming to record audio that is no longer being captured.
           setCapturing(false);
-          setConnected(false);
-        }
-      });
+          setMessage(describeInterruption(reason));
+          void pauseRef.current();
+        },
+      );
       setCapturing(true);
     },
     [move],
@@ -150,6 +160,8 @@ export function useRecordingSession(opts: Options) {
       setMessage(e instanceof ApiError ? e.message : 'Could not pause on the server; it will pause itself shortly.');
     }
   }, [move, teardownStream]);
+
+  pauseRef.current = pause;
 
   const resume = useCallback(async () => {
     const id = idRef.current;
@@ -266,7 +278,7 @@ export function useRecordingSession(opts: Options) {
   return {
     phase, interaction, segments, speakers, partial, message, seconds, indicator,
     begin, pause, resume, stop, assignRole, adopt,
-    captureKind: simulatedAudioAllowed() ? ('simulated' as const) : ('microphone' as const),
+    captureKind: captureKind(),
   };
 }
 export type RecordingSession = ReturnType<typeof useRecordingSession>;

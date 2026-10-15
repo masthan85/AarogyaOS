@@ -80,7 +80,8 @@ replace it in Phase 7 (ADR-0009). Minimum similarity applies, so irrelevant mate
 |---|---|
 | `development` LLM (lexicon extractor, deliberately naive) | built; refused in production; exists to exercise the guardrails |
 | `development` embeddings (feature hashing; lexical, not semantic) | built; refused in production |
-| Any real LLM (Anthropic, OpenAI, Azure OpenAI, Google, self-hosted) | **not built.** Needs a data-processing agreement, a residency decision and an eval run first |
+| `anthropic` LLM (Claude, official SDK, `app/ai/anthropic_llm.py`) | **built, not run against the real API.** Enabled by `AAROGYA_LLM_PROVIDER=anthropic` + `AAROGYA_ANTHROPIC_API_KEY`; default model `claude-opus-5-5` (`AAROGYA_ANTHROPIC_MODEL`). Refusals and truncated answers are errors; no sampling parameters are sent (the current models reject them). Needs, before patient data: a signed data-processing agreement, a residency decision and an eval run |
+| OpenAI, Azure OpenAI, Google, self-hosted LLM | **not built** |
 | Real embeddings, translation, terminology (SNOMED/ICD/LOINC), medication knowledge | **not built**; the Null providers raise `NotAvailable` and the UI says so |
 
 An unconfigured or failing provider yields "AI assistance is unavailable, carry on documenting manually".
@@ -92,6 +93,14 @@ diagnoses (confirmed or provisional, doctor-entered or clinician-confirmed) and 
 instructions. Unreviewed AI output is never included. Translation goes through `TranslationProvider`; with
 none connected the summary stays in the clinician's language and is marked `NOT_AVAILABLE`. A doctor edits
 and approves; an approved summary is frozen by a trigger and superseded by newer approvals.
+
+## Chart question and answer
+`POST /patients/{id}/ai/ask` (`app/modules/ai/chartqa.py`). The chart is flattened into citable entries (current, non-rejected
+diagnoses, allergies, medicines, vitals, notes, results, signed prescriptions, pending follow-ups; never AI candidates or
+suggestions). The model sees the question and those entries without the patient's name. Its JSON answer is vetted: each
+statement needs citations that exist, anything claiming an action is dropped, and if nothing survives the reply is "could not
+be answered from the recorded chart". A keyword search over the same entries is always returned, so the feature works with AI
+off, unconsented or failing. Rate-limited per user; audited (no question text) and metered like other AI calls.
 
 ## Control of automation
 Per organisation: `ai_processing_enabled`, `ai_suggestions_enabled`, `ai_suggestions_require_source`.

@@ -7,6 +7,7 @@ from app.ai.schemas import ExtractionEnvelope, SuggestionEnvelope
 
 EXTRACTION_VERSION = "extract-v1"
 SUGGESTION_VERSION = "suggest-v1"
+CHART_QA_VERSION = "chartqa-v1"
 
 _COMMON = (
     "You support a licensed clinician. You never diagnose, prescribe, order or decide; you only "
@@ -58,5 +59,26 @@ def render_suggestions(payload: dict[str, Any]) -> tuple[str, str]:
         f"allowed_categories: {payload['allowed_categories']}\n"
         f"<patient_context>\n{json.dumps(payload['context'], ensure_ascii=False)}\n</patient_context>\n"
         f"<reference_passages>\n{json.dumps(payload['knowledge'], ensure_ascii=False)}\n</reference_passages>"
+    )
+    return system, prompt
+
+
+def render_chart_qa(payload: dict[str, Any]) -> tuple[str, str]:
+    system = (
+        _COMMON
+        + " Task: answer a clinician's question about ONE patient using only the chart entries given.\n"
+        "Rules:\n"
+        "1. Every statement must be supported by at least one chart entry; cite the entry ids in refs. "
+        "Cite only ids that appear in the chart entries.\n"
+        "2. If the chart does not contain the answer, return an empty statements list. Never guess, "
+        "never use outside knowledge, never fill gaps.\n"
+        "3. Report what is recorded, with its date. Do not diagnose, recommend, prescribe or predict, "
+        "and do not say that anything has been done or ordered.\n"
+        "4. Keep each statement short and factual.\n"
+        'Schema: {"statements": [{"text": str, "refs": [str]}]}'
+    )
+    prompt = (
+        f"<question>{payload['question']}</question>\n"
+        f"<chart>\n{json.dumps(payload['items'], ensure_ascii=False)}\n</chart>"
     )
     return system, prompt

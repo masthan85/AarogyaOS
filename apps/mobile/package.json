@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.23",
     "@hookform/resolvers": "^5.9.1",
+    "@siteed/audio-studio": "3.2.1",
     "@tanstack/react-query": "^5.104.2",
     "expo": "~57.0.28",
     "expo-constants": "~57.0.21",

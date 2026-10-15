@@ -5,6 +5,9 @@ import { secureTokenStore } from '@/services/token-store';
 
 import { ApiClient } from './client';
 import {
+  askSchema,
+  documentSchema,
+  templateSchema,
   analyseSchema,
   generateSchema,
   reviewBundleSchema,
@@ -290,3 +293,21 @@ export const actOnSuggestion = (
   id: string,
   body: { action: 'accept' | 'edit' | 'reject' | 'dismiss'; title?: string; explanation?: string; reason?: string },
 ) => api.request(`/ai/suggestions/${id}/action`, suggestionActionSchema, { method: 'POST', body });
+
+// ---- Templates, documents, chart questions -----------------------------------------------------
+
+export const getNoteTemplates = () => api.request('/note-templates', z.array(templateSchema));
+export const getDocuments = (encId: string) =>
+  api.request(`/encounters/${encId}/summaries`, z.array(documentSchema));
+export const draftVisitSummary = (encId: string, body: { instructions?: string; language?: string }) =>
+  api.request(`/encounters/${encId}/summaries`, documentSchema, { method: 'POST', body });
+export const draftReferralLetter = (
+  encId: string,
+  body: { recipient: string; reason: string; instructions?: string },
+) => api.request(`/encounters/${encId}/letters`, documentSchema, { method: 'POST', body });
+export const editDocument = (id: string, content: string) =>
+  api.request(`/summaries/${id}`, documentSchema, { method: 'PUT', body: { content } });
+export const approveDocument = (id: string) =>
+  api.request(`/summaries/${id}/approve`, documentSchema, { method: 'POST', body: {} });
+export const askChart = (patientId: string, question: string) =>
+  api.request(`/patients/${patientId}/ai/ask`, askSchema, { method: 'POST', body: { question } });

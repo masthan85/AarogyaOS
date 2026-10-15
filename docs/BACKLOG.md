@@ -17,15 +17,15 @@ FHIR mapping of the clinical record.
 P4 Speech (done, provider-independent): consent (8 purposes, versioned wording, guardians), recording sessions,
 authenticated audio gateway, SpeechProvider + registry + fallback + development provider, immutable transcripts
 with language/code-switch/speaker metadata, speaker assignment, audio retention + purge, usage metering, speech
-eval tools, mobile consent/recording UI. **Open:** Sarvam adapter (needs live API docs + key), native microphone
+eval tools, mobile consent/recording UI. Sarvam adapter built from the vendor SDK (fake-server tested; live run pending). Microphone streaming module integrated (fake-backend tested; device test plan written). **Open:** device run of the microphone
 streaming module + device tests, real-language evaluation set, Redis for multi-worker partials/guards, scheduled
 purge job, legal review of consent wording, transcript text-correction layer.
 P4 (original scope): consent, sessions, audio capture, gateway, SpeechProvider, Sarvam adapter
 (after verification), diarisation, transcript UI, speaker correction.
 P5 AI (done, provider-independent): extraction with guardrails, review queue, accept/edit/reject into facts with
 provenance, deterministic and model suggestions, approved-knowledge retrieval with two-person approval, patient
-summary, usage metering, evaluation harness, mobile Assist tab. **Open:** a real LLM adapter (needs DPA, residency
-decision and a clinician-labelled eval set first), real embeddings and pgvector, translation provider, terminology
+summary, usage metering, evaluation harness, mobile Assist tab. Anthropic adapter built (stub-tested, not run live). **Open:** run the LLM adapter live, DPA, residency
+decision and a clinician-labelled eval set, real embeddings and pgvector, translation provider, terminology
 service, medication knowledge provider (interactions/contraindications/dose), consultation summary and
 patient-summary drafting by model, differential/medication suggestions evaluated against clinician-labelled cases,
 automatic prompt-injection test corpus, per-category suggestion thresholds, mobile jest/UI tests for the Assist
@@ -42,3 +42,10 @@ migrations moved out of container start. **Open:** Redis hub for multi-container
 audio store + KMS, field-key rotation, PITR/WAL archiving and RPO/RTO targets, tracing and log shipping, dashboards and
 alerts, AI cost configuration, Kubernetes/Terraform, image build verification, TLS/WAF, login rate limiting, pen test,
 Expo SDK upgrade to clear audit findings, admin console, capacity test on a production-like stack.
+
+Added after the Dragon Copilot / MedASR review: note templates (organisation layouts, structure only), referral letters (code-built
+from the record, doctor-approved), cited chart question-and-answer with a no-AI keyword fallback.
+Considered and NOT built, with the reason: **coding suggestions** (ICD/SNOMED) need a licensed terminology service; **doctor dictation
+mode / MedASR** needs an evaluation on your English audio first (MedASR is English-only, trained on dictation) and a purpose-limited
+recording type; **AI-written notes or letters** (kept code-built on purpose for safety); **letter sending/printing/PDF**; **translation
+of summaries** (needs a translation provider); **radiology reporting**; **nurse flowsheet extraction** beyond the existing vitals.

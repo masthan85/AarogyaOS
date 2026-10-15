@@ -60,6 +60,9 @@ risk flags; only the review columns can change, and only once), `ai_suggestions`
 retirement columns change) + `knowledge_chunks` (embeddings as float arrays), `patient_summaries` (versioned;
 approved rows are frozen and may only become SUPERSEDED). Immutability is enforced by triggers, not only by code.
 
+## Templates and letters
+`note_templates` (tenant-scoped, forced RLS): an organisation's note layouts, as ordered sections that name a note type, a heading and a hint. Structure only; no pre-filled text. `patient_summaries` gained `kind` (`VISIT_SUMMARY` | `REFERRAL_LETTER`) and `recipient`; versions and supersession are per kind (and per recipient for letters), and the frozen-once-approved trigger covers both.
+
 ## Clinical fact mixin
 `source`, `verification_state`, `certainty`, `recorded_by`, `recorded_at`,
 `evidence_segment_ids`, `supersedes_id`.

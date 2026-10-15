@@ -69,6 +69,8 @@ class DevelopmentLLMProvider:
             body = self._extract(request.payload)
         elif request.task == "suggestions":
             body = self._suggest(request.payload)
+        elif request.task == "chart_qa":
+            body = self._chart_qa(request.payload)
         else:
             body = {}
         text = json.dumps(body, ensure_ascii=False)
@@ -146,6 +148,18 @@ class DevelopmentLLMProvider:
                         }
                     )
         return {"candidates": out}
+
+    @staticmethod
+    def _chart_qa(payload: dict[str, Any]) -> dict[str, Any]:
+        """Naive on purpose: returns the two entries sharing the most words with the question."""
+        words = set(re.findall(r"[a-z0-9]{3,}", payload["question"].casefold()))
+        scored = []
+        for item in payload["items"]:
+            overlap = len(words & set(re.findall(r"[a-z0-9]{3,}", item["text"].casefold())))
+            if overlap:
+                scored.append((overlap, item))
+        scored.sort(key=lambda t: -t[0])
+        return {"statements": [{"text": i["text"], "refs": [i["ref"]]} for _, i in scored[:2]]}
 
     @staticmethod
     def _suggest(payload: dict[str, Any]) -> dict[str, Any]:

@@ -8,10 +8,7 @@ from app.speech.provider import ProviderNotAvailable, SpeechProvider
 # verified. Names listed in PENDING give a precise error instead of a silent fallback.
 _FACTORIES: dict[str, Callable[[], SpeechProvider]] = {DEV_NAME: DevelopmentSpeechProvider}
 PENDING: dict[str, str] = {
-    "sarvam": (
-        "The Sarvam adapter has not been built: its request/response schemas could not be read "
-        "from the official documentation. See docs/SPEECH_ARCHITECTURE.md for the checklist."
-    ),
+    "sarvam": "Sarvam is built but not configured: set AAROGYA_SARVAM_API_KEY.",
     "azure": "No Azure Speech adapter has been built yet.",
     "google": "No Google Speech adapter has been built yet.",
     "deepgram": "No Deepgram adapter has been built yet.",
@@ -22,6 +19,10 @@ PENDING: dict[str, str] = {
 
 def register(name: str, factory: Callable[[], SpeechProvider]) -> None:
     _FACTORIES[name] = factory
+
+
+def unregister(name: str) -> None:
+    _FACTORIES.pop(name, None)
 
 
 def get_provider(name: str, *, environment: str) -> SpeechProvider:

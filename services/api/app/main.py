@@ -5,6 +5,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.ai.anthropic_llm import AnthropicLLMProvider
+from app.ai.registry import register as register_llm
+from app.ai.registry import unregister as unregister_llm
 from app.core.config import Settings, get_settings
 from app.core.crypto import FieldCrypto
 from app.core.db import create_db_engine, create_sessionmaker
@@ -30,8 +33,11 @@ from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
+from app.modules.templates.router import router as templates_router
 from app.modules.tenancy.router import router as tenancy_router
 from app.speech.audio_store import LocalEncryptedAudioStore
+from app.speech.registry import register, unregister
+from app.speech.sarvam import SarvamSpeechProvider
 
 API_PREFIX = "/api/v1"
 
@@ -48,6 +54,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.settings = settings
+    llm_key = settings.anthropic_api_key.get_secret_value()
+    if llm_key:
+        register_llm(
+            "anthropic",
+            lambda: AnthropicLLMProvider(
+                llm_key,
+                model=settings.anthropic_model,
+                timeout_seconds=settings.llm_timeout_seconds,
+            ),
+        )
+    else:
+        unregister_llm("anthropic")
+    key = settings.sarvam_api_key.get_secret_value()
+    if key:
+        register(
+            "sarvam",
+            lambda: SarvamSpeechProvider(
+                key, model=settings.sarvam_model, mode=settings.sarvam_mode, url=settings.sarvam_url
+            ),
+        )
+    else:
+        unregister("sarvam")
     app.state.engine = engine
     app.state.crypto = FieldCrypto(settings.field_encryption_key)
     app.state.audio_store = LocalEncryptedAudioStore(settings.audio_store_path, app.state.crypto)
@@ -84,6 +112,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         gateway_router,
         ai_router,
         summaries_router,
+        templates_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

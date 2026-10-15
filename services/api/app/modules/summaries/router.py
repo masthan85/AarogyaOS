@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.context import Principal
 from app.core.deps import TenantDb, require
-from app.modules.ai.schemas import SummaryDraftIn, SummaryEditIn, SummaryOut
+from app.modules.ai.schemas import LetterDraftIn, SummaryDraftIn, SummaryEditIn, SummaryOut
 from app.modules.summaries import service
 
 router = APIRouter(tags=["patient-summary"])
@@ -19,6 +19,16 @@ def draft(
     principal: Annotated[Principal, Depends(require("summary:write"))],
 ) -> SummaryOut:
     return service.draft(db, principal, encounter_id, body)
+
+
+@router.post("/encounters/{encounter_id}/letters", response_model=SummaryOut, status_code=201)
+def draft_letter(
+    encounter_id: uuid.UUID,
+    body: LetterDraftIn,
+    db: TenantDb,
+    principal: Annotated[Principal, Depends(require("summary:write"))],
+) -> SummaryOut:
+    return service.draft_letter(db, principal, encounter_id, body)
 
 
 @router.get("/encounters/{encounter_id}/summaries", response_model=list[SummaryOut])

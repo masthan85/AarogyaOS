@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEV_SECRET = "dev-only-secret-change-me-dev-only-secret"  # noqa: S105
@@ -29,10 +29,18 @@ class Settings(BaseSettings):
     max_request_bytes: int = Field(default=5_000_000, ge=10_000, le=50_000_000)
     # Speech. No default provider in production: a deployment must choose one deliberately.
     llm_provider: str = ""
+    # Anthropic (Claude), official SDK (app/ai/anthropic_llm.py). Registered only with a key.
+    anthropic_api_key: SecretStr = SecretStr("")
+    anthropic_model: str = "claude-opus-5-5"
     embedding_provider: str = ""
-    llm_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
+    llm_timeout_seconds: float = Field(default=60.0, gt=0, le=120)
     ai_analyses_per_minute: int = Field(default=6, ge=1, le=60)
     speech_provider: str = ""
+    # Sarvam AI streaming speech-to-text (see app/speech/sarvam.py). Registered only with a key.
+    sarvam_api_key: SecretStr = SecretStr("")
+    sarvam_model: str = "saaras:v4"
+    sarvam_mode: Literal["transcribe", "verbatim", "translit", "codemix"] = "transcribe"
+    sarvam_url: str = "wss://api.sarvam.ai/speech-to-text/ws"
     speech_fallback_provider: str = ""
     speech_monitor_interval_seconds: float = Field(default=2.0, gt=0, le=30)
     speech_max_session_seconds: int = Field(default=3600, ge=60, le=14400)
@@ -48,6 +56,8 @@ class Settings(BaseSettings):
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")
+            if not self.sarvam_url.startswith("wss://"):
+                raise ValueError("AAROGYA_SARVAM_URL must be a wss:// URL in production")
             if "*" in self.cors_origins:
                 raise ValueError("AAROGYA_CORS_ORIGINS must list origins explicitly in production")
             if self.database_url.startswith("postgresql+psycopg://aarogya_app:aarogya_app@"):

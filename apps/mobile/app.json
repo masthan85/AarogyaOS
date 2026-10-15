@@ -20,7 +20,12 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "in.aarogyaos.app",
-      "allowBackup": false
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,6 +48,18 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "Allow AarogyaOS to unlock with Face ID."
+        }
+      ],
+      [
+        "@siteed/audio-studio",
+        {
+          "enablePhoneStateHandling": false,
+          "enableNotifications": false,
+          "enableBackgroundAudio": false,
+          "enableDeviceDetection": false,
+          "iosConfig": {
+            "microphoneUsageDescription": "AarogyaOS records a consultation only when the doctor presses Start and the patient has consented. It stops when the doctor presses Stop."
+          }
         }
       ]
     ],

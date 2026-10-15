@@ -34,4 +34,4 @@ reachable; otherwise pin to `~57.0.0` for `expo-*` packages.
 production). To exercise the real WebSocket stack end to end against a running server:
 `python scripts/smoke_recording.py http://127.0.0.1:8765` (see the script header). Schedule
 `python -m app.cli purge-audio` wherever audio retention is enabled. In dev builds the app uses simulated audio
-(`EXPO_PUBLIC_SIMULATED_AUDIO=1` enables it in other builds); real microphone streaming is not implemented.
+(`EXPO_PUBLIC_SIMULATED_AUDIO=1` enables it in other builds). Set `EXPO_PUBLIC_USE_MICROPHONE=1` in a development or release build (not Expo Go) to use the real microphone, which is unit-tested but has never run on a device: see DEVICE_TEST_PLAN.md. Real speech and LLM providers need `AAROGYA_SARVAM_API_KEY` / `AAROGYA_ANTHROPIC_API_KEY` (see `.env.example`).

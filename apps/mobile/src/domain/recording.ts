@@ -98,3 +98,17 @@ export function missingForRecording(status: PurposeStatus[], ai: boolean): strin
   const need = ['AUDIO_RECORDING', 'SPEECH_TRANSCRIPTION', ...(ai ? ['AI_PROCESSING'] : [])];
   return need.filter((p) => !status.find((s) => s.purpose === p)?.active);
 }
+
+/** Plain-language reason the microphone was taken, shown when a recording pauses itself. */
+export function describeInterruption(reason: string): string {
+  switch (reason) {
+    case 'phoneCall':
+      return 'Recording paused: a phone call used the microphone. Resume when the call ends.';
+    case 'audioFocusLoss':
+      return 'Recording paused: another app took the microphone. Resume when it is free.';
+    case 'deviceDisconnected':
+      return 'Recording paused: the microphone was disconnected.';
+    default:
+      return 'Recording paused: the microphone stopped. Nothing is being recorded.';
+  }
+}

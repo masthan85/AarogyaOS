@@ -428,3 +428,46 @@ export type Analyse = z.infer<typeof analyseSchema>;
 export type Candidate = z.infer<typeof candidateSchema>;
 export type Suggestion = z.infer<typeof suggestionSchema>;
 export type ReviewBundle = z.infer<typeof reviewBundleSchema>;
+
+// ---- Note templates, documents (summaries and referral letters), chart questions --------------
+
+export const templateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  specialty: z.string().nullable(),
+  sections: z.array(z.object({ note_type: z.string(), title: z.string(), hint: z.string() })),
+  active: z.boolean(),
+  builtin: z.boolean(),
+});
+export const documentSchema = z.object({
+  id: z.string(),
+  encounter_id: z.string(),
+  kind: z.string(),
+  recipient: z.string().nullable(),
+  version: z.number(),
+  language: z.string(),
+  content: z.string(),
+  source_content: z.string(),
+  translation_status: z.string(),
+  status: z.string(),
+  approved_at: z.string().nullable(),
+  created_at: z.string(),
+});
+export const askSchema = z.object({
+  answer: z
+    .array(
+      z.object({
+        text: z.string(),
+        citations: z.array(z.object({ ref: z.string(), label: z.string(), date: z.string().nullable().optional() })),
+      }),
+    )
+    .nullable(),
+  answered: z.boolean(),
+  matches: z.array(z.object({ ref: z.string(), text: z.string(), date: z.string().nullable().optional() })),
+  used_ai: z.boolean(),
+  message: z.string().nullable().optional(),
+  is_development: z.boolean(),
+});
+export type NoteTemplate = z.infer<typeof templateSchema>;
+export type ClinicalDocument = z.infer<typeof documentSchema>;
+export type AskResult = z.infer<typeof askSchema>;

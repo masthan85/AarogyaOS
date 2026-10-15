@@ -91,7 +91,7 @@ def test_dev_provider_is_honest_about_what_it_cannot_do() -> None:
 
 
 def test_registry_refuses_unbuilt_unknown_and_production_dev_providers() -> None:
-    with pytest.raises(ProviderNotAvailable, match="could not be read"):
+    with pytest.raises(ProviderNotAvailable, match="not configured"):
         get_provider("sarvam", environment="production")
     assert "sarvam" in PENDING
     with pytest.raises(ProviderNotAvailable, match="Unknown"):
