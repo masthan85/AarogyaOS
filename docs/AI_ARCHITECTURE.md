@@ -120,3 +120,9 @@ fixtures are three small synthetic cases and the development extractor was writt
 perfect score only shows the harness works.** Real evaluation needs clinician-labelled transcripts in the
 languages served. Suggestion quality (unsafe / unsupported rate) has no gold set yet; at runtime every
 dropped suggestion is counted. Acceptance rate is recorded but must never be optimised on its own.
+
+## Self-hosted model (optional)
+
+`AAROGYA_LLM_PROVIDER=self_hosted` with `AAROGYA_SELF_HOSTED_LLM_URL` and `AAROGYA_SELF_HOSTED_LLM_MODEL` sends the assistant's prompts to a model you run (vLLM, Ollama, llama.cpp server or anything speaking the chat-completions interface) instead of a vendor. Only that address is contacted: `https`, or plain `http` for localhost or a private-network address (a public address over `http` is refused at start-up). The same organisation switch and patient AI-processing consent apply, and every guardrail still runs on the output: strict JSON, schema checks, exact-quote grounding, hedging and negation rules, and clinician review.
+
+Built against a fake server only. Which model to use is open: judge any candidate on clinician-labelled Telugu, Hindi, Urdu and English transcripts (`app/ai/eval.py`) before using it with patients. `AAROGYA_SELF_HOSTED_LLM_JSON_MODE=true` asks the server for JSON-only output; turn it on only if your server supports it. It lowers malformed replies but does not make a reply correct.

@@ -7,6 +7,7 @@ import { type Prescription, type SafetyWarning, safetyWarningSchema } from '@/ap
 import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { itemsFromPrescription, parseNumber } from '@/domain/clinical';
+import { parseFrequency } from '@/domain/dosing';
 import { prescriptionHtml, type Letterhead } from '@/domain/print';
 import { printHtml, sharePdf } from '@/services/print';
 
@@ -58,6 +59,7 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
   }, done);
 
   const prescriptions = data.detail?.prescriptions ?? [];
+  const reading = parseFrequency(f.frequency);
   const valid = f.medicine_name.trim().length >= 2 && f.dose.trim() && f.frequency.trim();
 
   return (
@@ -121,6 +123,15 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
           <View style={{ flex: 2 }}><TextField label="How often" placeholder="twice daily" value={f.frequency} onChangeText={(v) => setF({ ...f, frequency: v })} /></View>
           <View style={{ flex: 1 }}><TextField label="Days" keyboardType="number-pad" value={f.days} onChangeText={(v) => setF({ ...f, days: v })} /></View>
         </View>
+ 
+        {reading ? (
+          <View style={{ gap: space.xs }}>
+            <Text style={{ color: t.textMuted }}>
+              Reads as: {reading.text}.{reading.changesDose ? ' The amount differs from one dose at each time: check the dose above.' : ''}
+            </Text>
+            {reading.text !== f.frequency ? <Button title="Write it out in words" variant="secondary" onPress={() => setF({ ...f, frequency: reading.text })} /> : null}
+          </View>
+        ) : null}
         <TextField label="Instructions" value={f.instructions} onChangeText={(v) => setF({ ...f, instructions: v })} />
         <Button title="Add medicine to prescription" variant="secondary" disabled={!valid} onPress={addItem} />
         {editing ? <Button title="Stop editing" variant="secondary" onPress={() => { setEditing(null); setItems([]); }} /> : null}

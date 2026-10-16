@@ -16,7 +16,10 @@ PENDING: dict[str, str] = {
     "openai": "No OpenAI adapter has been built yet.",
     "azure_openai": "No Azure OpenAI adapter has been built yet.",
     "google": "No Google adapter has been built yet.",
-    "self_hosted": "No self-hosted model adapter has been built yet.",
+    "self_hosted": (
+        "The self-hosted model is built but not configured: set AAROGYA_SELF_HOSTED_LLM_URL "
+        "and AAROGYA_SELF_HOSTED_LLM_MODEL."
+    ),
 }
 
 

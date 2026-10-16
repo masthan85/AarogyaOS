@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Anthropic (Claude), official SDK (app/ai/anthropic_llm.py). Registered only with a key.
     anthropic_api_key: SecretStr = SecretStr("")
     anthropic_model: str = "claude-opus-5-5"
+    # A model you run yourself (vLLM, Ollama, ...): app/ai/self_hosted.py. Off without an address.
+    self_hosted_llm_url: str = ""
+    self_hosted_llm_model: str = ""
+    self_hosted_llm_api_key: SecretStr = SecretStr("")
+    self_hosted_llm_json_mode: bool = False
     embedding_provider: str = ""
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=120)
     ai_analyses_per_minute: int = Field(default=6, ge=1, le=60)
@@ -66,6 +71,14 @@ class Settings(BaseSettings):
             self.speech_provider = self.speech_provider or "development"
             self.llm_provider = self.llm_provider or "development"
             self.embedding_provider = self.embedding_provider or "development"
+        if self.self_hosted_llm_url:
+            from app.ai.self_hosted import address_problem
+
+            problem = address_problem(self.self_hosted_llm_url)
+            if problem:
+                raise ValueError(f"AAROGYA_SELF_HOSTED_LLM_URL {problem}")
+            if not self.self_hosted_llm_model:
+                raise ValueError("AAROGYA_SELF_HOSTED_LLM_MODEL is required with a model address")
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")

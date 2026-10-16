@@ -9,6 +9,7 @@ from app.ai.anthropic_llm import AnthropicLLMProvider
 from app.ai.registry import register as register_llm
 from app.ai.registry import unregister as unregister_llm
 from app.ai.sarvam import SarvamLLMProvider
+from app.ai.self_hosted import SelfHostedLLMProvider
 from app.core.config import Settings, get_settings
 from app.core.crypto import crypto_from_settings
 from app.core.db import create_db_engine, create_sessionmaker
@@ -70,6 +71,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     else:
         unregister_llm("anthropic")
+    if settings.self_hosted_llm_url:
+        register_llm(
+            "self_hosted",
+            lambda: SelfHostedLLMProvider(
+                settings.self_hosted_llm_url,
+                model=settings.self_hosted_llm_model,
+                api_key=settings.self_hosted_llm_api_key.get_secret_value(),
+                timeout_seconds=settings.llm_timeout_seconds,
+                json_mode=settings.self_hosted_llm_json_mode,
+            ),
+        )
+    else:
+        unregister_llm("self_hosted")
     sarvam_key = settings.sarvam_api_key.get_secret_value()
     if sarvam_key:
         register_llm(
