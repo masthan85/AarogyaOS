@@ -343,6 +343,7 @@ export const segmentSchema = z.object({
   normalised_text: z.string().nullable(),
   language: z.string().nullable(),
   secondary_language: z.string().nullable(),
+  language_confidence: z.number().nullable().optional(),
   confidence: z.number().nullable(),
   code_switch_spans: z.array(z.object({ start: z.number(), end: z.number(), language: z.string() })),
 });
