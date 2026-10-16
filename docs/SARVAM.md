@@ -5,6 +5,8 @@ against the live service from this repository**: the build environment cannot re
 is written against the official `sarvamai` SDK (and, for streaming speech, its WebSocket protocol) and tested
 against local servers that speak the same wire format. Run the two live-check scripts with your key.
 
+**Live result (16 Oct 2026, run by the owner on their own machine):** `sarvam_services_check.py` passed all three checks: translation en-IN to hi-IN (numbers preserved), text-to-speech (a WAV was produced) and chat (valid JSON returned). Still unchecked: how the speech sounds, whether the Hindi is clinically acceptable, and the streaming speech-to-text (`sarvam_live_check.py`).
+
 ## What is used
 
 | Sarvam capability | In the app | Code | Switch |
