@@ -90,7 +90,7 @@ class SarvamSpeechProvider:
         self._mode = mode
         self._url = url
         self._drain = drain_seconds
-        # Off in the app: consultations mix languages, and a fixed language mis-writes the other one.
+        # Off in the app: consultations mix languages and a fixed one mis-writes the other.
         self._use_hint = use_language_hint
         # Diagnostics for the live-check script only: sees every vendor reply. Not used by the app.
         self._on_message = on_message
