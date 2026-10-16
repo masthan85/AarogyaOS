@@ -97,6 +97,27 @@ class TranscriptSegment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class TranscriptCorrection(Base):
+    """A person's correction of what the recogniser heard in one segment.
+
+    Append-only: the raw text is never touched, and the newest row for a segment is the one used.
+    A row with no text means "back to what was heard". Who corrected is kept; the text is not
+    copied into audit logs."""
+
+    __tablename__ = "transcript_corrections"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=new_uuid)
+    organisation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organisations.id"), index=True)
+    segment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transcript_segments.id"), index=True)
+    interaction_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("clinical_interactions.id"), index=True
+    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"))
+    text: Mapped[str | None] = mapped_column(Text)
+    corrected_by: Mapped[uuid.UUID] = mapped_column()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AudioAsset(Base):
     """Retained audio. Exists only when organisation policy AND the patient's consent allow it."""
 

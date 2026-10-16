@@ -9,8 +9,9 @@ from app.ai.anthropic_llm import AnthropicLLMProvider
 from app.ai.registry import register as register_llm
 from app.ai.registry import unregister as unregister_llm
 from app.ai.sarvam import SarvamLLMProvider
+from app.ai.self_hosted import SelfHostedLLMProvider
 from app.core.config import Settings, get_settings
-from app.core.crypto import FieldCrypto
+from app.core.crypto import crypto_from_settings
 from app.core.db import create_db_engine, create_sessionmaker
 from app.core.errors import install_error_handlers
 from app.core.logging import RequestContextMiddleware, configure_logging
@@ -22,6 +23,7 @@ from app.core.observability import (
     refresh_job_gauges,
     render,
 )
+from app.core.ratelimit import RateLimiter
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.clinical.router import router as clinical_router
@@ -33,6 +35,7 @@ from app.modules.interactions.router import router as interactions_router
 from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
+from app.modules.pharmacy.router import router as pharmacy_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.templates.router import router as templates_router
@@ -68,6 +71,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     else:
         unregister_llm("anthropic")
+    if settings.self_hosted_llm_url:
+        register_llm(
+            "self_hosted",
+            lambda: SelfHostedLLMProvider(
+                settings.self_hosted_llm_url,
+                model=settings.self_hosted_llm_model,
+                api_key=settings.self_hosted_llm_api_key.get_secret_value(),
+                timeout_seconds=settings.llm_timeout_seconds,
+                json_mode=settings.self_hosted_llm_json_mode,
+            ),
+        )
+    else:
+        unregister_llm("self_hosted")
     sarvam_key = settings.sarvam_api_key.get_secret_value()
     if sarvam_key:
         register_llm(
@@ -86,17 +102,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         register(
             "sarvam",
             lambda: SarvamSpeechProvider(
-                key, model=settings.sarvam_model, mode=settings.sarvam_mode, url=settings.sarvam_url
+                key,
+                model=settings.sarvam_model,
+                mode=settings.sarvam_mode,
+                url=settings.sarvam_url,
+                use_language_hint=settings.sarvam_use_language_hint,
             ),
         )
     else:
         unregister("sarvam")
     app.state.engine = engine
-    app.state.crypto = FieldCrypto(settings.field_encryption_key)
+    app.state.crypto = crypto_from_settings(settings)
     app.state.audio_store = LocalEncryptedAudioStore(settings.audio_store_path, app.state.crypto)
     app.state.sessionmaker = create_sessionmaker(engine)
 
     app.state.metrics = Metrics()
+    app.state.rate_limiter = RateLimiter()
     app.add_middleware(RequestContextMiddleware)
     app.add_middleware(MetricsMiddleware, metrics=app.state.metrics)
     app.add_middleware(
@@ -129,6 +150,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         summaries_router,
         templates_router,
         cover_router,
+        pharmacy_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

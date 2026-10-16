@@ -340,9 +340,11 @@ export const segmentSchema = z.object({
   start_ms: z.number(),
   end_ms: z.number(),
   raw_text: z.string(),
+  corrected_text: z.string().nullable().optional(),
   normalised_text: z.string().nullable(),
   language: z.string().nullable(),
   secondary_language: z.string().nullable(),
+  language_confidence: z.number().nullable().optional(),
   confidence: z.number().nullable(),
   code_switch_spans: z.array(z.object({ start: z.number(), end: z.number(), language: z.string() })),
 });
@@ -619,3 +621,13 @@ export const coverSchema = z.object({
 });
 export type Colleague = z.infer<typeof colleagueSchema>;
 export type Cover = z.infer<typeof coverSchema>;
+
+export const dispensingSchema = z.object({
+  id: z.string(),
+  prescription_id: z.string(),
+  status: z.enum(['DISPENSED', 'PARTIALLY_DISPENSED', 'NOT_DISPENSED']),
+  note: z.string().nullable(),
+  dispensed_by_name: z.string(),
+  created_at: z.string(),
+});
+export type Dispensing = z.infer<typeof dispensingSchema>;

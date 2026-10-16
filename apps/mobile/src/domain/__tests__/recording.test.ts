@@ -8,6 +8,7 @@ import {
   mergeSegments,
   missingForRecording,
   needsCheck,
+  shownText,
   PURPOSE_LABELS,
   recordingIndicator,
 } from '../recording';
@@ -54,6 +55,9 @@ describe('transcript helpers', () => {
     expect(needsCheck(seg(1, 'x', LOW_CONFIDENCE - 0.01))).toBe(true);
     expect(needsCheck(seg(1, 'x', LOW_CONFIDENCE))).toBe(false);
     expect(needsCheck(seg(1, 'x', null))).toBe(false); // no score means no claim either way
+    // Unsure which language was spoken (seen live: 0.498 and 0.663 on a short, mixed-language phrase).
+    expect(needsCheck({ ...seg(1, 'x', null), language_confidence: 0.498 })).toBe(true);
+    expect(needsCheck({ ...seg(1, 'x', null), language_confidence: 0.98 })).toBe(false);
   });
   it('merges polled segments by sequence without duplicates', () => {
     const merged = mergeSegments([seg(1), seg(2)], [seg(2, 'updated'), seg(3)]);
@@ -98,5 +102,13 @@ describe('describeInterruption', () => {
   it('says plainly why recording stopped', () => {
     expect(describeInterruption('phoneCall')).toMatch(/phone call/);
     expect(describeInterruption('something-new')).toMatch(/Nothing is being recorded/);
+  });
+});
+
+describe('shownText', () => {
+  it('prefers a staff correction and otherwise shows what was heard', () => {
+    expect(shownText({ raw_text: 'fewer', corrected_text: 'fever' })).toBe('fever');
+    expect(shownText({ raw_text: 'fewer', corrected_text: null })).toBe('fewer');
+    expect(shownText({ raw_text: 'fewer' })).toBe('fewer');
   });
 });

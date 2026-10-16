@@ -39,9 +39,11 @@ import {
   medicationSchema,
   orderSchema,
   colleagueSchema,
+  dispensingSchema,
   coverSchema,
   followUpSchema,
   reportedResultSchema,
+  segmentSchema,
   worklistFollowUpSchema,
   worklistOrderSchema,
   prescriptionSchema,
@@ -277,6 +279,8 @@ export const stopInteraction = (id: string) => control(id, 'stop');
 export const getInteraction = (id: string) => api.request(`/interactions/${id}`, interactionSchema);
 export const getTranscript = (id: string, afterSeq = 0) =>
   api.request(`/interactions/${id}/transcript${qs({ after_seq: String(afterSeq) })}`, transcriptSchema);
+export const correctSegment = (id: string, segmentId: string, text: string | null) =>
+  api.request(`/interactions/${id}/segments/${segmentId}/correction`, segmentSchema, { method: 'PUT', body: { text } });
 export const assignSpeaker = (id: string, speakerId: string, role: string) =>
   api.request(`/interactions/${id}/speakers/${encodeURIComponent(speakerId)}`, z.object({ speaker_id: z.string(), role: z.string() }), {
     method: 'PUT',
@@ -344,6 +348,8 @@ export const getRoles = () => api.request('/roles', z.array(roleSchema));
 export const createUser = (body: { email: string; full_name: string; password: string; roles: string[]; preferred_language?: string }) =>
   api.request('/users', userSchema, { method: 'POST', body });
 export const deactivateUser = (id: string) => api.request(`/users/${id}/deactivate`, userSchema, { method: 'POST', body: {} });
+export const handOverEncounter = (encId: string, toPractitionerId: string) =>
+  api.request(`/encounters/${encId}/handover`, encounterSchema, { method: 'POST', body: { to_practitioner_id: toPractitionerId } });
 export const getPractitionersFull = () => api.request('/practitioners', z.array(practitionerFullSchema));
 export const createPractitioner = (body: {
   user_id: string;
@@ -421,3 +427,8 @@ export const getCover = () => api.request('/cover', z.array(coverSchema));
 export const arrangeCover = (body: { to_user_id: string; starts_on: string; ends_on: string }) =>
   api.request('/cover', coverSchema, { method: 'POST', body });
 export const endCover = (id: string) => api.request(`/cover/${id}/end`, coverSchema, { method: 'POST', body: {} });
+
+export const getPatientDispensings = (patientId: string) =>
+  api.request(`/patients/${patientId}/dispensings`, z.array(dispensingSchema));
+export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PARTIALLY_DISPENSED' | 'NOT_DISPENSED'; note?: string }) =>
+  api.request(`/prescriptions/${rxId}/dispensing`, dispensingSchema, { method: 'POST', body });

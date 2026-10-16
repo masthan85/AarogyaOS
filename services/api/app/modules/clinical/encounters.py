@@ -28,7 +28,7 @@ from app.modules.clinical.schemas import (
     ServiceRequestOut,
 )
 from app.modules.scheduling import service as scheduling
-from app.modules.scheduling.models import Appointment, Practitioner
+from app.modules.scheduling.models import Appointment, Practitioner, QueueEntry
 
 OPEN = ("TRIAGE", "IN_PROGRESS")
 
@@ -203,6 +203,87 @@ def complete(session: Session, principal: Principal, encounter_id: uuid.UUID) ->
     enc.ended_at = datetime.now(UTC)
     scheduling.transition(session, principal, enc.appointment_id, "COMPLETED")
     _log(session, principal, "ENCOUNTER_COMPLETED", enc)
+    session.commit()
+    return enc
+
+
+def handover(
+    session: Session, principal: Principal, encounter_id: uuid.UUID, to_practitioner_id: uuid.UUID
+) -> Encounter:
+    """The responsible doctor passes an open consultation to a colleague at the same facility.
+
+    Nothing the first doctor wrote changes hands silently: unsigned prescriptions and unplaced
+    orders must be finished first, and a recording they started must be stopped, so the new
+    doctor never signs or inherits someone else's half-finished work."""
+    from app.modules.interactions.models import ClinicalInteraction
+
+    enc = get_encounter(session, encounter_id, lock=True)
+    if enc.status != "IN_PROGRESS":
+        raise Conflict("Only a consultation that is under way can be handed over")
+    require_owner(session, principal, enc)
+    target = session.get(Practitioner, to_practitioner_id)
+    if target is None or target.status != "ACTIVE" or target.id == enc.practitioner_id:
+        raise NotFound("That doctor was not found")
+    if target.facility_id != enc.facility_id:
+        raise Conflict("The other doctor works at a different site")
+    drafts = session.scalar(
+        select(func.count())
+        .select_from(Prescription)
+        .where(Prescription.encounter_id == enc.id, Prescription.status == "DRAFT")
+    )
+    draft_orders = session.scalar(
+        select(func.count())
+        .select_from(ServiceRequest)
+        .where(ServiceRequest.encounter_id == enc.id, ServiceRequest.status == "DRAFT")
+    )
+    if drafts or draft_orders:
+        raise Conflict(
+            f"Resolve drafts first: {drafts or 0} prescription(s) and {draft_orders or 0} order(s) "
+            "are not signed or placed. Sign, place or discard them."
+        )
+    recording = session.scalar(
+        select(func.count())
+        .select_from(ClinicalInteraction)
+        .where(
+            ClinicalInteraction.encounter_id == enc.id,
+            ClinicalInteraction.status.in_(("CREATED", "ACTIVE", "PAUSED")),
+        )
+    )
+    if recording:
+        raise Conflict("Stop the recording before handing over")
+
+    previous = enc.practitioner_id
+    enc.practitioner_id = target.id
+    appointment = session.get(Appointment, enc.appointment_id)
+    if appointment is not None:
+        appointment.practitioner_id = target.id
+    queue = session.scalar(
+        select(QueueEntry).where(QueueEntry.appointment_id == enc.appointment_id)
+    )
+    if queue is not None:
+        queue.practitioner_id = target.id
+    emit_event(
+        session,
+        org_id=_org(principal),
+        event_type="ENCOUNTER_HANDED_OVER",
+        aggregate_type="encounter",
+        aggregate_id=enc.id,
+        patient_id=enc.patient_id,
+        encounter_id=enc.id,
+        actor_user_id=principal.user_id,
+        payload={"from_practitioner_id": str(previous), "to_practitioner_id": str(target.id)},
+    )
+    record_audit(
+        session,
+        principal.meta,
+        org_id=_org(principal),
+        actor_user_id=principal.user_id,
+        action="ENCOUNTER_HANDED_OVER",
+        resource_type="encounter",
+        resource_id=enc.id,
+        before={"practitioner_id": str(previous)},
+        after={"practitioner_id": str(target.id)},
+    )
     session.commit()
     return enc
 

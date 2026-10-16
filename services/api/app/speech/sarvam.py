@@ -79,6 +79,7 @@ class SarvamSpeechProvider:
         url: str = DEFAULT_URL,
         drain_seconds: float = DRAIN_SECONDS,
         on_message: Callable[[dict[str, Any]], None] | None = None,
+        use_language_hint: bool = True,
     ) -> None:
         if not api_key:
             raise ValueError("A Sarvam API key is required")
@@ -89,6 +90,8 @@ class SarvamSpeechProvider:
         self._mode = mode
         self._url = url
         self._drain = drain_seconds
+        # Off in the app: consultations mix languages and a fixed one mis-writes the other.
+        self._use_hint = use_language_hint
         # Diagnostics for the live-check script only: sees every vendor reply. Not used by the app.
         self._on_message = on_message
 
@@ -97,7 +100,9 @@ class SarvamSpeechProvider:
 
     def _endpoint(self, opts: StreamOptions) -> str:
         hint = opts.language_hint
-        language = hint if hint in LANGUAGES else "unknown"  # unknown => vendor auto-detects
+        language = (
+            hint if self._use_hint and hint in LANGUAGES else "unknown"
+        )  # unknown => vendor auto-detects
         query = {
             "language-code": language,
             "model": self.model,

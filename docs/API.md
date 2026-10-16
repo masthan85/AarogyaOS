@@ -107,3 +107,28 @@ optimistic concurrency via `version`.
 | `POST /cover/{id}/end` | `result:review` | Either side may end it |
 
 While an arrangement is active, `GET /results/awaiting-review` for the covering doctor also returns the other doctor's results, each marked `covering_for`. Reviews are audited with `on_behalf_of`.
+
+## Transcript corrections (migration 0009)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `PUT /interactions/{id}/segments/{segment_id}/correction` | `transcript:correct` (doctor, nurse) | `{"text": "..."}` records a correction; `{"text": null}` goes back to what was heard. Only the person who made the recording can reach it. Returns the segment with `corrected_text` |
+
+`GET /interactions/{id}/transcript` returns `raw_text` (never changes) and `corrected_text` (null unless corrected). The assistant reads, and quotes from, the corrected text when it analyses later lines.
+
+## Rate limits
+
+`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Per worker process (see SECURITY.md).
+
+## Handover
+
+`POST /encounters/{id}/handover` (`encounter:consult`, current doctor only) with `{"to_practitioner_id": "..."}` passes a consultation that is under way to another active doctor at the same facility. Refused with 409 while prescription or order drafts exist or a recording is open; 404 for an unknown or same doctor. The appointment and queue entry follow. Audited as `ENCOUNTER_HANDED_OVER`.
+
+## Dispensing (migration 0010)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `POST /prescriptions/{id}/dispensing` | `prescription:dispense` (pharmacist) | `{status: DISPENSED \| PARTIALLY_DISPENSED \| NOT_DISPENSED, note?}`. Signed prescriptions only; 409 once fully dispensed or if voided |
+| `GET /patients/{id}/dispensings` | `prescription:read` | Newest first |
+
+Append-only (database trigger). Records the decision and who made it; there is no stock, brand or batch tracking and no interaction check.

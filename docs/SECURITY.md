@@ -36,8 +36,8 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
   (name, age, sex, masked mobile) but cannot open records. Reception has no clinical timeline.
 - ABHA numbers and other identifiers are AES-256-GCM encrypted with a context-bound AAD; lookups use an
   HMAC blind index with a separately derived key. Unmasking requires `patient:identifier` and is audited.
-  `AAROGYA_FIELD_ENCRYPTION_KEY` is required in production; rotation is supported by the `v1:` ciphertext
-  prefix but a re-encryption job is not built yet.
+  `AAROGYA_FIELD_ENCRYPTION_KEY` is required in production; rotation is supported (ciphertexts name their key, see
+  OPERATIONS.md, "Rotating the field encryption key").
 - Every patient open, search (result count only, never the query), timeline view and identifier reveal is audited.
   Audit rows and outbox events hold ids and field *names*, never demographics. Previous demographic values live in
   `patient_revisions`.
@@ -76,7 +76,7 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
 Security headers on every response; `Cache-Control: no-store` and a restrictive CSP on `/api/`; HSTS in production;
 request-size cap; production config refuses default secrets, default DB password and wildcard CORS; metrics labels carry
 no identifiers; job failures record only the exception class; backups refuse to be written unencrypted.
-Known gaps: no login rate limiting beyond account lockout, no WAF/TLS in this repo, no field-key rotation, access logs
+Known gaps: login and search rate limits are per worker only, no WAF/TLS in this repo, audio is not re-encrypted on key rotation, access logs
 contain record ids in paths.
 
 ## Clinical AI (Phase 5)
@@ -98,3 +98,6 @@ user agent, correlation id, before/after for sensitive changes, AI involvement.
 ## Open items needing specialist review
 DPDP Act 2023 compliance and rules, data residency, pentest, threat model for audio
 gateway, key management, DPA with each AI provider.
+
+## Rate limits
+Login is limited per client address and patient search per user (defaults 60 a minute, `AAROGYA_LOGIN_ATTEMPTS_PER_MINUTE_PER_IP`, `AAROGYA_PATIENT_SEARCHES_PER_MINUTE_PER_USER`, 0 turns off). The limiter lives in each worker's memory: with several workers the real limit is higher, a restart clears it, and behind a proxy that hides client addresses all users share one login bucket, so configure the proxy to pass the real address before relying on it. Accounts also lock after repeated failures and every search is audited. A shared (Redis) limiter is still to do.

@@ -120,3 +120,14 @@ export function coverProblem(startsOn: string, endsOn: string, today: string): s
   if (days >= MAX_COVER_DAYS) return `Cover can last at most ${MAX_COVER_DAYS} days.`;
   return null;
 }
+
+export type DispenseState = { label: string; tone: 'neutral' | 'success' | 'warning'; canRecord: boolean };
+
+/** The newest record decides. Fully dispensed is final; anything else can still be followed up. */
+export function dispenseState(history: { status: string; created_at: string }[]): DispenseState {
+  const latest = [...history].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (!latest) return { label: 'Not dispensed yet', tone: 'neutral', canRecord: true };
+  if (latest.status === 'DISPENSED') return { label: 'Fully dispensed', tone: 'success', canRecord: false };
+  if (latest.status === 'PARTIALLY_DISPENSED') return { label: 'Partly dispensed', tone: 'warning', canRecord: true };
+  return { label: 'Not dispensed', tone: 'warning', canRecord: true };
+}

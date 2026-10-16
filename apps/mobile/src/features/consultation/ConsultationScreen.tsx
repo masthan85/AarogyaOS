@@ -97,7 +97,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} letterhead={letterhead} /> : null}
       {tab === 'followup' ? <FollowUpPanel encId={id} data={data} /> : null}
       {tab === 'documents' ? <DocumentsPanel encId={id} patientLanguage={data.patient?.preferred_language} letterhead={letterhead} /> : null}
-      {tab === 'finish' ? <FinishPanel encId={id} data={data} /> : null}
+      {tab === 'finish' ? <FinishPanel encId={id} data={data} onOpenAssist={canAssist ? () => setTab('assist') : undefined} /> : null}
     </>
   );
 

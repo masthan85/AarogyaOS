@@ -89,3 +89,26 @@ export function acceptOutcome(c: Candidate): string {
       return 'Saved as a note in this visit';
   }
 }
+
+export type Unreviewed = {
+  total: number;
+  /** Things that change safety if missed: an allergy or medicine mentioned, a symptom the patient reported, a safety warning. */
+  important: string[];
+  safetyWarnings: number;
+};
+
+const IMPORTANT_KINDS = new Set(['ALLERGY', 'MEDICATION', 'SYMPTOM', 'CHIEF_COMPLAINT']);
+
+/**
+ * What the assistant found that nobody has accepted or rejected yet. Shown when finishing a visit so a
+ * finding the patient mentioned (for example chest tightness) is not left behind unseen. It informs; it
+ * never blocks, and a finding the patient denied is not listed as important.
+ */
+export function unreviewed(candidates: Candidate[], suggestions: Suggestion[]): Unreviewed {
+  const waiting = pendingCandidates(candidates);
+  const important = waiting
+    .filter((c) => IMPORTANT_KINDS.has(c.kind) && c.assertion !== 'ABSENT')
+    .map((c) => `${KIND_LABELS[c.kind] ?? c.kind}: ${c.text}${c.assertion === 'POSSIBLE' ? ' (possible)' : ''}`);
+  const safety = pendingSuggestions(suggestions).filter((s) => isSafetyCategory(s.category)).length;
+  return { total: waiting.length + pendingSuggestions(suggestions).length, important, safetyWarnings: safety };
+}

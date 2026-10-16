@@ -12,9 +12,9 @@ state and alerts, verification workflow, database-level immutability.
 P3 follow-ups: clinical sign-off of reference ranges and paediatric ranges, medication knowledge provider (interactions,
 contraindications, dose checks, Indian brand/generic data under licence), terminology service (ICD/SNOMED/LOINC),
 document/PDF result upload (needs object store), prescription print/PDF and patient copy, referrals, care-team
-scoping and break-glass, full encounter handover (results cover is built), duplicate patient merge (deliberately not built: it
+scoping and break-glass, duplicate patient merge (deliberately not built: it
 needs clinical-governance decisions on which record wins and how to undo a merge, and it touches immutable rows),
-dispensing and stock records for pharmacy (the pharmacy screen is read-only), FHIR mapping of the clinical record.
+stock, brand and batch tracking for pharmacy (a simple dispensed / partly / not record exists), FHIR mapping of the clinical record.
 P4 Speech (done, provider-independent): consent (8 purposes, versioned wording, guardians), recording sessions,
 authenticated audio gateway, SpeechProvider + registry + fallback + development provider, immutable transcripts
 with language/code-switch/speaker metadata, speaker assignment, audio retention + purge, usage metering, speech
@@ -46,6 +46,8 @@ Expo SDK upgrade to clear audit findings, admin console, capacity test on a prod
 
 Added after the Dragon Copilot / MedASR review: note templates (organisation layouts, structure only), referral letters (code-built
 from the record, doctor-approved), cited chart question-and-answer with a no-AI keyword fallback.
+Added: review check before finishing a visit, Indian prescription shorthand reader (mobile only, unambiguous notation only, never auto-applied), copy-visit-as-text, self-hosted model adapter. Considered and rejected from an outside research note: an autonomous browser agent that fills other EMRs (wrong-patient, prompt-injection and unreviewed-write risks), rolling summaries of the conversation (can lose a negation or a number) and unverified model names.
+
 Considered and NOT built, with the reason: **coding suggestions** (ICD/SNOMED) need a licensed terminology service; **doctor dictation
 mode / MedASR** needs an evaluation on your English audio first (MedASR is English-only, trained on dictation) and a purpose-limited
 recording type; **AI-written notes or letters** (kept code-built on purpose for safety); **letter sending/printing/PDF**; **translation

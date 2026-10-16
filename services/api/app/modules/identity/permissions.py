@@ -45,6 +45,7 @@ PERMISSIONS: dict[str, str] = {
     "prescription:write": "Draft and edit prescriptions",
     "prescription:sign": "Sign (finalise) prescriptions",
     "prescription:read": "View prescriptions",
+    "prescription:dispense": "Record that a signed prescription was dispensed",
     "order:write": "Draft, place and cancel investigation orders",
     "order:read": "View investigation orders",
     "result:enter": "Enter investigation results",
@@ -62,6 +63,7 @@ PERMISSIONS: dict[str, str] = {
     "interaction:consultation": "Record consultations",
     "transcript:read": "Read transcripts of conversations you took part in",
     "speaker:assign": "Assign roles to speakers in a transcript",
+    "transcript:correct": "Correct what the recogniser heard (the original is kept)",
     "usage:read": "View speech and AI usage and cost",
     # Phase 5: clinical AI. AI proposes; these permissions decide who may review it.
     "ai:analyse": "Run AI analysis on a conversation you recorded",
@@ -117,6 +119,7 @@ _NURSE = [
     "interaction:triage",
     "transcript:read",
     "speaker:assign",
+    "transcript:correct",
 ]
 _DOCTOR = [
     *_CLINICAL_BASE,
@@ -136,6 +139,7 @@ _DOCTOR = [
     "interaction:consultation",
     "transcript:read",
     "speaker:assign",
+    "transcript:correct",
 ]
 _RECEPTION = [*_RECEPTION, "followup:read", *_CONSENT, "interaction:reception", "transcript:read"]
 _LAB = [*_READ_STRUCTURE, "patient:search", "order:read", "result:enter"]
@@ -167,7 +171,11 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
     "receptionist": ("Receptionist", False, _RECEPTION),
     "lab_technician": ("Lab Technician", False, _LAB),
     "radiology_technician": ("Radiology Technician", False, _LAB),
-    "pharmacist": ("Pharmacist", False, [*_READ_STRUCTURE, "patient:search", "prescription:read"]),
+    "pharmacist": (
+        "Pharmacist",
+        False,
+        [*_READ_STRUCTURE, "patient:search", "prescription:read", "prescription:dispense"],
+    ),
     "billing_staff": (
         "Billing Staff",
         False,

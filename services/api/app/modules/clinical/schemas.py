@@ -64,6 +64,10 @@ class EncounterOut(BaseModel):
     ended_at: datetime | None
 
 
+class HandoverIn(BaseModel):
+    to_practitioner_id: uuid.UUID
+
+
 class TriageCategoryIn(BaseModel):
     category: Literal["ROUTINE", "URGENT", "EMERGENCY"]
 

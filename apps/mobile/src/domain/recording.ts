@@ -58,8 +58,15 @@ export const ROLE_OPTIONS = ['DOCTOR', 'PATIENT', 'FAMILY_MEMBER', 'OTHER_STAFF'
 
 /** Below this the recogniser itself was unsure; flag the line so a person checks it. */
 export const LOW_CONFIDENCE = 0.75;
-export const needsCheck = (s: Pick<Segment, 'confidence'>): boolean =>
-  s.confidence !== null && s.confidence < LOW_CONFIDENCE;
+/** Some recognisers (Sarvam) give no word confidence but do say how sure they are of the language. */
+export const LOW_LANGUAGE_CONFIDENCE = 0.75;
+export const needsCheck = (s: Pick<Segment, 'confidence'> & { language_confidence?: number | null }): boolean =>
+  (s.confidence !== null && s.confidence < LOW_CONFIDENCE) ||
+  (s.language_confidence != null && s.language_confidence < LOW_LANGUAGE_CONFIDENCE);
+
+/** What the rest of the app should read: a person's correction if there is one, otherwise what was heard. */
+export const shownText = (s: Pick<Segment, 'raw_text'> & { corrected_text?: string | null }): string =>
+  s.corrected_text ?? s.raw_text;
 
 export const formatClock = (totalSeconds: number): string => {
   const s = Math.max(0, Math.floor(totalSeconds));

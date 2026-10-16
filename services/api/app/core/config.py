@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # Base64 of 32 random bytes. Encrypts sensitive identifiers (e.g. ABHA numbers) and keys
     # their blind index. Losing it makes those identifiers unrecoverable: back it up.
     field_encryption_key: str = _DEV_FIELD_KEY
+    # Older keys, comma separated, kept only while data is re-encrypted after a rotation.
+    field_encryption_previous_keys: str = ""
     access_token_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_days: int = Field(default=14, ge=1, le=90)
     max_failed_logins: int = Field(default=5, ge=3)
@@ -32,6 +34,11 @@ class Settings(BaseSettings):
     # Anthropic (Claude), official SDK (app/ai/anthropic_llm.py). Registered only with a key.
     anthropic_api_key: SecretStr = SecretStr("")
     anthropic_model: str = "claude-opus-5-5"
+    # A model you run yourself (vLLM, Ollama, ...): app/ai/self_hosted.py. Off without an address.
+    self_hosted_llm_url: str = ""
+    self_hosted_llm_model: str = ""
+    self_hosted_llm_api_key: SecretStr = SecretStr("")
+    self_hosted_llm_json_mode: bool = False
     embedding_provider: str = ""
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=120)
     ai_analyses_per_minute: int = Field(default=6, ge=1, le=60)
@@ -40,6 +47,11 @@ class Settings(BaseSettings):
     sarvam_api_key: SecretStr = SecretStr("")
     sarvam_model: str = "saaras:v4"
     sarvam_mode: Literal["transcribe", "verbatim", "translit", "codemix"] = "transcribe"
+    # Live test: a fixed language wrote Hindi in Roman letters; auto-detect did better.
+    sarvam_use_language_hint: bool = False
+    # Per worker process, per minute; 0 turns a limit off. See app/core/ratelimit.py.
+    login_attempts_per_minute_per_ip: int = 60
+    patient_searches_per_minute_per_user: int = 60
     sarvam_url: str = "wss://api.sarvam.ai/speech-to-text/ws"
     # The same key serves Sarvam's REST services. Each is chosen explicitly: nothing is sent to
     # Sarvam unless its provider is set to "sarvam".
@@ -59,6 +71,14 @@ class Settings(BaseSettings):
             self.speech_provider = self.speech_provider or "development"
             self.llm_provider = self.llm_provider or "development"
             self.embedding_provider = self.embedding_provider or "development"
+        if self.self_hosted_llm_url:
+            from app.ai.self_hosted import address_problem
+
+            problem = address_problem(self.self_hosted_llm_url)
+            if problem:
+                raise ValueError(f"AAROGYA_SELF_HOSTED_LLM_URL {problem}")
+            if not self.self_hosted_llm_model:
+                raise ValueError("AAROGYA_SELF_HOSTED_LLM_MODEL is required with a model address")
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")

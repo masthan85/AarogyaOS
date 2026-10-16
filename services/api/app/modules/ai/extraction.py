@@ -163,6 +163,13 @@ def analyse(
     def role_of(seg: TranscriptSegment) -> str:
         return roles.get(seg.speaker_id or "", "UNKNOWN")
 
+    fixed = interactions.corrections(
+        session, ia.id
+    )  # the model reads, and quotes must match, the corrected text
+
+    def text_of(seg: TranscriptSegment) -> str:
+        return fixed.get(seg.id, seg.raw_text)
+
     allowed = sorted(KINDS_BY_PURPOSE.get(ia.purpose, frozenset()))
     payload = {
         "allowed_kinds": allowed,
@@ -171,7 +178,7 @@ def analyse(
                 "seq": s.seq,
                 "speaker_role": role_of(s),
                 "language": s.language,
-                "text": s.raw_text,
+                "text": text_of(s),
                 "context_only": s in context,
             }
             for s in [*context, *window]
@@ -244,7 +251,7 @@ def analyse(
     except (ValueError, ValidationError):
         return failed("INVALID_OUTPUT", "INVALID", resp)  # rejected whole: never repaired
 
-    views = [guardrails.SegmentView(s.seq, s.raw_text, role_of(s), str(s.id)) for s in window]
+    views = [guardrails.SegmentView(s.seq, text_of(s), role_of(s), str(s.id)) for s in window]
     existing = set(
         session.scalars(select(AiCandidate.dedupe_key).where(AiCandidate.interaction_id == ia.id))
     )
