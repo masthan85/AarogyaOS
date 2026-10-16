@@ -119,3 +119,7 @@ While an arrangement is active, `GET /results/awaiting-review` for the covering 
 ## Rate limits
 
 `POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Per worker process (see SECURITY.md).
+
+## Handover
+
+`POST /encounters/{id}/handover` (`encounter:consult`, current doctor only) with `{"to_practitioner_id": "..."}` passes a consultation that is under way to another active doctor at the same facility. Refused with 409 while prescription or order drafts exist or a recording is open; 404 for an unknown or same doctor. The appointment and queue entry follow. Audited as `ENCOUNTER_HANDED_OVER`.

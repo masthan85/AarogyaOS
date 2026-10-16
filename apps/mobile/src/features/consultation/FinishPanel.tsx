@@ -1,8 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
-import { completeEncounter } from '@/api/endpoints';
-import { AlertBanner, Button, Card, SectionTitle } from '@/design-system/components';
+import { completeEncounter, getPractitioners, handOverEncounter } from '@/api/endpoints';
+import { AlertBanner, Button, Card, ChoiceChips, SectionTitle } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 
 import { useAction } from './useAction';
@@ -14,6 +16,11 @@ export function FinishPanel({ encId, data }: { encId: string; data: EncounterDat
   const draftRx = d?.prescriptions.filter((p) => p.status === 'DRAFT').length ?? 0;
   const draftOrders = d?.orders.filter((o) => o.status === 'DRAFT').length ?? 0;
   const unconfirmed = d?.conditions.filter((c) => c.certainty !== 'CONFIRMED').length ?? 0;
+  const facilityId = d?.encounter.facility_id;
+  const colleagues = useQuery({ queryKey: ['colleagues-site', facilityId], queryFn: () => getPractitioners(facilityId), enabled: !!facilityId, gcTime: 0 });
+  const others = (colleagues.data ?? []).filter((p) => p.id !== d?.encounter.practitioner_id);
+  const [to, setTo] = useState<string>();
+  const hand = useAction(() => handOverEncounter(encId, to as string), () => router.replace('/queue'));
   const finish = useAction(() => completeEncounter(encId), () => router.replace('/queue'));
 
   return (
@@ -29,6 +36,19 @@ export function FinishPanel({ encId, data }: { encId: string; data: EncounterDat
             { text: 'Not yet', style: 'cancel' }, { text: 'Complete', onPress: () => void finish.run() },
           ])} />
       </Card>
+      {others.length > 0 ? (
+        <Card title="Hand over to a colleague">
+          <Text style={{ color: t.textMuted }}>
+            Passes this consultation, still open, to another doctor at this site. Sign or discard prescription drafts, place or cancel orders and
+            stop any recording first. You will no longer be able to change this visit.
+          </Text>
+          <ChoiceChips value={to} onChange={setTo} options={others.map((p) => ({ value: p.id, label: p.full_name }))} />
+          <Button title="Hand over" variant="secondary" disabled={!to || draftRx + draftOrders > 0} loading={hand.pending}
+            onPress={() => Alert.alert('Hand over this consultation?', 'The other doctor takes over. This cannot be undone by you.', [
+              { text: 'Not yet', style: 'cancel' }, { text: 'Hand over', onPress: () => void hand.run() },
+            ])} />
+        </Card>
+      ) : null}
     </View>
   );
 }

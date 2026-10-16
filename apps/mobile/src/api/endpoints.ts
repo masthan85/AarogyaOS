@@ -347,6 +347,8 @@ export const getRoles = () => api.request('/roles', z.array(roleSchema));
 export const createUser = (body: { email: string; full_name: string; password: string; roles: string[]; preferred_language?: string }) =>
   api.request('/users', userSchema, { method: 'POST', body });
 export const deactivateUser = (id: string) => api.request(`/users/${id}/deactivate`, userSchema, { method: 'POST', body: {} });
+export const handOverEncounter = (encId: string, toPractitionerId: string) =>
+  api.request(`/encounters/${encId}/handover`, encounterSchema, { method: 'POST', body: { to_practitioner_id: toPractitionerId } });
 export const getPractitionersFull = () => api.request('/practitioners', z.array(practitionerFullSchema));
 export const createPractitioner = (body: {
   user_id: string;

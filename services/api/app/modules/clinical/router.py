@@ -24,6 +24,7 @@ from app.modules.clinical.schemas import (
     FollowUpIn,
     FollowUpOut,
     FollowUpStatusIn,
+    HandoverIn,
     MedicationEdit,
     MedicationIn,
     MedicationOut,
@@ -99,6 +100,16 @@ def complete_encounter(
     principal: Annotated[Principal, Depends(require("encounter:consult"))],
 ) -> Encounter:
     return encounters.complete(db, principal, encounter_id)
+
+
+@router.post("/encounters/{encounter_id}/handover", response_model=EncounterOut)
+def hand_over_encounter(
+    encounter_id: uuid.UUID,
+    body: HandoverIn,
+    db: TenantDb,
+    principal: Annotated[Principal, Depends(require("encounter:consult"))],
+) -> Encounter:
+    return encounters.handover(db, principal, encounter_id, body.to_practitioner_id)
 
 
 @router.get("/patients/{patient_id}/encounters", response_model=list[EncounterOut])
