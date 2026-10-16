@@ -86,7 +86,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         register(
             "sarvam",
             lambda: SarvamSpeechProvider(
-                key, model=settings.sarvam_model, mode=settings.sarvam_mode, url=settings.sarvam_url
+                key,
+                model=settings.sarvam_model,
+                mode=settings.sarvam_mode,
+                url=settings.sarvam_url,
+                use_language_hint=settings.sarvam_use_language_hint,
             ),
         )
     else:

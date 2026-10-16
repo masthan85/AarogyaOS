@@ -212,6 +212,11 @@ async def test_empty_transcripts_and_garbage_are_ignored(fake: Fake) -> None:
     assert [s.text for s in await collect(provider(fake), seconds(1))] == ["real"]
 
 
+async def test_the_app_default_ignores_the_hint_and_lets_the_service_detect(fake: Fake) -> None:
+    await collect(provider(fake, use_language_hint=False), seconds(1), language_hint="hi-IN")
+    assert fake.requests[0]["query"]["language-code"] == "unknown"
+
+
 async def test_language_hints_the_service_does_not_support_become_auto_detect(fake: Fake) -> None:
     for hint in ("auto", "xx-YY", "en-GB"):
         fake.requests.clear()

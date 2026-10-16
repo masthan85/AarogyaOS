@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     sarvam_api_key: SecretStr = SecretStr("")
     sarvam_model: str = "saaras:v4"
     sarvam_mode: Literal["transcribe", "verbatim", "translit", "codemix"] = "transcribe"
+    # Live test: a fixed language wrote Hindi in Roman letters; auto-detect did better.
+    sarvam_use_language_hint: bool = False
     sarvam_url: str = "wss://api.sarvam.ai/speech-to-text/ws"
     # The same key serves Sarvam's REST services. Each is chosen explicitly: nothing is sent to
     # Sarvam unless its provider is set to "sarvam".
