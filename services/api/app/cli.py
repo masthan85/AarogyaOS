@@ -18,12 +18,12 @@ def main(argv: list[str]) -> int:
     command = argv[0] if argv else ""
     with sm() as session:
         if command == "purge-audio":
-            from app.core.crypto import FieldCrypto
+            from app.core.crypto import crypto_from_settings
             from app.modules.interactions.retention import purge_due_audio
             from app.speech.audio_store import LocalEncryptedAudioStore
 
             store = LocalEncryptedAudioStore(
-                settings.audio_store_path, FieldCrypto(settings.field_encryption_key)
+                settings.audio_store_path, crypto_from_settings(settings)
             )
             print(f"Audio files removed: {purge_due_audio(session, store)}")
             return 0
@@ -37,6 +37,16 @@ def main(argv: list[str]) -> int:
             run = run_job(sm, settings, name)
             print(f"{name}: {run.status} {run.result}")
             return 0 if run.status in ("OK", "SKIPPED") else 1
+        if command == "rotate-field-key":
+            from app.core.crypto import crypto_from_settings
+            from app.modules.patients.rotation import rotate_identifiers
+
+            crypto = crypto_from_settings(settings)
+            done = rotate_identifiers(session, crypto)
+            print(f"Identifiers re-encrypted under key {crypto.key_id}: {done}.")
+            print("No identifier needs an older key any more.")
+            print("Retained audio is not re-encrypted; keep older keys listed while it exists.")
+            return 0
         if command == "seed":
             sync_reference_data(session)
             print("Reference data synced")

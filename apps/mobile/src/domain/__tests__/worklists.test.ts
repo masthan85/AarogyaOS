@@ -1,6 +1,6 @@
 import type { ReportedResult, WorklistFollowUp } from '@/api/schemas';
 
-import { buildResult, coverProblem, byPriority, describeValue, emptyResultForm, groupFollowUps, isCritical, reviewOrder } from '../worklists';
+import { buildResult, dispenseState, coverProblem, byPriority, describeValue, emptyResultForm, groupFollowUps, isCritical, reviewOrder } from '../worklists';
 
 const form = (o: Partial<ReturnType<typeof emptyResultForm>>) => ({ ...emptyResultForm('Haemoglobin'), ...o });
 const res = (o: Partial<ReportedResult>): ReportedResult => ({
@@ -76,5 +76,18 @@ describe('coverProblem', () => {
     expect(coverProblem('2026-01-01', '2026-01-03', '2026-03-05')).toMatch(/already ended/);
     expect(coverProblem('2026-03-05', '2026-05-05', '2026-03-05')).toMatch(/at most/);
     expect(coverProblem('5 March', '2026-03-08', '2026-03-05')).toMatch(/YYYY/);
+  });
+});
+
+describe('dispenseState', () => {
+  it('follows the newest record and treats full dispensing as final', () => {
+    expect(dispenseState([])).toEqual({ label: 'Not dispensed yet', tone: 'neutral', canRecord: true });
+    const history = [
+      { status: 'PARTIALLY_DISPENSED', created_at: '2026-03-01T10:00:00Z' },
+      { status: 'DISPENSED', created_at: '2026-03-02T10:00:00Z' },
+    ];
+    expect(dispenseState(history).canRecord).toBe(false);
+    expect(dispenseState([history[0]]).label).toBe('Partly dispensed');
+    expect(dispenseState([{ status: 'NOT_DISPENSED', created_at: 'x' }]).canRecord).toBe(true);
   });
 });

@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # Base64 of 32 random bytes. Encrypts sensitive identifiers (e.g. ABHA numbers) and keys
     # their blind index. Losing it makes those identifiers unrecoverable: back it up.
     field_encryption_key: str = _DEV_FIELD_KEY
+    # Older keys, comma separated, kept only while data is re-encrypted after a rotation.
+    field_encryption_previous_keys: str = ""
     access_token_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_days: int = Field(default=14, ge=1, le=90)
     max_failed_logins: int = Field(default=5, ge=3)

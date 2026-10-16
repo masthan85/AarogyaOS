@@ -621,3 +621,13 @@ export const coverSchema = z.object({
 });
 export type Colleague = z.infer<typeof colleagueSchema>;
 export type Cover = z.infer<typeof coverSchema>;
+
+export const dispensingSchema = z.object({
+  id: z.string(),
+  prescription_id: z.string(),
+  status: z.enum(['DISPENSED', 'PARTIALLY_DISPENSED', 'NOT_DISPENSED']),
+  note: z.string().nullable(),
+  dispensed_by_name: z.string(),
+  created_at: z.string(),
+});
+export type Dispensing = z.infer<typeof dispensingSchema>;

@@ -45,6 +45,7 @@ PERMISSIONS: dict[str, str] = {
     "prescription:write": "Draft and edit prescriptions",
     "prescription:sign": "Sign (finalise) prescriptions",
     "prescription:read": "View prescriptions",
+    "prescription:dispense": "Record that a signed prescription was dispensed",
     "order:write": "Draft, place and cancel investigation orders",
     "order:read": "View investigation orders",
     "result:enter": "Enter investigation results",
@@ -170,7 +171,11 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
     "receptionist": ("Receptionist", False, _RECEPTION),
     "lab_technician": ("Lab Technician", False, _LAB),
     "radiology_technician": ("Radiology Technician", False, _LAB),
-    "pharmacist": ("Pharmacist", False, [*_READ_STRUCTURE, "patient:search", "prescription:read"]),
+    "pharmacist": (
+        "Pharmacist",
+        False,
+        [*_READ_STRUCTURE, "patient:search", "prescription:read", "prescription:dispense"],
+    ),
     "billing_staff": (
         "Billing Staff",
         False,

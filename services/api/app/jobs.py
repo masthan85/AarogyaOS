@@ -14,7 +14,7 @@ from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
-from app.core.crypto import FieldCrypto
+from app.core.crypto import crypto_from_settings
 from app.core.db import set_tenant
 from app.modules.identity.models import RefreshToken
 from app.modules.interactions.models import ClinicalInteraction
@@ -30,9 +30,7 @@ JobFn = Callable[[Session, Settings], dict[str, int]]
 
 
 def purge_audio(session: Session, settings: Settings) -> dict[str, int]:
-    store = LocalEncryptedAudioStore(
-        settings.audio_store_path, FieldCrypto(settings.field_encryption_key)
-    )
+    store = LocalEncryptedAudioStore(settings.audio_store_path, crypto_from_settings(settings))
     return {"removed": purge_due_audio(session, store)}
 
 

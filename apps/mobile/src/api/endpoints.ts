@@ -39,6 +39,7 @@ import {
   medicationSchema,
   orderSchema,
   colleagueSchema,
+  dispensingSchema,
   coverSchema,
   followUpSchema,
   reportedResultSchema,
@@ -426,3 +427,8 @@ export const getCover = () => api.request('/cover', z.array(coverSchema));
 export const arrangeCover = (body: { to_user_id: string; starts_on: string; ends_on: string }) =>
   api.request('/cover', coverSchema, { method: 'POST', body });
 export const endCover = (id: string) => api.request(`/cover/${id}/end`, coverSchema, { method: 'POST', body: {} });
+
+export const getPatientDispensings = (patientId: string) =>
+  api.request(`/patients/${patientId}/dispensings`, z.array(dispensingSchema));
+export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PARTIALLY_DISPENSED' | 'NOT_DISPENSED'; note?: string }) =>
+  api.request(`/prescriptions/${rxId}/dispensing`, dispensingSchema, { method: 'POST', body });

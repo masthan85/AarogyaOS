@@ -176,6 +176,15 @@ def _prepare_identifiers(
     return [(i, crypto.blind_index(i.value, context=_ident_context(i.system))) for i in items]
 
 
+def _all_indexes(crypto: FieldCrypto, items: list[IdentifierIn]) -> list[tuple[str, str]]:
+    """(system, index) under every configured key, so lookups survive a key rotation."""
+    return [
+        (i.system, idx)
+        for i in items
+        for idx in crypto.blind_indexes(i.value, context=_ident_context(i.system))
+    ]
+
+
 def create_patient(
     session: Session, principal: Principal, crypto: FieldCrypto, body: PatientCreate
 ) -> PatientOut:
@@ -195,7 +204,7 @@ def create_patient(
             name=name,
             dob=dob,
             mobile=body.mobile,
-            identifier_indexes=[(i.system, idx) for i, idx in prepared],
+            identifier_indexes=_all_indexes(crypto, body.identifiers),
         )
         if candidates:
             raise PossibleDuplicate(
@@ -418,6 +427,13 @@ def add_identifier(
     org_id = _org(principal)
     patient = _get(session, patient_id)
     index = crypto.blind_index(body.value, context=_ident_context(body.system))
+    older = crypto.blind_indexes(body.value, context=_ident_context(body.system))
+    if session.scalar(
+        select(PatientIdentifier.id).where(
+            PatientIdentifier.system == body.system, PatientIdentifier.value_index.in_(older)
+        )
+    ):
+        raise Conflict("This identifier is already registered to a patient")
     ident = PatientIdentifier(
         organisation_id=org_id,
         patient_id=patient.id,

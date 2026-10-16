@@ -73,3 +73,5 @@ approved rows are frozen and may only become SUPERSEDED). Immutability is enforc
 Separate mapping layer; resources never stored as the source of truth.
 
 `transcript_corrections` (tenant-scoped, forced RLS, migration 0009): append-only (a trigger refuses update and delete). One row per correction: segment, text (null = undo), who. The newest row for a segment applies; the original `transcript_segments.raw_text` is untouched. Audit rows record who corrected which line, never the text.
+
+`dispensings` (tenant-scoped, forced RLS, append-only, migration 0010): a pharmacist's record per prescription: status, optional note (300 characters, free text, so keep clinical detail out), who. The newest row is the current state.

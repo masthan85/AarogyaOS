@@ -36,8 +36,8 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
   (name, age, sex, masked mobile) but cannot open records. Reception has no clinical timeline.
 - ABHA numbers and other identifiers are AES-256-GCM encrypted with a context-bound AAD; lookups use an
   HMAC blind index with a separately derived key. Unmasking requires `patient:identifier` and is audited.
-  `AAROGYA_FIELD_ENCRYPTION_KEY` is required in production; rotation is supported by the `v1:` ciphertext
-  prefix but a re-encryption job is not built yet.
+  `AAROGYA_FIELD_ENCRYPTION_KEY` is required in production; rotation is supported (ciphertexts name their key, see
+  OPERATIONS.md, "Rotating the field encryption key").
 - Every patient open, search (result count only, never the query), timeline view and identifier reveal is audited.
   Audit rows and outbox events hold ids and field *names*, never demographics. Previous demographic values live in
   `patient_revisions`.
@@ -76,7 +76,7 @@ unlock gate; no clipboard of PHI; encrypted local drafts.
 Security headers on every response; `Cache-Control: no-store` and a restrictive CSP on `/api/`; HSTS in production;
 request-size cap; production config refuses default secrets, default DB password and wildcard CORS; metrics labels carry
 no identifiers; job failures record only the exception class; backups refuse to be written unencrypted.
-Known gaps: no login rate limiting beyond account lockout, no WAF/TLS in this repo, no field-key rotation, access logs
+Known gaps: login and search rate limits are per worker only, no WAF/TLS in this repo, audio is not re-encrypted on key rotation, access logs
 contain record ids in paths.
 
 ## Clinical AI (Phase 5)

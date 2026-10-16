@@ -10,7 +10,7 @@ from app.ai.registry import register as register_llm
 from app.ai.registry import unregister as unregister_llm
 from app.ai.sarvam import SarvamLLMProvider
 from app.core.config import Settings, get_settings
-from app.core.crypto import FieldCrypto
+from app.core.crypto import crypto_from_settings
 from app.core.db import create_db_engine, create_sessionmaker
 from app.core.errors import install_error_handlers
 from app.core.logging import RequestContextMiddleware, configure_logging
@@ -34,6 +34,7 @@ from app.modules.interactions.router import router as interactions_router
 from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
+from app.modules.pharmacy.router import router as pharmacy_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.templates.router import router as templates_router
@@ -97,7 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     else:
         unregister("sarvam")
     app.state.engine = engine
-    app.state.crypto = FieldCrypto(settings.field_encryption_key)
+    app.state.crypto = crypto_from_settings(settings)
     app.state.audio_store = LocalEncryptedAudioStore(settings.audio_store_path, app.state.crypto)
     app.state.sessionmaker = create_sessionmaker(engine)
 
@@ -135,6 +136,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         summaries_router,
         templates_router,
         cover_router,
+        pharmacy_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
