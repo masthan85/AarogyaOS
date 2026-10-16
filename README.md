@@ -61,7 +61,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 
 | Area | State |
 |---|---|
-| Sarvam speech-to-text | Written from the vendor's SDK and tested against a local fake. Never run live: use `services/api/scripts/sarvam_live_check.py` |
+| Sarvam speech-to-text | Ran live once with a short English clip (16 Oct 2026): connects, accepts the audio and returns final segments. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
 | Microphone streaming | Written and unit-tested; never run on a device: follow [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) |
 | Claude LLM adapter | Written and stub-tested; never run against the API. Needs a data-processing agreement and a residency decision first |
 | Drug interactions, contraindications, dose checks | Not checked at all (allergy matching is by name only). Needs a licensed drug knowledge provider |

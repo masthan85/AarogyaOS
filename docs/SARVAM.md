@@ -5,7 +5,9 @@ against the live service from this repository**: the build environment cannot re
 is written against the official `sarvamai` SDK (and, for streaming speech, its WebSocket protocol) and tested
 against local servers that speak the same wire format. Run the two live-check scripts with your key.
 
-**Live result (16 Oct 2026, run by the owner on their own machine):** `sarvam_services_check.py` passed all three checks: translation en-IN to hi-IN (numbers preserved), text-to-speech (a WAV was produced) and chat (valid JSON returned). Still unchecked: how the speech sounds, whether the Hindi is clinically acceptable, and the streaming speech-to-text (`sarvam_live_check.py`).
+**Live result (16 Oct 2026, run by the owner on their own machine):** `sarvam_services_check.py` passed all three checks: translation en-IN to hi-IN (numbers preserved), text-to-speech (a WAV was produced) and chat (valid JSON returned). Still unchecked: how the speech sounds and whether the Hindi is clinically acceptable.
+
+**Streaming speech-to-text, live (16 Oct 2026, owner's key and machine):** `sarvam_live_check.py` with a 9.8 s English test clip (16 kHz mono PCM) connected, accepted raw PCM, returned two final segments (START/END speech events, then a `data` message each) and the last segment arrived after the audio ended, so the flush works. Estimated times were produced as designed. A first run with a silent recording returned nothing and no error, which is expected. Not yet checked: accuracy (one short clip, English only), Indian languages, code-mixed speech, drug names, noisy rooms, long sessions, reconnect behaviour, and the app's microphone path on a phone.
 
 ## What is used
 
