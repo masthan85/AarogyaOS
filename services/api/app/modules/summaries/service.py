@@ -7,16 +7,20 @@ language and says so. A doctor approves the final wording; an approved summary n
 """
 
 import asyncio
+import re
+import time
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.ai.knowledge import NotAvailable, NullTranslationProvider, TranslationProvider
+from app.core.config import Settings
 from app.core.context import Principal
-from app.core.errors import Conflict, NotFound
+from app.core.errors import Conflict, NotFound, TooManyRequests
+from app.modules.ai.models import AiUsage
 from app.modules.ai.schemas import LetterDraftIn, SummaryDraftIn, SummaryOut
 from app.modules.audit.service import emit_event, record_audit
 from app.modules.clinical.encounters import get_encounter, require_owner
@@ -33,11 +37,13 @@ from app.modules.clinical.models import (
     PrescriptionItem,
     ServiceRequest,
 )
+from app.modules.consent.queries import active_consent
 from app.modules.identity.models import User
 from app.modules.patients.models import Patient
 from app.modules.scheduling.models import Practitioner
 from app.modules.summaries.models import PatientSummary
 from app.modules.tenancy.models import Facility
+from app.modules.tenancy.policy import load_policy
 
 SOURCE_LANGUAGE = "en-IN"
 _SETTLED = ("CLINICIAN_CONFIRMED", "CLINICIAN_EDITED")
@@ -94,13 +100,31 @@ def build_english(session: Session, encounter_id: uuid.UUID, instructions: str |
     return "\n".join(lines)
 
 
+TRANSLATED = ("MACHINE_DRAFT", "NUMBERS_MISMATCH")
+
+
+def _numbers(text: str) -> list[str]:
+    return sorted(re.findall(r"\d+(?:[.,]\d+)*", text))
+
+
 def _translate(translator: TranslationProvider, text: str, target: str) -> tuple[str, str]:
+    """Translate, or say why not. A translation is always only a draft for the doctor to check, and
+    one whose numbers differ from the source is flagged: a changed digit can change a dose."""
     if target.split("-")[0].lower() == SOURCE_LANGUAGE.split("-")[0]:
         return text, "NOT_NEEDED"
     try:
-        return asyncio.run(translator.translate(text, SOURCE_LANGUAGE, target)), "MACHINE_DRAFT"
+        out = asyncio.run(translator.translate(text, SOURCE_LANGUAGE, target))
     except NotAvailable:
         return text, "NOT_AVAILABLE"  # stays in the clinician's language; the UI says so
+    return out, "MACHINE_DRAFT" if _numbers(out) == _numbers(text) else "NUMBERS_MISMATCH"
+
+
+def _may_send_to_vendor(session: Session, org_id: uuid.UUID, patient_id: uuid.UUID) -> bool:
+    """Text about the patient leaves for a model vendor only with the organisation's switch on and
+    the patient's AI-processing consent."""
+    return load_policy(session, org_id).ai_processing_enabled and (
+        active_consent(session, patient_id, "AI_PROCESSING") is not None
+    )
 
 
 def draft(
@@ -113,7 +137,11 @@ def draft(
     enc = get_encounter(session, encounter_id)
     require_owner(session, principal, enc)
     english = build_english(session, enc.id, body.instructions)
-    content, status = _translate(translator or NullTranslationProvider(), english, body.language)
+    translator = translator or NullTranslationProvider()
+    if translator.available and not _may_send_to_vendor(session, _org(principal), enc.patient_id):
+        content, status = english, "NOT_CONSENTED"
+    else:
+        content, status = _translate(translator, english, body.language)
     version = _next_version(session, enc.id, "VISIT_SUMMARY")
     row = PatientSummary(
         kind="VISIT_SUMMARY",
@@ -121,7 +149,7 @@ def draft(
         patient_id=enc.patient_id,
         encounter_id=enc.id,
         version=version,
-        language=body.language if status == "MACHINE_DRAFT" else SOURCE_LANGUAGE,
+        language=body.language if status in TRANSLATED else SOURCE_LANGUAGE,
         content=content,
         source_content=english,
         translation_status=status,
@@ -156,8 +184,8 @@ def edit(session: Session, principal: Principal, summary_id: uuid.UUID, content:
     if row.status != "DRAFT":
         raise Conflict("Only a draft can be edited. Make a new draft instead.")
     row.content = content.strip()
-    if row.translation_status == "MACHINE_DRAFT":
-        row.translation_status = "CLINICIAN_EDITED"
+    if row.translation_status in TRANSLATED:
+        row.translation_status = "CLINICIAN_EDITED"  # a person has now read and changed it
     _log(session, principal, "PATIENT_SUMMARY_EDITED", row)
     session.commit()
     return SummaryOut.model_validate(row)
@@ -402,3 +430,63 @@ def draft_letter(
     _log(session, principal, "REFERRAL_LETTER_DRAFTED", row)
     session.commit()
     return SummaryOut.model_validate(row)
+
+
+# ---- reading a summary aloud -----------------------------------------------------------------
+
+
+class SpeechUnavailable(Exception):
+    pass
+
+
+def speak(
+    session: Session, principal: Principal, settings: Settings, summary_id: uuid.UUID, tts: Any
+) -> bytes:
+    """WAV audio of an APPROVED summary or letter. Only text a doctor approved is ever spoken, the
+    audio is not stored, and the text leaves only with the AI-processing consent."""
+    row = _get(session, principal, summary_id)
+    if row.status != "APPROVED":
+        raise Conflict("Only an approved document can be read aloud")
+    org_id = _org(principal)
+    if not _may_send_to_vendor(session, org_id, row.patient_id):
+        raise Conflict("Reading aloud needs the organisation's AI switch and the patient's consent")
+    recent = (
+        session.scalar(
+            select(func.count())
+            .select_from(AiUsage)
+            .where(
+                AiUsage.user_id == principal.user_id,
+                AiUsage.feature == "speech",
+                AiUsage.created_at > datetime.now(UTC) - timedelta(minutes=1),
+            )
+        )
+        or 0
+    )
+    if recent >= settings.ai_analyses_per_minute:
+        raise TooManyRequests("Too many requests in a minute. Wait a moment and try again.")
+    started = time.monotonic()
+    try:
+        audio: bytes = asyncio.run(tts.synthesize(row.content, row.language))
+        status = "OK"
+    except NotAvailable as exc:
+        status, audio = "ERROR", b""
+        error = str(exc)
+    session.add(
+        AiUsage(
+            organisation_id=org_id,
+            feature="speech",
+            provider="sarvam",
+            model="bulbul:v3",
+            patient_id=row.patient_id,
+            encounter_id=row.encounter_id,
+            user_id=principal.user_id,
+            latency_ms=int((time.monotonic() - started) * 1000),
+            status=status,
+        )
+    )
+    if status == "OK":
+        _log(session, principal, "PATIENT_SUMMARY_SPOKEN", row)
+        session.commit()
+        return audio
+    session.commit()
+    raise SpeechUnavailable(error)

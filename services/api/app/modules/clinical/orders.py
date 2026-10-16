@@ -29,6 +29,7 @@ from app.modules.clinical.schemas import (
     ServiceRequestIn,
     ServiceRequestOut,
 )
+from app.modules.cover.service import covering_for
 from app.modules.patients.models import Patient
 
 
@@ -448,6 +449,10 @@ def review_result(session: Session, principal: Principal, result_id: uuid.UUID) 
     if res.reviewed_at is None:
         res.reviewed_at = datetime.now(UTC)
         res.reviewed_by = principal.user_id
+        ordered_by = session.scalar(
+            select(ServiceRequest.ordered_by).where(ServiceRequest.id == res.service_request_id)
+        )
+        on_behalf = ordered_by is not None and ordered_by != principal.user_id
         _log(
             session,
             principal,
@@ -456,27 +461,34 @@ def review_result(session: Session, principal: Principal, result_id: uuid.UUID) 
             res.id,
             res.patient_id,
             None,
+            {"on_behalf_of": str(ordered_by)} if on_behalf else None,
         )
     session.commit()
     return ResultOut.model_validate(res)
 
 
 def results_awaiting_review(session: Session, principal: Principal) -> list[ResultOut]:
-    """Abnormal-first list of unreviewed results for orders this doctor placed."""
-    rows = session.scalars(
-        select(InvestigationResult)
+    """Abnormal-first list of unreviewed results for orders this doctor placed, plus those of any
+    colleague who has currently asked this doctor to cover."""
+    covered = covering_for(session, principal.user_id)
+    rows = session.execute(
+        select(InvestigationResult, ServiceRequest.ordered_by)
         .join(ServiceRequest, ServiceRequest.id == InvestigationResult.service_request_id)
         .where(
             InvestigationResult.reviewed_at.is_(None),
-            ServiceRequest.ordered_by == principal.user_id,
+            ServiceRequest.ordered_by.in_([principal.user_id, *covered]),
         )
         .order_by(InvestigationResult.reported_at.desc())
         .limit(100)
     ).all()
     rank = {"CRITICAL_LOW": 0, "CRITICAL_HIGH": 0, "LOW": 1, "HIGH": 1}
-    return sorted(
-        (ResultOut.model_validate(r) for r in rows), key=lambda r: rank.get(r.interpretation, 2)
-    )
+    out = []
+    for res, ordered_by in rows:
+        item = ResultOut.model_validate(res)
+        if ordered_by is not None and ordered_by != principal.user_id:
+            item.covering_for = covered.get(ordered_by)
+        out.append(item)
+    return sorted(out, key=lambda r: rank.get(r.interpretation, 2))
 
 
 def patient_results(session: Session, patient_id: uuid.UUID) -> list[ResultOut]:

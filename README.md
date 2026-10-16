@@ -38,6 +38,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Decision support for the treating doctor: rule-based checks (missing allergy status, abnormal results, allergy clashes) plus model suggestions that must cite approved reference material. Accepting an investigation suggestion creates only a draft order.
 - Reference knowledge supplied by the organisation, with two-person approval, versions and retirement.
 - **Ask the chart**: ask a question about one patient and get an answer that cites the recorded entries it rests on, or "not found". A plain keyword search over the chart always works, even with AI off.
+- Sarvam services (optional, each off until chosen): speech-to-text, translation of patient summaries into the patient's language, reading approved documents aloud, and a Sarvam chat model option.
 - Evaluation harness, usage metering, per-organisation switches, and a Claude (Anthropic) adapter alongside a development stand-in.
 
 **Interoperability**
@@ -47,7 +48,12 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Strict tenant isolation (PostgreSQL row-level security, tested), backend-enforced roles and permissions, short-lived tokens with rotation and reuse detection, field-level encryption.
 - Audit log and event outbox with no clinical content; readiness check that waits for migrations; Prometheus metrics without identifiers; security headers and request limits; scheduled maintenance jobs; encrypted backup and a restore drill; optional pgvector search.
 
+**Administration (mobile, role-gated)**
+- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts; the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
+- Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
+
 **Mobile app (Expo / React Native)**
+- Worklists: results awaiting a doctor's review (critical first), follow-ups due (overdue, today, this week), and a lab/radiology order list with result entry for technicians. The result view shows investigations the signed-in doctor ordered, plus those of a colleague who has asked them to cover for up to 31 days. Doctors can also edit a draft prescription before signing it, and pharmacists have a read-only screen of a patient's signed prescriptions (no dispensing or stock).
 - Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
 - Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
 
@@ -55,14 +61,14 @@ discharge. Every workflow works with AI, speech and the network switched off.
 
 | Area | State |
 |---|---|
-| Sarvam speech-to-text | Written from the vendor's SDK and tested against a local fake. Never run live: use `services/api/scripts/sarvam_live_check.py` |
+| Sarvam speech-to-text | Ran live once with a short English clip (16 Oct 2026): connects, accepts the audio and returns final segments. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
 | Microphone streaming | Written and unit-tested; never run on a device: follow [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) |
 | Claude LLM adapter | Written and stub-tested; never run against the API. Needs a data-processing agreement and a residency decision first |
 | Drug interactions, contraindications, dose checks | Not checked at all (allergy matching is by name only). Needs a licensed drug knowledge provider |
 | ICD / SNOMED / LOINC coding | Not built; needs a licensed terminology service |
 | ABDM (ABHA, consent manager, health information exchange) | Not built; the FHIR export is base R4, not ABDM profile-conformant. Needs the ABDM guide version and sandbox credentials |
-| Translation of patient documents | Not built (documents stay in English and say so) |
-| Letter sending, printing, PDF | Not built |
+| Sarvam translation, read-aloud and chat | Ran live once (16 Oct 2026, owner's key, via `scripts/sarvam_services_check.py`): all three calls succeeded, and the translation kept its numbers. The spoken audio has not yet been listened to and the Hindi has not been read by a clinician. Translations are drafts a doctor must check. See [docs/SARVAM.md](docs/SARVAM.md) for everything Sarvam is used for, and what is deliberately not |
+| Sending letters to other providers | Not built. Documents and prescriptions can be shared or printed as PDF from the phone (untested on a device) |
 | Deployment | Not deployed. Docker, Kubernetes, TLS, WAF, managed Postgres, encrypted audio store and Redis (for multi-container audio) are not done |
 | Accuracy | AI quality and speech accuracy are unmeasured on real clinical data; the bundled evaluation fixtures are tiny and synthetic |
 | Reviews | Clinical safety officer review, CDSCO (SaMD) status, DPDP legal review and a penetration test have not happened |

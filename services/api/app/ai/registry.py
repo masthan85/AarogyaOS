@@ -12,6 +12,7 @@ PENDING: dict[str, str] = {
         "Anthropic is built but not configured: set AAROGYA_ANTHROPIC_API_KEY (and have a signed "
         "data-processing agreement before sending patient data)."
     ),
+    "sarvam": "Sarvam is built but not configured: set AAROGYA_SARVAM_API_KEY.",
     "openai": "No OpenAI adapter has been built yet.",
     "azure_openai": "No Azure OpenAI adapter has been built yet.",
     "google": "No Google adapter has been built yet.",

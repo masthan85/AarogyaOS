@@ -87,6 +87,8 @@ by the state machine but unused until consent/triage steps exist. Transitions ou
 | Referral letters | `POST /encounters/{id}/letters` (draft); listing, `PUT /summaries/{id}` (edit) and `POST /summaries/{id}/approve` are shared with visit summaries, which carry a `kind` | `summary:write`; encounter's doctor |
 | Chart question | `POST /patients/{id}/ai/ask` `{question}` -> cited answer (when AI is on and consented) plus matching entries (always) | `ai:suggestions` + `patient:clinical` |
 
+| Read aloud | `POST /summaries/{id}/speech` -> `audio/wav` of an approved summary or letter (not stored) | `summary:read`; encounter's doctor; AI switch + patient consent; `503` if no voice service is connected |
+
 Errors of note: `409 consent_required` carries `missing: [...]`; `503` when the speech provider is unavailable. AI endpoints report an unavailable model as `200 {status: FAILED, message}` rather than an error, so a client never treats it as a failed save.
 
 Removed from Phase 2: `POST /appointments/{id}/start-consultation` and `/complete` and the `queue:call` permission,
@@ -94,3 +96,14 @@ replaced by the encounter workflow above.
 
 Planned conventions (not yet implemented): `Idempotency-Key` on mutating POSTs, cursor pagination,
 optimistic concurrency via `version`.
+
+## Cover (migration 0008)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `GET /cover/colleagues` | `result:review` | Other active doctors in the organisation |
+| `GET /cover` | `result:review` | Arrangements I made or that name me (ended ones for 30 days) |
+| `POST /cover` | `result:review` | `{to_user_id, starts_on, ends_on}`; at most 31 days, not more than a year ahead |
+| `POST /cover/{id}/end` | `result:review` | Either side may end it |
+
+While an arrangement is active, `GET /results/awaiting-review` for the covering doctor also returns the other doctor's results, each marked `covering_for`. Reviews are audited with `on_behalf_of`.

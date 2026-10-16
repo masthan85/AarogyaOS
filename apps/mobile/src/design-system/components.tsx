@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  Switch,
   StyleSheet,
   Text,
   TextInput,
@@ -202,4 +203,72 @@ export function ProvenanceChip({ text, tone }: { text: string; tone: ChipTone })
 export function SectionTitle({ children }: { children: ReactNode }) {
   const t = useTheme();
   return <Text style={{ color: t.textMuted, fontWeight: '700', textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.6 }}>{children}</Text>;
+}
+
+export function MultiChips<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label?: string;
+  options: { value: T; label: string }[];
+  value: T[];
+  onChange: (v: T[]) => void;
+}) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: space.xs }}>
+      {label ? <Text style={{ color: t.text, fontWeight: '600' }}>{label}</Text> : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+        {options.map((o) => {
+          const selected = value.includes(o.value);
+          return (
+            <Pressable
+              key={String(o.value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: selected }}
+              onPress={() => onChange(selected ? value.filter((v) => v !== o.value) : [...value, o.value])}
+              style={{
+                minHeight: MIN_TOUCH,
+                paddingHorizontal: space.md,
+                justifyContent: 'center',
+                borderRadius: 999,
+                borderWidth: 1.5,
+                borderColor: t.primary,
+                backgroundColor: selected ? t.primary : 'transparent',
+              }}>
+              <Text style={{ color: selected ? t.primaryText : t.primary, fontWeight: '600' }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/** A labelled switch with a sentence saying what it does. */
+export function ToggleRow({
+  label,
+  help,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  help?: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  const t = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, opacity: disabled ? 0.5 : 1 }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ color: t.text, fontWeight: '600' }}>{label}</Text>
+        {help ? <Text style={{ color: t.textMuted, fontSize: 12 }}>{help}</Text> : null}
+      </View>
+      <Switch value={value} onValueChange={onChange} disabled={disabled} accessibilityLabel={label} />
+    </View>
+  );
 }

@@ -29,7 +29,7 @@ import base64
 import contextlib
 import json
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 from urllib.parse import urlencode
 
@@ -78,6 +78,7 @@ class SarvamSpeechProvider:
         mode: str = "transcribe",
         url: str = DEFAULT_URL,
         drain_seconds: float = DRAIN_SECONDS,
+        on_message: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         if not api_key:
             raise ValueError("A Sarvam API key is required")
@@ -88,6 +89,8 @@ class SarvamSpeechProvider:
         self._mode = mode
         self._url = url
         self._drain = drain_seconds
+        # Diagnostics for the live-check script only: sees every vendor reply. Not used by the app.
+        self._on_message = on_message
 
     def __repr__(self) -> str:  # never show the key
         return f"SarvamSpeechProvider(model={self.model!r}, mode={self._mode!r})"
@@ -163,6 +166,8 @@ class SarvamSpeechProvider:
                         continue
                     idle_since = time.monotonic()
                     msg = _parse(raw)
+                    if self._on_message is not None:
+                        self._on_message(msg)
                     kind, data = msg.get("type"), msg.get("data") or {}
                     if kind == "events":
                         if data.get("signal_type") == "START_SPEECH":

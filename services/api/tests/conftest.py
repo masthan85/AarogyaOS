@@ -32,7 +32,7 @@ APP_PASSWORD = "aarogya_test_app"  # noqa: S105
 PASSWORD = "correct-horse-battery"  # noqa: S105
 TENANT_TABLES = (
     "ai_suggestion_actions, ai_suggestions, ai_candidates, ai_extractions, ai_usage, "
-    "knowledge_chunks, knowledge_documents, patient_summaries, note_templates, "
+    "knowledge_chunks, knowledge_documents, patient_summaries, note_templates, cover_arrangements, "
     "speech_usage, audio_assets, transcript_segments, interaction_speakers, clinical_interactions, "
     "consents, consent_policies, "
     "follow_ups, investigation_results, service_requests, prescription_items, prescriptions, "

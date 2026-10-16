@@ -7,6 +7,7 @@ import app.modules.ai.models
 import app.modules.audit.models
 import app.modules.clinical.models
 import app.modules.consent.models
+import app.modules.cover.models
 import app.modules.identity.models
 import app.modules.interactions.models
 import app.modules.languages.models

@@ -404,6 +404,8 @@ class ResultOut(BaseModel):
     comment: str | None
     reported_at: datetime
     reviewed_at: datetime | None
+    # Set only in the review list, when the result belongs to a colleague whose cover you hold.
+    covering_for: str | None = None
 
 
 # ---- follow-up ---------------------------------------------------------------------

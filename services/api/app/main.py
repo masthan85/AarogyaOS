@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.ai.anthropic_llm import AnthropicLLMProvider
 from app.ai.registry import register as register_llm
 from app.ai.registry import unregister as unregister_llm
+from app.ai.sarvam import SarvamLLMProvider
 from app.core.config import Settings, get_settings
 from app.core.crypto import FieldCrypto
 from app.core.db import create_db_engine, create_sessionmaker
@@ -25,6 +26,7 @@ from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
+from app.modules.cover.router import router as cover_router
 from app.modules.identity.router import auth_router, users_router
 from app.modules.interactions.gateway import router as gateway_router
 from app.modules.interactions.router import router as interactions_router
@@ -66,6 +68,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     else:
         unregister_llm("anthropic")
+    sarvam_key = settings.sarvam_api_key.get_secret_value()
+    if sarvam_key:
+        register_llm(
+            "sarvam",
+            lambda: SarvamLLMProvider(
+                sarvam_key,
+                model=settings.sarvam_llm_model,
+                base_url=settings.sarvam_rest_url,
+                timeout=settings.llm_timeout_seconds,
+            ),
+        )
+    else:
+        unregister_llm("sarvam")
     key = settings.sarvam_api_key.get_secret_value()
     if key:
         register(
@@ -113,6 +128,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ai_router,
         summaries_router,
         templates_router,
+        cover_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

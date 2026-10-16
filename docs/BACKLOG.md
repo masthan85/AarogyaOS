@@ -12,8 +12,9 @@ state and alerts, verification workflow, database-level immutability.
 P3 follow-ups: clinical sign-off of reference ranges and paediatric ranges, medication knowledge provider (interactions,
 contraindications, dose checks, Indian brand/generic data under licence), terminology service (ICD/SNOMED/LOINC),
 document/PDF result upload (needs object store), prescription print/PDF and patient copy, referrals, care-team
-scoping and break-glass, doctor handover/cover, edit-draft UI for prescriptions, results-to-review dashboard tile,
-FHIR mapping of the clinical record.
+scoping and break-glass, full encounter handover (results cover is built), duplicate patient merge (deliberately not built: it
+needs clinical-governance decisions on which record wins and how to undo a merge, and it touches immutable rows),
+dispensing and stock records for pharmacy (the pharmacy screen is read-only), FHIR mapping of the clinical record.
 P4 Speech (done, provider-independent): consent (8 purposes, versioned wording, guardians), recording sessions,
 authenticated audio gateway, SpeechProvider + registry + fallback + development provider, immutable transcripts
 with language/code-switch/speaker metadata, speaker assignment, audio retention + purge, usage metering, speech
@@ -49,3 +50,7 @@ Considered and NOT built, with the reason: **coding suggestions** (ICD/SNOMED) n
 mode / MedASR** needs an evaluation on your English audio first (MedASR is English-only, trained on dictation) and a purpose-limited
 recording type; **AI-written notes or letters** (kept code-built on purpose for safety); **letter sending/printing/PDF**; **translation
 of summaries** (needs a translation provider); **radiology reporting**; **nurse flowsheet extraction** beyond the existing vitals.
+
+Sarvam breadth (docs/SARVAM.md): translation, read-aloud and chat adapters added. Not yet: batch transcription with speaker labels, document digitisation and translation of outside reports (both need a live run and stored files), pronunciation dictionary for drug names.
+
+Added: administration screens (organisation switches, consent wording, staff and roles, doctor profiles and hours, note layouts, reference library, usage and audit) and PDF share/print of approved documents and signed prescriptions (phone-generated, so every Indian script renders). Both are compile- and unit-tested only, not run on a device.

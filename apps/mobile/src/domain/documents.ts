@@ -34,9 +34,21 @@ export function currentDocuments(docs: ClinicalDocument[]): ClinicalDocument[] {
 export const documentTitle = (d: ClinicalDocument): string =>
   d.kind === 'REFERRAL_LETTER' && d.recipient ? `Referral to ${d.recipient}` : (DOCUMENT_LABELS[d.kind] ?? d.kind);
 
-export const translationNote = (d: ClinicalDocument): string | null =>
-  d.translation_status === 'NOT_AVAILABLE'
-    ? 'No translation service is connected, so this is in English.'
-    : d.translation_status === 'MACHINE_DRAFT'
-      ? 'Machine-translated draft: check it before approving.'
-      : null;
+export const translationNote = (d: ClinicalDocument): string | null => {
+  switch (d.translation_status) {
+    case 'NOT_AVAILABLE':
+      return 'No translation service is connected, so this is in English.';
+    case 'NOT_CONSENTED':
+      return 'Not translated: it needs the organisation\'s AI switch and the patient\'s AI-processing consent. This is in English.';
+    case 'MACHINE_DRAFT':
+      return 'Machine-translated draft: read it, and check every medicine and number, before approving.';
+    case 'NUMBERS_MISMATCH':
+      return 'Warning: the numbers in the translation differ from the English. Compare every dose and date before approving.';
+    default:
+      return null;
+  }
+};
+
+/** Reading aloud is offered only for approved text, in languages the voice service covers. */
+export const SPEECH_LANGUAGES = new Set(['en-IN', 'hi-IN', 'bn-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'od-IN', 'pa-IN', 'ta-IN', 'te-IN']);
+export const canReadAloud = (d: ClinicalDocument): boolean => d.status === 'APPROVED' && SPEECH_LANGUAGES.has(d.language);

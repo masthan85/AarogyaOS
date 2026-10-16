@@ -61,6 +61,8 @@ retirement columns change) + `knowledge_chunks` (embeddings as float arrays), `p
 approved rows are frozen and may only become SUPERSEDED). Immutability is enforced by triggers, not only by code.
 
 ## Templates and letters
+`cover_arrangements` (tenant-scoped, forced RLS, migration 0008): one doctor asking a colleague to review their results between two dates (at most 31 days). It only widens the colleague's results-awaiting-review list.
+
 `note_templates` (tenant-scoped, forced RLS): an organisation's note layouts, as ordered sections that name a note type, a heading and a hint. Structure only; no pre-filled text. `patient_summaries` gained `kind` (`VISIT_SUMMARY` | `REFERRAL_LETTER`) and `recipient`; versions and supersession are per kind (and per recipient for letters), and the frozen-once-approved trigger covers both.
 
 ## Clinical fact mixin

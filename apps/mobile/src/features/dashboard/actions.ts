@@ -9,13 +9,15 @@ export type DashboardAction = {
   href?: Href;
 };
 
-// Clinical workflow tiles are listed so each role sees its future home, but stay disabled
-// until the corresponding phase lands. Nothing here pretends to be a working feature.
+// Every tile opens a working screen. Visibility is a convenience; the API enforces permissions.
 export const DASHBOARD_ACTIONS: DashboardAction[] = [
   { key: 'patients', title: 'Patients', description: 'Find or register a patient', permission: 'patient:search', href: '/patients' },
   { key: 'appointments', title: 'Appointments', description: 'Day view and booking', permission: 'appointment:read', href: '/appointments' },
   { key: 'queue', title: 'Queue', description: 'Who is waiting, tokens, calling', permission: 'queue:read', href: '/queue' },
+  { key: 'results', title: 'Results to review', description: 'Investigation results you ordered, critical first', permission: 'result:review', href: '/results' },
+  { key: 'follow-ups', title: 'Follow-ups', description: 'Patients due to be seen again', permission: 'followup:read', href: '/follow-ups' },
+  { key: 'lab', title: 'Orders and results', description: 'Pending lab and radiology orders; enter results', permission: 'result:enter', href: '/lab' },
+  { key: 'pharmacy', title: 'Pharmacy', description: 'Look up a patient\'s signed prescriptions', permission: 'prescription:read', href: '/pharmacy' },
   { key: 'facilities', title: 'Facilities', description: 'Sites and departments', permission: 'facility:read', href: '/facilities' },
-  { key: 'staff', title: 'Staff & roles', description: 'Phase 1 API ready, screen to follow', permission: 'user:read' },
-  { key: 'audit', title: 'Audit log', description: 'Who accessed or changed what', permission: 'audit:read' },
+  { key: 'admin', title: 'Administration', description: 'Settings, staff, doctors, note layouts, reference library, usage and audit', permission: 'user:read', href: '/admin' },
 ];

@@ -26,7 +26,7 @@ Hazard log (initial)
 | H13 | Unsigned/half-made decisions leaking into care | Drafts (prescriptions, orders) are invisible to pharmacy, lab and nurses; a visit cannot be completed with drafts outstanding | — |
 | H14 | Silent alteration of the record | Facts append-only (database triggers); corrections supersede; signed prescriptions and reported results frozen; audit log append-only | A database superuser could still bypass triggers; restrict and monitor superuser access |
 | H15 | Unverified information treated as confirmed | Every fact carries source + verification state; a patient's uncertain statement is stored as POSSIBLE; only a doctor confirms diagnoses | AI-generated facts (Phase 5) must enter as AI_GENERATED / REQUIRES_REVIEW |
-| H16 | Doctor edits another doctor's consultation | Clinical writes restricted to the encounter's own practitioner | Cover/handover workflow not built |
+| H16 | Doctor edits another doctor's consultation | Clinical writes restricted to the encounter's own practitioner | Short-term cover exists for reviewing results only (`/cover`, max 31 days, either side can end it, reviews audited with `on_behalf_of`). Cover does not let anyone write to another doctor's encounter; a full handover of encounters is not built |
 | H17 | Offline duplicate or lost clinical writes | Clinical writes are never queued offline; the app says plainly when nothing was saved | Idempotency keys planned |
 
 ## Phase 4 hazards (speech)
@@ -65,6 +65,13 @@ Hazard log (initial)
 | H40 | The chart answer invents or misattributes a fact | Answer comes only from listed chart entries; every statement must cite entries that exist, else it is dropped; "not found" instead of a guess; the matching entries are shown beside it; the model cannot claim actions | A cited entry can still be misread by the model; the clinician sees the cited source text and should check it |
 | H41 | Unreviewed AI output treated as chart fact | Candidates and suggestions are excluded from the searchable chart (tested) | — |
 | H42 | Stale or superseded entries answer a question | Only current, non-rejected versions are searched, each with its date | Very old entries are still returned if they match |
+
+## Translation and read-aloud (Sarvam)
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H43 | A machine translation changes a dose, drug or instruction and the patient follows it | Always a draft until a doctor approves; digits requested in 0-9 and compared with the English (mismatch flagged `NUMBERS_MISMATCH`); the English source is kept; editing marks it clinician-edited | **Not clinically evaluated.** Numbers are checked, words are not. A doctor who cannot read the language cannot check it: use a reader for each language you offer |
+| H44 | Audio of text nobody approved, or in the wrong language, is played to a patient | Only APPROVED text is spoken; the document's own language is used; unsupported languages are refused; audio is not stored | Pronunciation of drug names and numbers is unverified; the voice is synthetic and says nothing about who approved it |
+| H45 | Patient text sent to a vendor without permission | Needs the organisation's AI switch, the patient's AI-processing consent and the provider switch; checked per call; nothing sent when any is missing (tested) | Vendor retention and residency terms are not yet agreed |
 
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

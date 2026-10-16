@@ -1,10 +1,13 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
+from app.ai.knowledge import NotAvailable
+from app.ai.services import get_translator, get_tts
 from app.core.context import Principal
-from app.core.deps import TenantDb, require
+from app.core.deps import SettingsDep, TenantDb, require
+from app.core.errors import ServiceUnavailable
 from app.modules.ai.schemas import LetterDraftIn, SummaryDraftIn, SummaryEditIn, SummaryOut
 from app.modules.summaries import service
 
@@ -17,8 +20,9 @@ def draft(
     body: SummaryDraftIn,
     db: TenantDb,
     principal: Annotated[Principal, Depends(require("summary:write"))],
+    settings: SettingsDep,
 ) -> SummaryOut:
-    return service.draft(db, principal, encounter_id, body)
+    return service.draft(db, principal, encounter_id, body, get_translator(settings))
 
 
 @router.post("/encounters/{encounter_id}/letters", response_model=SummaryOut, status_code=201)
@@ -57,3 +61,18 @@ def approve(
     principal: Annotated[Principal, Depends(require("summary:write"))],
 ) -> SummaryOut:
     return service.approve(db, principal, summary_id)
+
+
+@router.post("/summaries/{summary_id}/speech")
+def speech(
+    summary_id: uuid.UUID,
+    db: TenantDb,
+    principal: Annotated[Principal, Depends(require("summary:read"))],
+    settings: SettingsDep,
+) -> Response:
+    try:
+        tts = get_tts(settings)
+        audio = service.speak(db, principal, settings, summary_id, tts)
+    except (NotAvailable, service.SpeechUnavailable) as exc:
+        raise ServiceUnavailable(str(exc)) from exc
+    return Response(audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})

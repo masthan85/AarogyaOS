@@ -5,6 +5,14 @@ import { secureTokenStore } from '@/services/token-store';
 
 import { ApiClient } from './client';
 import {
+  aiUsageSchema,
+  auditLogSchema,
+  knowledgeDocSchema,
+  orgPolicySchema,
+  practitionerFullSchema,
+  roleSchema,
+  speechUsageSchema,
+  userSchema,
   askSchema,
   documentSchema,
   templateSchema,
@@ -30,7 +38,12 @@ import {
   conditionSchema,
   medicationSchema,
   orderSchema,
+  colleagueSchema,
+  coverSchema,
   followUpSchema,
+  reportedResultSchema,
+  worklistFollowUpSchema,
+  worklistOrderSchema,
   prescriptionSchema,
   safetyCheckSchema,
   patientConsentsSchema,
@@ -207,6 +220,10 @@ export type RxItemInput = {
 };
 export const createPrescription = (encId: string, items: RxItemInput[]) =>
   api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items } });
+export const getPatientPrescriptions = (patientId: string) =>
+  api.request(`/patients/${patientId}/prescriptions`, z.array(prescriptionSchema));
+export const updatePrescription = (rxId: string, items: RxItemInput[]) =>
+  api.request(`/prescriptions/${rxId}`, prescriptionSchema, { method: 'PUT', body: { items } });
 export const safetyCheck = (rxId: string) =>
   api.request(`/prescriptions/${rxId}/safety-check`, safetyCheckSchema, { method: 'POST', body: {} });
 export const signPrescription = (rxId: string, acknowledged: string[]) =>
@@ -311,3 +328,96 @@ export const approveDocument = (id: string) =>
   api.request(`/summaries/${id}/approve`, documentSchema, { method: 'POST', body: {} });
 export const askChart = (patientId: string, question: string) =>
   api.request(`/patients/${patientId}/ai/ask`, askSchema, { method: 'POST', body: { question } });
+export const getDocumentSpeech = (id: string) =>
+  api.requestBytes(`/summaries/${id}/speech`, { method: 'POST', body: {} });
+
+// ---- Administration --------------------------------------------------------------------------------
+
+export const getOrgPolicy = () => api.request('/organisations/current/policy', orgPolicySchema);
+export const saveOrgPolicy = (body: z.infer<typeof orgPolicySchema>) =>
+  api.request('/organisations/current/policy', orgPolicySchema, { method: 'PUT', body });
+export const installConsentWording = (language = 'en-IN') =>
+  api.request(`/consent-policies/install-templates${qs({ language })}`, z.array(policySchema), { method: 'POST', body: {} });
+
+export const getUsers = () => api.request('/users', z.array(userSchema));
+export const getRoles = () => api.request('/roles', z.array(roleSchema));
+export const createUser = (body: { email: string; full_name: string; password: string; roles: string[]; preferred_language?: string }) =>
+  api.request('/users', userSchema, { method: 'POST', body });
+export const deactivateUser = (id: string) => api.request(`/users/${id}/deactivate`, userSchema, { method: 'POST', body: {} });
+export const getPractitionersFull = () => api.request('/practitioners', z.array(practitionerFullSchema));
+export const createPractitioner = (body: {
+  user_id: string;
+  facility_id: string;
+  specialty: string;
+  registration_number?: string;
+  consultation_minutes?: number;
+}) => api.request('/practitioners', practitionerFullSchema, { method: 'POST', body });
+export const setWorkingHours = (id: string, hours: { weekday: number; start_time: string; end_time: string }[]) =>
+  api.request(`/practitioners/${id}/working-hours`, practitionerFullSchema, { method: 'PUT', body: { hours } });
+
+export type TemplateBody = {
+  name: string;
+  specialty?: string | null;
+  sections: { note_type: string; title: string; hint: string }[];
+  active: boolean;
+};
+export const getAllTemplates = () => api.request('/note-templates/all', z.array(templateSchema));
+export const createTemplate = (body: TemplateBody) => api.request('/note-templates', templateSchema, { method: 'POST', body });
+export const updateTemplate = (id: string, body: TemplateBody) =>
+  api.request(`/note-templates/${id}`, templateSchema, { method: 'PUT', body });
+
+export const getKnowledgeDocs = () => api.request('/knowledge/documents', z.array(knowledgeDocSchema));
+export const createKnowledgeDoc = (body: {
+  title: string;
+  publisher: string;
+  source: string;
+  version: string;
+  licence: string;
+  specialty?: string;
+  chunks: string[];
+}) => api.request('/knowledge/documents', knowledgeDocSchema, { method: 'POST', body });
+export const approveKnowledgeDoc = (id: string) =>
+  api.request(`/knowledge/documents/${id}/approve`, knowledgeDocSchema, { method: 'POST', body: {} });
+export const retireKnowledgeDoc = (id: string) =>
+  api.request(`/knowledge/documents/${id}/retire`, knowledgeDocSchema, { method: 'POST', body: {} });
+
+export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
+export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
+export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
+
+// ---- worklists ----------------------------------------------------------------------------
+
+export const getOrders = (params: { status?: string; category?: string; patient_id?: string }) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  return api.request(`/orders?${q.toString()}`, z.array(worklistOrderSchema));
+};
+export type ResultInput = {
+  test_name: string;
+  value_numeric?: number;
+  value_text?: string;
+  unit?: string;
+  ref_low?: number;
+  ref_high?: number;
+  critical_low?: number;
+  critical_high?: number;
+  comment?: string;
+};
+export const enterResult = (orderId: string, body: ResultInput) =>
+  api.request(`/orders/${orderId}/results`, reportedResultSchema, { method: 'POST', body });
+export const getResultsAwaitingReview = () => api.request('/results/awaiting-review', z.array(reportedResultSchema));
+export const reviewResult = (id: string) =>
+  api.request(`/results/${id}/review`, reportedResultSchema, { method: 'POST', body: {} });
+export const getFollowUps = (params: { due_on_or_before?: string; status?: string }) => {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  return api.request(`/follow-ups?${q.toString()}`, z.array(worklistFollowUpSchema));
+};
+export const setFollowUpStatus = (id: string, status: 'COMPLETED' | 'CANCELLED') =>
+  api.request(`/follow-ups/${id}/status`, worklistFollowUpSchema, { method: 'POST', body: { status } });
+
+export const getColleagues = () => api.request('/cover/colleagues', z.array(colleagueSchema));
+export const getCover = () => api.request('/cover', z.array(coverSchema));
+export const arrangeCover = (body: { to_user_id: string; starts_on: string; ends_on: string }) =>
+  api.request('/cover', coverSchema, { method: 'POST', body });
+export const endCover = (id: string) => api.request(`/cover/${id}/end`, coverSchema, { method: 'POST', body: {} });

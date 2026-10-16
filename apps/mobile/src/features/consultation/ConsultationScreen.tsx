@@ -22,6 +22,7 @@ import { NotesPanel } from './NotesPanel';
 import { OrdersPanel } from './OrdersPanel';
 import { PrescriptionPanel } from './PrescriptionPanel';
 import { type EncounterData, useEncounterData } from './useEncounterData';
+import { useLetterhead } from './useLetterhead';
 
 type Tab = 'context' | 'conversation' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
 const TABS: { value: Tab; label: string }[] = [
@@ -80,6 +81,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
     return () => clearInterval(timer);
   }, [liveId, id, qc]);
 
+  const letterhead = useLetterhead(data);
   const detail = data.detail;
   if (!detail) return null;
   const p = data.patient;
@@ -92,9 +94,9 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       {tab === 'notes' ? <NotesPanel encId={id} data={data} /> : null}
       {tab === 'diagnosis' ? <DiagnosisPanel encId={id} data={data} /> : null}
       {tab === 'orders' ? <OrdersPanel encId={id} data={data} /> : null}
-      {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} /> : null}
+      {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} letterhead={letterhead} /> : null}
       {tab === 'followup' ? <FollowUpPanel encId={id} data={data} /> : null}
-      {tab === 'documents' ? <DocumentsPanel encId={id} /> : null}
+      {tab === 'documents' ? <DocumentsPanel encId={id} patientLanguage={data.patient?.preferred_language} letterhead={letterhead} /> : null}
       {tab === 'finish' ? <FinishPanel encId={id} data={data} /> : null}
     </>
   );

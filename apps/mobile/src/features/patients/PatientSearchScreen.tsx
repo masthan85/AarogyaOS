@@ -33,7 +33,8 @@ export function PatientHitRow({ p, onPress }: { p: PatientHit; onPress: () => vo
   );
 }
 
-export function PatientSearchScreen() {
+/** `onSelect` lets another screen (the pharmacy counter) use the search without opening the full profile. */
+export function PatientSearchScreen({ onSelect }: { onSelect?: (p: PatientHit) => void } = {}) {
   const t = useTheme();
   const { me } = useAuth();
   const [mode, setMode] = useState<Mode>('name');
@@ -77,7 +78,7 @@ export function PatientSearchScreen() {
           onSubmitEditing={() => text.trim() && setSubmitted({ [mode]: text.trim() })}
         />
         <Button title="Search" onPress={() => text.trim() && setSubmitted({ [mode]: text.trim() })} />
-        {can(me, 'patient:create') ? (
+        {!onSelect && can(me, 'patient:create') ? (
           <Button title="Register new patient" variant="secondary" onPress={() => router.push('/patients/new')} />
         ) : null}
       </View>
@@ -95,7 +96,7 @@ export function PatientSearchScreen() {
           contentContainerStyle={{ padding: space.md, gap: space.md }}
           ListEmptyComponent={<EmptyState message="No matching patient. Check the spelling or register a new patient." />}
           renderItem={({ item }) => (
-            <PatientHitRow p={item} onPress={() => canOpen && router.push(`/patients/${item.id}`)} />
+            <PatientHitRow p={item} onPress={() => (onSelect ? onSelect(item) : canOpen && router.push(`/patients/${item.id}`))} />
           )}
         />
       ) : (

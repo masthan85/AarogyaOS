@@ -102,4 +102,17 @@ describe('ApiClient', () => {
     expect(err.status).toBe(409);
     expect(err.body?.candidates).toEqual([{ id: '1' }]);
   });
+
+  it('downloads files with the same token handling and surfaces the server message on failure', async () => {
+    const bytes = new Uint8Array([82, 73, 70, 70]);
+    const ok = jest.fn(async () => new Response(bytes, { status: 200, headers: { 'content-type': 'audio/wav' } }));
+    const c = new ApiClient({ baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl: ok });
+    expect(Array.from(new Uint8Array(await c.requestBytes('/a', { method: 'POST', body: {} })))).toEqual([82, 73, 70, 70]);
+    const init = (ok.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer access-0');
+
+    const failing = jest.fn(async () => json(409, { detail: 'Only an approved document can be read aloud' }));
+    const c2 = new ApiClient({ baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl: failing });
+    await expect(c2.requestBytes('/a')).rejects.toMatchObject({ status: 409, message: 'Only an approved document can be read aloud' });
+  });
 });
