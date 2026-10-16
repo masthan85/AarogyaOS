@@ -18,6 +18,7 @@ What to look for (the adapter was written from the vendor SDK, not run live):
 
 import asyncio
 import os
+import struct
 import sys
 import wave
 
@@ -41,6 +42,8 @@ async def main(path: str, language: str) -> int:
         key,
         model=os.environ.get("AAROGYA_SARVAM_MODEL", "saaras:v4"),
         mode=os.environ.get("AAROGYA_SARVAM_MODE", "transcribe"),  # type: ignore[arg-type]
+        drain_seconds=float(os.environ.get("AAROGYA_SARVAM_DRAIN", "8")),
+        on_message=lambda m: print("  <-", str(m)[:300]),  # every vendor reply
     )
 
     async def chunks():  # type: ignore[no-untyped-def]
@@ -49,7 +52,11 @@ async def main(path: str, language: str) -> int:
             yield pcm[i : i + step]
             await asyncio.sleep(0.2)  # real-time pacing
 
-    print(f"{len(pcm) / BYTES_PER_SECOND:.1f}s of audio, language hint {language}")
+    peak = max((abs(s) for s in struct.unpack(f"<{len(pcm) // 2}h", pcm)), default=0)
+    seconds = len(pcm) / BYTES_PER_SECOND
+    print(f"{seconds:.1f}s of audio, loudest sample {peak}/32767, language hint {language}")
+    if peak < 1500:
+        print("WARNING: this recording is very quiet or silent; the service may hear nothing.")
     try:
         async for seg in provider.stream_transcribe(
             chunks(), StreamOptions(language_hint=language)
@@ -59,7 +66,7 @@ async def main(path: str, language: str) -> int:
     except ProviderError as exc:
         print(f"PROVIDER ERROR: {exc}")
         return 1
-    print("done")
+    print("done (if no [..] lines were printed above, the service returned no transcript)")
     return 0
 
 
