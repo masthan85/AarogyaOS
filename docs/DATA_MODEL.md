@@ -71,3 +71,5 @@ approved rows are frozen and may only become SUPERSEDED). Immutability is enforc
 
 ## FHIR
 Separate mapping layer; resources never stored as the source of truth.
+
+`transcript_corrections` (tenant-scoped, forced RLS, migration 0009): append-only (a trigger refuses update and delete). One row per correction: segment, text (null = undo), who. The newest row for a segment applies; the original `transcript_segments.raw_text` is untouched. Audit rows record who corrected which line, never the text.

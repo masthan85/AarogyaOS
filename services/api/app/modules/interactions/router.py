@@ -17,8 +17,10 @@ from app.modules.audit.service import record_audit
 from app.modules.interactions import service
 from app.modules.interactions.schemas import (
     AudioFormat,
+    CorrectionIn,
     InteractionCreate,
     InteractionOut,
+    SegmentOut,
     SpeakerAssign,
     SpeakerOut,
     StartOut,
@@ -81,6 +83,19 @@ def get_transcript(
     after_seq: Annotated[int, Query(ge=0)] = 0,
 ) -> TranscriptOut:
     return service.transcript(db, principal, interaction_id, after_seq)
+
+
+@router.put(
+    "/interactions/{interaction_id}/segments/{segment_id}/correction", response_model=SegmentOut
+)
+def correct_segment(
+    interaction_id: uuid.UUID,
+    segment_id: uuid.UUID,
+    body: CorrectionIn,
+    db: TenantDb,
+    principal: Annotated[Principal, Depends(require("transcript:correct"))],
+) -> SegmentOut:
+    return service.correct_segment(db, principal, interaction_id, segment_id, body.text)
 
 
 @router.put("/interactions/{interaction_id}/speakers/{speaker_id}", response_model=SpeakerOut)

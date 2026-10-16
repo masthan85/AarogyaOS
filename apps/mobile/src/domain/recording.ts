@@ -64,6 +64,10 @@ export const needsCheck = (s: Pick<Segment, 'confidence'> & { language_confidenc
   (s.confidence !== null && s.confidence < LOW_CONFIDENCE) ||
   (s.language_confidence != null && s.language_confidence < LOW_LANGUAGE_CONFIDENCE);
 
+/** What the rest of the app should read: a person's correction if there is one, otherwise what was heard. */
+export const shownText = (s: Pick<Segment, 'raw_text'> & { corrected_text?: string | null }): string =>
+  s.corrected_text ?? s.raw_text;
+
 export const formatClock = (totalSeconds: number): string => {
   const s = Math.max(0, Math.floor(totalSeconds));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;

@@ -59,7 +59,7 @@ def say(db: Session, iid: str, lines: list[tuple[str, str]], *, start_seq: int =
                     role=role,
                 )
             )
-    ids = []
+    segs = []
     for i, (sid, text) in enumerate(lines):
         seg = TranscriptSegment(
             organisation_id=ia.organisation_id,
@@ -74,9 +74,9 @@ def say(db: Session, iid: str, lines: list[tuple[str, str]], *, start_seq: int =
             provider_model="dev-1",
         )
         db.add(seg)
-        ids.append(seg.id)
+        segs.append(seg)
     db.commit()
-    return [str(i) for i in ids]
+    return [str(s.id) for s in segs]
 
 
 def analyse(client: TestClient, h: dict[str, str], iid: str) -> Any:

@@ -8,6 +8,7 @@ import {
   mergeSegments,
   missingForRecording,
   needsCheck,
+  shownText,
   PURPOSE_LABELS,
   recordingIndicator,
 } from '../recording';
@@ -101,5 +102,13 @@ describe('describeInterruption', () => {
   it('says plainly why recording stopped', () => {
     expect(describeInterruption('phoneCall')).toMatch(/phone call/);
     expect(describeInterruption('something-new')).toMatch(/Nothing is being recorded/);
+  });
+});
+
+describe('shownText', () => {
+  it('prefers a staff correction and otherwise shows what was heard', () => {
+    expect(shownText({ raw_text: 'fewer', corrected_text: 'fever' })).toBe('fever');
+    expect(shownText({ raw_text: 'fewer', corrected_text: null })).toBe('fewer');
+    expect(shownText({ raw_text: 'fewer' })).toBe('fewer');
   });
 });

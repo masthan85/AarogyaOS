@@ -1,10 +1,11 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.context import Principal
 from app.core.deps import CryptoDep, TenantDb, require
+from app.core.ratelimit import limiter_of
 from app.modules.patients import service
 from app.modules.patients.schemas import (
     IdentifierIn,
@@ -34,11 +35,17 @@ def create_patient(
 @router.get("/search", response_model=list[PatientHit])
 def search_patients(
     db: TenantDb,
+    request: Request,
     principal: Annotated[Principal, Depends(require("patient:search"))],
     name: Annotated[str | None, Query(max_length=100)] = None,
     mobile: Annotated[str | None, Query(max_length=20)] = None,
     mrn: Annotated[str | None, Query(max_length=20)] = None,
 ) -> list[PatientHit]:
+    limiter_of(request).check(
+        f"search:{principal.user_id}",
+        limit=request.app.state.settings.patient_searches_per_minute_per_user,
+        window_seconds=60,
+    )
     return service.search_patients(db, principal, name=name, mobile=mobile, mrn=mrn)
 
 

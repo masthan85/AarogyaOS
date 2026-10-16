@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Purpose = Literal["RECEPTION", "TRIAGE", "CONSULTATION"]
 Role = Literal["DOCTOR", "PATIENT", "OTHER_STAFF", "FAMILY_MEMBER", "UNKNOWN"]
@@ -73,6 +73,8 @@ class SegmentOut(BaseModel):
     start_ms: int
     end_ms: int
     raw_text: str
+    # A person's correction of raw_text, if any. raw_text itself never changes.
+    corrected_text: str | None = None
     normalised_text: str | None
     language: str | None
     secondary_language: str | None
@@ -99,6 +101,21 @@ class TranscriptOut(BaseModel):
     speakers: list[SpeakerOut]
     partial: PartialOut | None
     last_seq: int
+
+
+class CorrectionIn(BaseModel):
+    # None puts the segment back to exactly what was heard.
+    text: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("text")
+    @classmethod
+    def _not_blank(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v:
+            raise ValueError("Enter the corrected text, or send null to undo a correction")
+        return v
 
 
 class SpeakerAssign(BaseModel):

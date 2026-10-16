@@ -340,6 +340,7 @@ export const segmentSchema = z.object({
   start_ms: z.number(),
   end_ms: z.number(),
   raw_text: z.string(),
+  corrected_text: z.string().nullable().optional(),
   normalised_text: z.string().nullable(),
   language: z.string().nullable(),
   secondary_language: z.string().nullable(),

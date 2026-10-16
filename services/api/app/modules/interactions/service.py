@@ -17,6 +17,7 @@ from app.modules.interactions.models import (
     ClinicalInteraction,
     InteractionSpeaker,
     SpeechUsage,
+    TranscriptCorrection,
     TranscriptSegment,
 )
 from app.modules.interactions.schemas import (
@@ -459,6 +460,79 @@ def add_segment(
     return row
 
 
+def corrections(session: Session, interaction_id: uuid.UUID) -> dict[uuid.UUID, str]:
+    """The current correction for each corrected segment (newest row wins; an empty one undoes)."""
+    rows = session.scalars(
+        select(TranscriptCorrection)
+        .where(TranscriptCorrection.interaction_id == interaction_id)
+        .order_by(TranscriptCorrection.created_at, TranscriptCorrection.id)
+    )
+    current: dict[uuid.UUID, str] = {}
+    for r in rows:
+        if r.text is None:
+            current.pop(r.segment_id, None)
+        else:
+            current[r.segment_id] = r.text
+    return current
+
+
+def correct_segment(
+    session: Session,
+    principal: Principal,
+    interaction_id: uuid.UUID,
+    segment_id: uuid.UUID,
+    text: str | None,
+) -> SegmentOut:
+    ia = visible(session, principal, interaction_id)
+    seg = session.get(TranscriptSegment, segment_id)
+    if seg is None or seg.interaction_id != ia.id:
+        raise NotFound("Transcript line not found")
+    session.add(
+        TranscriptCorrection(
+            organisation_id=ia.organisation_id,
+            segment_id=seg.id,
+            interaction_id=ia.id,
+            patient_id=ia.patient_id,
+            text=text,
+            corrected_by=principal.user_id,
+        )
+    )
+    record_audit(
+        session,
+        principal.meta,
+        org_id=ia.organisation_id,
+        actor_user_id=principal.user_id,
+        action="TRANSCRIPT_CORRECTED" if text is not None else "TRANSCRIPT_CORRECTION_UNDONE",
+        resource_type="transcript_segments",
+        resource_id=seg.id,
+    )
+    session.commit()
+    speakers = _speaker_rows(session, ia.id)
+    return _segment_out(seg, speakers, corrections(session, ia.id))
+
+
+def _segment_out(
+    r: TranscriptSegment, speakers: dict[str, InteractionSpeaker], fixed: dict[uuid.UUID, str]
+) -> SegmentOut:
+    return SegmentOut(
+        id=r.id,
+        seq=r.seq,
+        speaker_id=r.speaker_id,
+        speaker_role=speakers[r.speaker_id].role if r.speaker_id in speakers else "UNKNOWN",
+        start_ms=r.start_ms,
+        end_ms=r.end_ms,
+        raw_text=r.raw_text,
+        corrected_text=fixed.get(r.id),
+        normalised_text=r.normalised_text,
+        language=r.language,
+        secondary_language=r.secondary_language,
+        language_confidence=r.language_confidence,
+        confidence=r.confidence,
+        code_switch_spans=r.code_switch_spans,
+        provider=r.provider,
+    )
+
+
 def transcript(
     session: Session,
     principal: Principal,
@@ -470,6 +544,7 @@ def transcript(
     ia = visible(session, principal, interaction_id)
     reconcile_stale(session, ia)
     speakers = _speaker_rows(session, ia.id)
+    fixed = corrections(session, ia.id)
     rows = session.scalars(
         select(TranscriptSegment)
         .where(TranscriptSegment.interaction_id == ia.id, TranscriptSegment.seq > after_seq)
@@ -495,25 +570,7 @@ def transcript(
         status=ia.status,
         is_development=ia.is_development,
         ai_processing=ia.ai_processing,
-        segments=[
-            SegmentOut(
-                id=r.id,
-                seq=r.seq,
-                speaker_id=r.speaker_id,
-                speaker_role=speakers[r.speaker_id].role if r.speaker_id in speakers else "UNKNOWN",
-                start_ms=r.start_ms,
-                end_ms=r.end_ms,
-                raw_text=r.raw_text,
-                normalised_text=r.normalised_text,
-                language=r.language,
-                secondary_language=r.secondary_language,
-                language_confidence=r.language_confidence,
-                confidence=r.confidence,
-                code_switch_spans=r.code_switch_spans,
-                provider=r.provider,
-            )
-            for r in rows
-        ],
+        segments=[_segment_out(r, speakers, fixed) for r in rows],
         speakers=[
             SpeakerOut(speaker_id=s.speaker_id, role=s.role, label=s.label)
             for s in sorted(speakers.values(), key=lambda s: s.speaker_id)

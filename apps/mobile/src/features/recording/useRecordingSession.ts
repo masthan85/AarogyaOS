@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   assignSpeaker,
+  correctSegment,
   createInteraction,
   freshAccessToken,
   getInteraction,
@@ -196,6 +197,19 @@ export function useRecordingSession(opts: Options) {
     move('ended');
   }, [move]);
 
+  const correctLine = useCallback(async (segmentId: string, text: string | null): Promise<boolean> => {
+    const id = idRef.current;
+    if (!id) return false;
+    try {
+      const updated = await correctSegment(id, segmentId, text);
+      setSegments((cur) => mergeSegments(cur, [updated]));
+      return true;
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : 'Could not save the correction.');
+      return false;
+    }
+  }, []);
+
   const assignRole = useCallback(async (speakerId: string, role: string) => {
     const id = idRef.current;
     if (!id) return;
@@ -277,7 +291,7 @@ export function useRecordingSession(opts: Options) {
 
   return {
     phase, interaction, segments, speakers, partial, message, seconds, indicator,
-    begin, pause, resume, stop, assignRole, adopt,
+    begin, pause, resume, stop, assignRole, correctLine, adopt,
     captureKind: captureKind(),
   };
 }

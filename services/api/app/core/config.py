@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     sarvam_mode: Literal["transcribe", "verbatim", "translit", "codemix"] = "transcribe"
     # Live test: a fixed language wrote Hindi in Roman letters; auto-detect did better.
     sarvam_use_language_hint: bool = False
+    # Per worker process, per minute; 0 turns a limit off. See app/core/ratelimit.py.
+    login_attempts_per_minute_per_ip: int = 60
+    patient_searches_per_minute_per_user: int = 60
     sarvam_url: str = "wss://api.sarvam.ai/speech-to-text/ws"
     # The same key serves Sarvam's REST services. Each is chosen explicitly: nothing is sent to
     # Sarvam unless its provider is set to "sarvam".

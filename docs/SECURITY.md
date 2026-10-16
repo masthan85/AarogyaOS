@@ -98,3 +98,6 @@ user agent, correlation id, before/after for sensitive changes, AI involvement.
 ## Open items needing specialist review
 DPDP Act 2023 compliance and rules, data residency, pentest, threat model for audio
 gateway, key management, DPA with each AI provider.
+
+## Rate limits
+Login is limited per client address and patient search per user (defaults 60 a minute, `AAROGYA_LOGIN_ATTEMPTS_PER_MINUTE_PER_IP`, `AAROGYA_PATIENT_SEARCHES_PER_MINUTE_PER_USER`, 0 turns off). The limiter lives in each worker's memory: with several workers the real limit is higher, a restart clears it, and behind a proxy that hides client addresses all users share one login bucket, so configure the proxy to pass the real address before relying on it. Accounts also lock after repeated failures and every search is audited. A shared (Redis) limiter is still to do.

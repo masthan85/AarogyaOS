@@ -1,10 +1,11 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.core.context import Principal
 from app.core.deps import MetaDep, PrincipalDep, SettingsDep, SystemDb, TenantDb, require
+from app.core.ratelimit import limiter_of
 from app.modules.identity import service
 from app.modules.identity.schemas import (
     LoginRequest,
@@ -22,7 +23,14 @@ users_router = APIRouter(tags=["users"])
 
 
 @auth_router.post("/login", response_model=TokenPair)
-def login(body: LoginRequest, db: SystemDb, settings: SettingsDep, meta: MetaDep) -> TokenPair:
+def login(
+    body: LoginRequest, db: SystemDb, settings: SettingsDep, meta: MetaDep, request: Request
+) -> TokenPair:
+    limiter_of(request).check(
+        f"login:{meta.ip_address}",
+        limit=settings.login_attempts_per_minute_per_ip,
+        window_seconds=60,
+    )
     return service.login(
         db,
         settings,

@@ -42,6 +42,7 @@ import {
   coverSchema,
   followUpSchema,
   reportedResultSchema,
+  segmentSchema,
   worklistFollowUpSchema,
   worklistOrderSchema,
   prescriptionSchema,
@@ -277,6 +278,8 @@ export const stopInteraction = (id: string) => control(id, 'stop');
 export const getInteraction = (id: string) => api.request(`/interactions/${id}`, interactionSchema);
 export const getTranscript = (id: string, afterSeq = 0) =>
   api.request(`/interactions/${id}/transcript${qs({ after_seq: String(afterSeq) })}`, transcriptSchema);
+export const correctSegment = (id: string, segmentId: string, text: string | null) =>
+  api.request(`/interactions/${id}/segments/${segmentId}/correction`, segmentSchema, { method: 'PUT', body: { text } });
 export const assignSpeaker = (id: string, speakerId: string, role: string) =>
   api.request(`/interactions/${id}/speakers/${encodeURIComponent(speakerId)}`, z.object({ speaker_id: z.string(), role: z.string() }), {
     method: 'PUT',

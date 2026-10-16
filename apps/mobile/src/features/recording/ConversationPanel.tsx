@@ -5,9 +5,9 @@ import { Pressable, Switch, Text, View } from 'react-native';
 
 import { getPatientConsents } from '@/api/endpoints';
 import type { Segment } from '@/api/schemas';
-import { Button, Card, ChoiceChips, SectionTitle, StatusChip } from '@/design-system/components';
+import { Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { radius, space, useTheme } from '@/design-system/tokens';
-import { formatClock, missingForRecording, needsCheck, PURPOSE_LABELS, ROLE_LABELS, ROLE_OPTIONS } from '@/domain/recording';
+import { formatClock, missingForRecording, needsCheck, shownText, PURPOSE_LABELS, ROLE_LABELS, ROLE_OPTIONS } from '@/domain/recording';
 
 import type { RecordingSession } from './useRecordingSession';
 
@@ -71,7 +71,7 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
       ) : null}
       {rec.segments.length > 0 ? (
         <Text style={{ color: t.textMuted, fontSize: 12 }}>
-          This is exactly what the speech service heard. It is not a clinical record until you confirm
+          This is what the speech service heard, plus any corrections staff made (the original is kept). It is not a clinical record until you confirm
           information from it. Tap a speaker label to say who is speaking.
         </Text>
       ) : null}
@@ -82,7 +82,11 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
 function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
+  const [fixing, setFixing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [showOriginal, setShowOriginal] = useState(false);
   const role = s.speaker_role;
+  const corrected = s.corrected_text != null;
   return (
     <View style={{ padding: space.sm, borderRadius: radius.md, backgroundColor: t.surface, borderWidth: 1, borderColor: needsCheck(s) ? t.warning : t.border, gap: space.xs }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm }}>
@@ -98,7 +102,28 @@ function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
         {needsCheck(s) ? <StatusChip label="please check" tone="warning" /> : null}
         <Text style={{ color: t.textMuted, fontSize: 12 }}>{formatClock(s.start_ms / 1000)}</Text>
       </View>
-      <Text style={{ color: t.text, fontSize: 16 }}>{s.raw_text}</Text>
+      <Text style={{ color: t.text, fontSize: 16 }}>{shownText(s)}</Text>
+      {corrected ? (
+        <Pressable accessibilityRole="button" onPress={() => setShowOriginal((v) => !v)} hitSlop={8}>
+          <Text style={{ color: t.textMuted, fontSize: 12 }}>
+            {showOriginal ? `Heard: ${s.raw_text}` : 'Corrected by staff. Tap to see what was heard.'}
+          </Text>
+        </Pressable>
+      ) : null}
+      {fixing ? (
+        <View style={{ gap: space.sm }}>
+          <TextField label="What was actually said" value={draft} onChangeText={setDraft} multiline />
+          <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+            <Button title="Save correction" disabled={!draft.trim()} onPress={() => void rec.correctLine(s.id, draft.trim()).then((ok) => ok && setFixing(false))} />
+            {corrected ? <Button title="Undo correction" variant="secondary" onPress={() => void rec.correctLine(s.id, null).then((ok) => ok && setFixing(false))} /> : null}
+            <Button title="Cancel" variant="secondary" onPress={() => setFixing(false)} />
+          </View>
+        </View>
+      ) : (
+        <Pressable accessibilityRole="button" onPress={() => { setDraft(shownText(s)); setFixing(true); }} hitSlop={8}>
+          <Text style={{ color: t.primary, fontSize: 12 }}>Correct this line</Text>
+        </Pressable>
+      )}
       {editing && s.speaker_id ? (
         <ChoiceChips label="Who is speaking?" value={role as (typeof ROLE_OPTIONS)[number]}
           options={ROLE_OPTIONS.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}

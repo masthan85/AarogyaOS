@@ -107,3 +107,15 @@ optimistic concurrency via `version`.
 | `POST /cover/{id}/end` | `result:review` | Either side may end it |
 
 While an arrangement is active, `GET /results/awaiting-review` for the covering doctor also returns the other doctor's results, each marked `covering_for`. Reviews are audited with `on_behalf_of`.
+
+## Transcript corrections (migration 0009)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `PUT /interactions/{id}/segments/{segment_id}/correction` | `transcript:correct` (doctor, nurse) | `{"text": "..."}` records a correction; `{"text": null}` goes back to what was heard. Only the person who made the recording can reach it. Returns the segment with `corrected_text` |
+
+`GET /interactions/{id}/transcript` returns `raw_text` (never changes) and `corrected_text` (null unless corrected). The assistant reads, and quotes from, the corrected text when it analyses later lines.
+
+## Rate limits
+
+`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Per worker process (see SECURITY.md).
