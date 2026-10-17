@@ -1,0 +1,17 @@
+{
+  "note": "Invented conversation for trying a model. Not a real patient and not a clinical reference.",
+  "purpose": "CONSULTATION",
+  "segments": [
+    {"seq": 1, "role": "DOCTOR", "text": "Good morning, please sit. How are you today?"},
+    {"seq": 2, "role": "PATIENT", "text": "Good morning doctor. I am fine, just this back problem. It is a lovely day, no?"},
+    {"seq": 3, "role": "DOCTOR", "text": "Yes. What work do you do?"},
+    {"seq": 4, "role": "PATIENT", "text": "I drive a delivery van. I fell from my scooter about three weeks ago and since then I have lower back pain."},
+    {"seq": 5, "role": "DOCTOR", "text": "Does the pain go down to your leg?"},
+    {"seq": 6, "role": "PATIENT", "text": "Yes, down my left leg to the foot, and my foot feels numb. It is worse when I sit for long. I have no fever and no problem passing urine."},
+    {"seq": 7, "role": "PATIENT", "text": "I take amlodipine 5 mg once daily for blood pressure for five years. I am allergic to penicillin, I got a rash as a child."},
+    {"seq": 8, "role": "DOCTOR", "text": "My father also had a slipped disc, that is why I ask. On examination there is reduced power in the left ankle and straight leg raising is positive on the left."},
+    {"seq": 9, "role": "DOCTOR", "text": "We will get an MRI of the lumbar spine. Take tablet paracetamol 650 mg twice daily for five days and avoid lifting."},
+    {"seq": 10, "role": "DOCTOR", "text": "Come back after 5 days with the MRI report. Come sooner if the leg weakness increases."},
+    {"seq": 11, "role": "PATIENT", "text": "Thank you doctor, see you soon."}
+  ]
+}

@@ -20,6 +20,7 @@ Kind = Literal[
     "INVESTIGATION_DISCUSSED",
     "TREATMENT_DISCUSSED",
     "FOLLOW_UP",
+    "CIRCUMSTANCE",
 ]
 Assertion = Literal["PRESENT", "ABSENT", "POSSIBLE", "HISTORICAL"]
 Subject = Literal["PATIENT", "FAMILY_MEMBER", "OTHER"]
@@ -54,6 +55,8 @@ ALLOWED_ATTRIBUTES: dict[str, frozenset[str]] = {
     "PREVIOUS_TREATMENT": frozenset({"treatment", "outcome", "when"}),
     "DIAGNOSIS_DISCUSSED": frozenset({"diagnosis"}),
     "FOLLOW_UP": frozenset({"when", "reason"}),
+    # What led to the problem: an injury, a fall, lifting, an event, with when it happened.
+    "CIRCUMSTANCE": frozenset({"event", "mechanism", "when"}),
 }
 
 

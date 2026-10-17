@@ -24,6 +24,7 @@ export const KIND_LABELS: Record<string, string> = {
   INVESTIGATION_DISCUSSED: 'Test discussed',
   TREATMENT_DISCUSSED: 'Treatment discussed',
   FOLLOW_UP: 'Follow-up',
+  CIRCUMSTANCE: 'What led to it',
 };
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -77,6 +78,8 @@ export function acceptOutcome(c: Candidate): string {
   switch (c.kind) {
     case 'DIAGNOSIS_DISCUSSED':
       return 'Recorded as a suspected diagnosis, not a confirmed one';
+    case 'CIRCUMSTANCE':
+      return 'Saved in the history of the present illness';
     case 'INVESTIGATION_DISCUSSED':
       return 'Saved as a draft test you still have to order';
     case 'TREATMENT_DISCUSSED':
@@ -88,6 +91,18 @@ export function acceptOutcome(c: Candidate): string {
     default:
       return 'Saved as a note in this visit';
   }
+}
+
+/** Wording for the one-tap options a finding can offer besides a plain note. Each is the doctor's choice. */
+export function extraAccept(c: Candidate): { mode: 'follow_up' | 'prescription_draft'; label: string; outcome: string } | null {
+  if (c.kind === 'FOLLOW_UP' && c.assertion === 'PRESENT' && c.follow_up_in_days) {
+    const n = c.follow_up_in_days;
+    return { mode: 'follow_up', label: `Schedule follow-up in ${n} day${n === 1 ? '' : 's'}`, outcome: `A follow-up is added to the list, ${n} day${n === 1 ? '' : 's'} from today` };
+  }
+  if (c.kind === 'TREATMENT_DISCUSSED' && c.assertion === 'PRESENT') {
+    return { mode: 'prescription_draft', label: 'Add to a draft prescription', outcome: 'Added to a draft prescription. Nothing is signed' };
+  }
+  return null;
 }
 
 export type Unreviewed = {

@@ -41,6 +41,8 @@ class CandidateOut(BaseModel):
     edited_text: str | None
     result_kind: str | None
     created_at: datetime
+    # For a pending FOLLOW_UP the doctor can schedule: how many days from today the wording says.
+    follow_up_in_days: int | None = None
 
 
 class ReviewIn(BaseModel):
@@ -49,7 +51,8 @@ class ReviewIn(BaseModel):
     note: str | None = Field(default=None, max_length=300)
     # For a TREATMENT_DISCUSSED candidate: record it as a plan note (default) or put it on the
     # draft prescription. Either way nothing is signed.
-    mode: Literal["note", "prescription_draft"] = "note"
+    # For a FOLLOW_UP candidate: "follow_up" schedules a follow-up from the stated time.
+    mode: Literal["note", "prescription_draft", "follow_up"] = "note"
 
 
 class ReviewOut(BaseModel):

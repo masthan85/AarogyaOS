@@ -388,6 +388,7 @@ export const candidateSchema = z.object({
   edited_text: z.string().nullable(),
   result_kind: z.string().nullable(),
   created_at: z.string(),
+  follow_up_in_days: z.number().nullable().optional(),
 });
 export const suggestionSchema = z.object({
   id: z.string(),
