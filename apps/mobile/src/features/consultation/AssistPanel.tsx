@@ -88,7 +88,7 @@ export function AssistPanel({ encId, data, rec, isDoctor }: { encId: string; dat
   );
 }
 
-function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean; onDone: () => void }) {
+export function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean; onDone: () => void }) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(c.text);
