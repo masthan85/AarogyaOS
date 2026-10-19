@@ -57,6 +57,105 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
 - Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
 
+## How it fits together
+
+```mermaid
+flowchart LR
+    subgraph Phone["Mobile app (Expo / React Native)"]
+        direction TB
+        UI["Screens: queue, consultation,<br/>Draft EMR, worklists, admin"]
+        MIC["Microphone capture<br/>(only between Start and Stop)"]
+    end
+
+    subgraph API["API (FastAPI modular monolith)"]
+        direction TB
+        AUTH["Auth, roles, audit"]
+        REC["Recording gateway<br/>consent check, transcripts"]
+        CLIN["Clinical record<br/>notes, orders, prescriptions"]
+        AI["Assistant<br/>extraction, guardrails, review queue"]
+        DOC["Documents<br/>summaries, letters, translation"]
+        FHIR["FHIR R4 export"]
+    end
+
+    subgraph Providers["Swappable providers (each off until configured)"]
+        direction TB
+        STT["Speech-to-text<br/>Sarvam / development"]
+        LLM["Language model<br/>Sarvam / Anthropic / self-hosted"]
+        TR["Translation, read-aloud<br/>Sarvam"]
+    end
+
+    DB[("PostgreSQL<br/>row-level security<br/>per organisation")]
+
+    UI -->|"HTTPS, bearer token"| AUTH
+    MIC -->|"audio, WebSocket"| REC
+    AUTH --> CLIN
+    CLIN --> FHIR
+    REC --> STT
+    AI --> LLM
+    DOC --> TR
+    REC -.->|"transcript lines"| AI
+    API --> DB
+```
+
+The mobile app talks only to the API. Every table carries the organisation it belongs to and the database itself refuses to show one organisation another's rows. The speech, language-model, translation and read-aloud providers sit behind interfaces: the app works with all of them switched off, and a provider that is not configured is simply unavailable. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Consultation flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dr as Doctor
+    participant App as Mobile app
+    participant API as API
+    participant STT as Speech provider
+    participant LLM as Language model
+    participant DB as Database
+
+    Dr->>App: Open consultation, check consent
+    App->>API: Consent status for recording and AI
+    API-->>App: Granted / missing
+    Dr->>App: Start recording
+    App->>API: Start session (identified patient, explicit Start)
+    loop while recording
+        App->>API: Audio chunks
+        API->>STT: Stream audio
+        STT-->>API: Transcript lines
+        API->>DB: Store transcript (original text never edited)
+    end
+    Dr->>App: Stop recording
+    App->>API: Final analysis of the conversation (also run every 30 s while recording)
+    API->>LLM: Prompt with transcript lines
+    LLM-->>API: Candidate findings (JSON)
+    API->>API: Guardrails: exact quote, hedging, denial, speaker checks
+    API->>DB: Save kept findings as PENDING candidates (not in the record)
+    App-->>Dr: Draft EMR tab, laid out like a clinic note
+    loop each finding
+        Dr->>App: Accept, edit or reject
+        App->>API: Review decision
+        API->>DB: Accepted: written to the record with provenance and audit
+    end
+    Dr->>App: Add tests, prescription and follow-up, then sign
+    Dr->>App: Finish visit
+    App->>API: Complete encounter
+    API->>DB: Record becomes read-only
+```
+
+Nothing the assistant produces is part of the record until the doctor accepts it, nothing is diagnosed, ordered or prescribed by software, and every step also works by hand if recording, speech or the model is unavailable.
+
+### How a finding is handled
+
+```mermaid
+flowchart LR
+    A["Transcript line"] --> B["Model proposes a finding<br/>with an exact quote"]
+    B --> C{"Quote found in that line?<br/>Not a question?<br/>Allowed kind?"}
+    C -- no --> X["Dropped"]
+    C -- yes --> D["Hedged words: shown as 'possible'<br/>Denials kept as 'denies'<br/>Speaker unknown: flagged"]
+    D --> E["Pending in the Draft EMR"]
+    E --> F{"Doctor decides"}
+    F -- reject --> R["Recorded as rejected"]
+    F -- accept or edit --> G["Written to the record<br/>marked as software-assisted,<br/>confirmed by the doctor"]
+```
+
 ## What is not done
 
 | Area | State |
