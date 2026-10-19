@@ -1,6 +1,6 @@
 import type { Candidate, Suggestion } from '@/api/schemas';
 
-import { acceptOutcome, canReviewKind, flagLabel, isSafetyCategory, orderSuggestions, pendingCandidates, unreviewed } from '../assist';
+import { acceptOutcome, canReviewKind, flagLabel, isSafetyCategory, orderSuggestions, pendingCandidates, unreviewed, extraAccept } from '../assist';
 
 const cand = (o: Partial<Candidate>): Candidate => ({
   id: '1', interaction_id: 'i', encounter_id: 'e', kind: 'SYMPTOM', text: 'fever', assertion: 'PRESENT', subject: 'PATIENT',
@@ -67,5 +67,19 @@ describe('unreviewed', () => {
   });
   it('says nothing when everything has been reviewed', () => {
     expect(unreviewed([cand({ status: 'REJECTED' })], [])).toEqual({ total: 0, important: [], safetyWarnings: 0 });
+  });
+});
+
+describe('extraAccept', () => {
+  it('offers to schedule only a follow-up whose time could be read', () => {
+    expect(extraAccept(cand({ kind: 'FOLLOW_UP', follow_up_in_days: 5 }))?.label).toBe('Schedule follow-up in 5 days');
+    expect(extraAccept(cand({ kind: 'FOLLOW_UP', follow_up_in_days: 1 }))?.label).toBe('Schedule follow-up in 1 day');
+    expect(extraAccept(cand({ kind: 'FOLLOW_UP', follow_up_in_days: null }))).toBeNull();
+    expect(extraAccept(cand({ kind: 'FOLLOW_UP', follow_up_in_days: 5, assertion: 'ABSENT' }))).toBeNull();
+  });
+  it('offers a draft prescription for a treatment that was actually discussed', () => {
+    expect(extraAccept(cand({ kind: 'TREATMENT_DISCUSSED' }))?.mode).toBe('prescription_draft');
+    expect(extraAccept(cand({ kind: 'TREATMENT_DISCUSSED', assertion: 'ABSENT' }))).toBeNull();
+    expect(extraAccept(cand({ kind: 'SYMPTOM' }))).toBeNull();
   });
 });

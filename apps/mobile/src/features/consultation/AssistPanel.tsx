@@ -7,7 +7,8 @@ import type { Candidate, Suggestion } from '@/api/schemas';
 import { Button, Card, EmptyState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import {
-  acceptOutcome, ASSERTION_LABELS, CATEGORY_LABELS, canReviewKind, flagLabel, isSafetyCategory, KIND_LABELS,
+  acceptOutcome,
+  extraAccept, ASSERTION_LABELS, CATEGORY_LABELS, canReviewKind, flagLabel, isSafetyCategory, KIND_LABELS,
   orderSuggestions, pendingCandidates, pendingSuggestions, uncertaintyLabel,
 } from '@/domain/assist';
 import type { RecordingSession } from '@/features/recording/useRecordingSession';
@@ -87,11 +88,13 @@ export function AssistPanel({ encId, data, rec, isDoctor }: { encId: string; dat
   );
 }
 
-function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean; onDone: () => void }) {
+export function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean; onDone: () => void }) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(c.text);
   const accept = useAction(() => reviewCandidate(c.id, { action: 'accept' }), onDone);
+  const extra = extraAccept(c);
+  const acceptExtra = useAction(() => reviewCandidate(c.id, { action: 'accept', mode: extra?.mode }), onDone);
   const edit = useAction(() => reviewCandidate(c.id, { action: 'edit', edited_text: text.trim() }), () => { setEditing(false); onDone(); });
   const reject = useAction(() => reviewCandidate(c.id, { action: 'reject' }), onDone);
   const absent = c.assertion === 'ABSENT';
@@ -112,6 +115,7 @@ function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean;
       ))}
       {c.risk_flags.map((f) => <Text key={f} style={{ color: t.warning, fontSize: 12 }}>• {flagLabel(f)}</Text>)}
       <Text style={{ color: t.textMuted, fontSize: 12 }}>If accepted: {acceptOutcome(c)}</Text>
+      {extra ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Or: {extra.outcome}</Text> : null}
       {!allowed ? <Text style={{ color: t.textMuted, fontSize: 12 }}>The treating doctor reviews this kind of finding.</Text> : null}
       {allowed && editing ? (
         <View style={{ gap: space.sm }}>
@@ -123,6 +127,7 @@ function CandidateCard({ c, allowed, onDone }: { c: Candidate; allowed: boolean;
       {allowed && !editing ? (
         <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
           <Button title="Accept" loading={accept.pending} onPress={() => void accept.run()} />
+          {extra ? <Button title={extra.label} variant="secondary" loading={acceptExtra.pending} onPress={() => void acceptExtra.run()} /> : null}
           <Button title="Edit" variant="secondary" onPress={() => setEditing(true)} />
           <Button
             title="Reject"

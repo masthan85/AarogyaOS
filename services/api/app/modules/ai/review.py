@@ -7,13 +7,14 @@ DRAFT orders, treatments as plan notes or DRAFT prescription items.
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ai.followup_when import days_from_phrase
 from app.core.context import Principal
 from app.core.errors import AppError, Conflict, Forbidden, NotFound
 from app.modules.ai.models import AiCandidate
@@ -25,6 +26,7 @@ from app.modules.clinical.models import (
     ClinicalNote,
     Condition,
     Encounter,
+    FollowUp,
     PatientMedication,
     Prescription,
     PrescriptionItem,
@@ -32,6 +34,7 @@ from app.modules.clinical.models import (
 )
 from app.modules.clinical.safety import check_prescription
 from app.modules.clinical.schemas import PrescriptionItemIn
+from app.modules.cover.service import today
 from app.modules.interactions import service as interactions
 from app.modules.interactions.models import ClinicalInteraction
 
@@ -49,6 +52,7 @@ _DOCTOR_NOTE_TYPE = {
     "VITAL_MENTIONED": "GENERAL",
     "FOLLOW_UP": "PLAN",
     "TREATMENT_DISCUSSED": "PLAN",
+    "CIRCUMSTANCE": "HPI",
 }
 _PREFIX = {"PRESENT": "", "ABSENT": "Denies: ", "POSSIBLE": "Possible: ", "HISTORICAL": "Past: "}
 
@@ -59,7 +63,10 @@ def _org(principal: Principal) -> uuid.UUID:
 
 
 def to_out(c: AiCandidate) -> CandidateOut:
-    return CandidateOut.model_validate(c)
+    out = CandidateOut.model_validate(c)
+    if c.kind == "FOLLOW_UP" and c.status == "PENDING" and c.assertion != "ABSENT":
+        out.follow_up_in_days = days_from_phrase(c.attributes.get("when") or c.text)
+    return out
 
 
 def _describe(c: AiCandidate, text: str) -> str:
@@ -312,6 +319,30 @@ def _materialise(
         session.add(order)
         session.flush()
         return "service_requests", order.id, []
+
+    if c.kind == "FOLLOW_UP" and mode == "follow_up":
+        if not principal.has("followup:write"):
+            raise Forbidden("Only a doctor can schedule a follow-up")
+        if c.assertion != "PRESENT":
+            raise AppError("Only a follow-up that was actually asked for can be scheduled")
+        days = days_from_phrase(text if edited else c.attributes.get("when") or text)
+        if days is None:
+            raise AppError(
+                "No time could be read from this. Add the follow-up on the Follow-up tab."
+            )
+        fu = FollowUp(
+            organisation_id=org_id,
+            patient_id=c.patient_id,
+            encounter_id=enc.id,
+            due_date=today() + timedelta(days=days),
+            kind="REVIEW",
+            reason=(c.attributes.get("reason") or "Follow-up discussed in the consultation")[:300],
+            status="PENDING",
+            created_by=principal.user_id,
+        )
+        session.add(fu)
+        session.flush()
+        return "follow_ups", fu.id, []
 
     if c.kind == "TREATMENT_DISCUSSED" and mode == "prescription_draft":
         return _prescription_draft(session, principal, c, enc, attrs)

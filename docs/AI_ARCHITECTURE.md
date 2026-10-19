@@ -121,8 +121,18 @@ perfect score only shows the harness works.** Real evaluation needs clinician-la
 languages served. Suggestion quality (unsafe / unsupported rate) has no gold set yet; at runtime every
 dropped suggestion is counted. Acceptance rate is recorded but must never be optimised on its own.
 
+## Causes and follow-ups from the conversation (prompt `extract-v2`)
+
+A `CIRCUMSTANCE` finding captures what led to a problem (fall, accident, lifting), with `event`, `mechanism`, `when`; accepted, it becomes part of the history of the present illness. The prompt also tells the model to ignore greetings and small talk. That instruction is only as good as the model: the app cannot tell small talk from content by itself, so the doctor's accept/reject step and the exact-quote check remain the control. A `FOLLOW_UP` finding whose time is plainly stated ("after 5 days", "in two weeks"; `app/ai/followup_when.py`) offers "Schedule follow-up" on accept; a vague time ("if it gets worse") or a routine ("twice a week") is never turned into a date. The doctor chooses; nurses cannot schedule.
+
 ## Self-hosted model (optional)
 
 `AAROGYA_LLM_PROVIDER=self_hosted` with `AAROGYA_SELF_HOSTED_LLM_URL` and `AAROGYA_SELF_HOSTED_LLM_MODEL` sends the assistant's prompts to a model you run (vLLM, Ollama, llama.cpp server or anything speaking the chat-completions interface) instead of a vendor. Only that address is contacted: `https`, or plain `http` for localhost or a private-network address (a public address over `http` is refused at start-up). The same organisation switch and patient AI-processing consent apply, and every guardrail still runs on the output: strict JSON, schema checks, exact-quote grounding, hedging and negation rules, and clinician review.
 
 Built against a fake server only. Which model to use is open: judge any candidate on clinician-labelled Telugu, Hindi, Urdu and English transcripts (`app/ai/eval.py`) before using it with patients. `AAROGYA_SELF_HOSTED_LLM_JSON_MODE=true` asks the server for JSON-only output; turn it on only if your server supports it. It lowers malformed replies but does not make a reply correct.
+
+## The draft EMR view
+
+`apps/mobile/src/domain/emrDraft.ts` arranges the review-queue findings into a clinic-note layout. It is built by code from the same findings, so it can never contain a statement the checks did not allow: no sentences are written by a model, a gap is never filled, and a denied item stays marked "Denies". Clear, plainly stated history and symptoms can be accepted together per heading; allergies, medicines, diagnoses and plan items are always reviewed one at a time. When an AI-assisted recording ends, the app runs a last analysis and opens this tab.
+
+What it does not do: write a narrative history, name a diagnosis the doctor did not say, or add an examination that was not described. Examination findings, results and the final assessment still come from the doctor.

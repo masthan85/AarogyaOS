@@ -306,7 +306,7 @@ export const getReviewBundle = (encId: string) =>
   api.request(`/encounters/${encId}/ai/review`, reviewBundleSchema);
 export const reviewCandidate = (
   id: string,
-  body: { action: 'accept' | 'edit' | 'reject'; edited_text?: string; mode?: 'note' | 'prescription_draft' },
+  body: { action: 'accept' | 'edit' | 'reject'; edited_text?: string; mode?: 'note' | 'prescription_draft' | 'follow_up' },
 ) => api.request(`/ai/candidates/${id}/review`, reviewResultSchema, { method: 'POST', body });
 export const generateSuggestions = (encId: string) =>
   api.request(`/encounters/${encId}/ai/suggestions`, generateSchema, { method: 'POST', body: {} });

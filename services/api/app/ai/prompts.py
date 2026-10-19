@@ -5,7 +5,7 @@ from typing import Any
 
 from app.ai.schemas import ExtractionEnvelope, SuggestionEnvelope
 
-EXTRACTION_VERSION = "extract-v1"
+EXTRACTION_VERSION = "extract-v2"
 SUGGESTION_VERSION = "suggest-v1"
 CHART_QA_VERSION = "chartqa-v1"
 
@@ -34,6 +34,13 @@ def render_extraction(payload: dict[str, Any]) -> tuple[str, str]:
         "word in `original_term`. Preserve the speaker's uncertainty.\n"
         "7. Segments with context_only=true are background; do not extract from them.\n"
         "8. Use only the kinds listed in allowed_kinds.\n"
+        "9. Ignore greetings, small talk, introductions, jobs, hobbies and anything else with no clinical "
+        "meaning. Most of a conversation produces no candidate; that is correct.\n"
+        "10. CIRCUMSTANCE is what led to the problem: an injury, a fall, an accident, lifting something, "
+        "an illness in the household, a medicine started. Use attributes event, mechanism and when only "
+        "from what was said.\n"
+        "11. FOLLOW_UP is a return visit the clinician asks for; put the stated time in attributes.when "
+        "exactly as said (for example '5 days'), never a date you worked out.\n"
         f"Schema: {json.dumps(ExtractionEnvelope.model_json_schema())}"
     )
     prompt = f"allowed_kinds: {payload['allowed_kinds']}\n<transcript>\n{json.dumps(payload['segments'], ensure_ascii=False)}\n</transcript>"

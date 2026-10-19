@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { analyseInteraction, getPatientInteractions } from '@/api/endpoints';
@@ -16,6 +16,7 @@ import { AssistPanel } from './AssistPanel';
 import { DocumentsPanel } from './DocumentsPanel';
 import { ContextPanel } from './ContextPanel';
 import { DiagnosisPanel } from './DiagnosisPanel';
+import { EmrDraftPanel } from './EmrDraftPanel';
 import { FinishPanel } from './FinishPanel';
 import { FollowUpPanel } from './FollowUpPanel';
 import { NotesPanel } from './NotesPanel';
@@ -24,10 +25,11 @@ import { PrescriptionPanel } from './PrescriptionPanel';
 import { type EncounterData, useEncounterData } from './useEncounterData';
 import { useLetterhead } from './useLetterhead';
 
-type Tab = 'context' | 'conversation' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
+type Tab = 'context' | 'conversation' | 'emr' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
 const TABS: { value: Tab; label: string }[] = [
   { value: 'context', label: 'Patient' },
   { value: 'conversation', label: 'Conversation' },
+  { value: 'emr', label: 'Draft EMR' },
   { value: 'assist', label: 'Assist' },
   { value: 'notes', label: 'Notes' },
   { value: 'diagnosis', label: 'Diagnosis' },
@@ -56,7 +58,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
   const [ai, setAi] = useState(false);
   const rec = useRecordingSession({ patientId, encounterId: id, languageHint: data.patient?.preferred_language, ai });
   const canAssist = can(me, 'ai:review');
-  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && (x.value !== 'assist' || canAssist) && (x.value !== 'documents' || can(me, 'summary:write')) && !(wide && x.value === 'context'));
+  const tabs = TABS.filter((x) => (x.value !== 'conversation' || canRecord) && (x.value !== 'assist' || canAssist) && (x.value !== 'emr' || canAssist) && (x.value !== 'documents' || can(me, 'summary:write')) && !(wide && x.value === 'context'));
   const [tab, setTab] = useState<Tab>(wide ? 'notes' : 'context');
   const closed = data.detail?.encounter.status === 'COMPLETED';
 
@@ -81,6 +83,21 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
     return () => clearInterval(timer);
   }, [liveId, id, qc]);
 
+  // When an AI-assisted recording ends, take one last look at the conversation and open the draft
+  // record for review. Convenience only: if it fails the doctor still has every tab.
+  const endedId = rec.phase === 'ended' && ai ? rec.interaction?.id : undefined;
+  const openedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!endedId || openedFor.current === endedId || !canAssist) return;
+    openedFor.current = endedId;
+    analyseInteraction(endedId)
+      .catch(() => undefined)
+      .finally(() => {
+        void qc.invalidateQueries({ queryKey: ['ai-review', id] });
+        setTab('emr');
+      });
+  }, [endedId, canAssist, id, qc]);
+
   const letterhead = useLetterhead(data);
   const detail = data.detail;
   if (!detail) return null;
@@ -90,6 +107,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
     <>
       {tab === 'context' ? <ContextPanel data={data} /> : null}
       {tab === 'conversation' ? <ConversationPanel rec={rec} patientId={patientId} closed={!!closed} ai={ai} onAiChange={setAi} /> : null}
+      {tab === 'emr' ? <EmrDraftPanel encId={id} data={data} rec={rec} isDoctor={can(me, 'note:clinical')} onFinish={() => setTab('finish')} /> : null}
       {tab === 'assist' ? <AssistPanel encId={id} data={data} rec={rec} isDoctor={can(me, 'note:clinical')} /> : null}
       {tab === 'notes' ? <NotesPanel encId={id} data={data} /> : null}
       {tab === 'diagnosis' ? <DiagnosisPanel encId={id} data={data} /> : null}

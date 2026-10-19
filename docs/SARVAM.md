@@ -49,6 +49,14 @@ python scripts/sarvam_live_check.py sample.wav hi-IN   # streaming speech-to-tex
 ```
 Both read `SARVAM_API_KEY` from the environment or the git-ignored `.env`. Send me any failure text (never the key).
 
+## Trying the note-taking assistant with Sarvam's chat model
+
+```
+python scripts/extraction_live_check.py sarvam
+```
+
+Runs the app's real prompt and safety checks on an invented neurosurgery conversation (`evals/neurosurgery_sample.json`) and prints what was kept, what the checks dropped, and which lines produced nothing. Use `development` to see the built-in test extractor for comparison, or pass your own JSON file of the same shape. This is the missing live test for the assistant: judge it against what a neurosurgeon would write, not against this note.
+
 ## Open questions only a live run answers
 Whether raw PCM is accepted exactly as sent on the streaming endpoint; translation quality for medical text; whether `sarvam-105b`
 follows the JSON schema reliably enough for extraction (compare with `python -m app.ai.eval`); latency from India; rate limits and
