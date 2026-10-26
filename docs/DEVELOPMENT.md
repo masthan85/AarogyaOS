@@ -25,6 +25,27 @@ npm run typecheck && npm test
 Use `npx expo install <pkg>` for new Expo packages where the Expo compatibility service is
 reachable; otherwise pin to `~57.0.0` for `expo-*` packages.
 
+## Try it with Docker Desktop (Windows, Mac or Linux)
+
+Everything below uses invented data and development-only passwords. Run it from the repository folder.
+
+1. Start Docker Desktop and wait until it says it is running.
+2. Start the database and the API (the first run builds the image and takes a few minutes):
+   `docker compose --env-file infrastructure/dev.env -f infrastructure/docker-compose.yml up --build`
+   Leave this window open. It is ready when `http://localhost:8000/health` shows `{"status":"ok"}`.
+3. In a second window, create the demo clinic, users and patient:
+   `docker compose --env-file infrastructure/dev.env -f infrastructure/docker-compose.yml exec api python -m app.cli demo-seed`
+   It prints the sign-in details (organisation `demo-clinic`, password `Demo-pass-2026!`; users `admin`, `doctor`, `nurse`, `reception`, `pharmacist`, `lab` at `@demo.example.com`). Running it again changes nothing.
+4. Look at the API: open `http://localhost:8000/docs`, use `POST /api/v1/auth/login` with the details above, then paste the token under "Authorize".
+5. Run the mobile app against it: in `apps/mobile`, `npm install`, then set `EXPO_PUBLIC_API_URL` to `http://10.0.2.2:8000` for an Android emulator, or `http://<your computer's address on the Wi-Fi>:8000` for a phone on the same network (allow port 8000 through the Windows firewall), then `npx expo start`. The microphone is simulated in this mode: it plays a scripted sample conversation, not your voice.
+6. Walk through a visit: sign in as reception, find "Demo Patient", check in, record consent (recording and AI); sign in as the nurse for triage; sign in as the doctor, open the consultation, switch on AI assistance on the Conversation tab, Start, then Stop. The "Draft EMR" tab opens with what the built-in test extractor found.
+
+To use Sarvam speech and the real language model: copy `infrastructure/dev.env` to `infrastructure/dev.local.env` (git ignores it), add `AAROGYA_SARVAM_API_KEY=...`, `AAROGYA_SPEECH_PROVIDER=sarvam` and `AAROGYA_LLM_PROVIDER=sarvam`, and use `--env-file infrastructure/dev.local.env` in the commands above. Sarvam sends audio and text to Sarvam's servers: use invented content only. The real microphone needs a development build, not Expo Go (see DEVICE_TEST_PLAN.md).
+
+To stop: `Ctrl+C` in the first window. To wipe the data and start again: `docker compose --env-file infrastructure/dev.env -f infrastructure/docker-compose.yml down -v`.
+
+Written without being able to run Docker here; the compose file, the seed command and the migrations were checked separately, so report the first thing that does not work.
+
 ## Docker
 `docker compose --env-file .env -f infrastructure/docker-compose.yml up --build`
 (untested in the Phase 1 build environment, which had no Docker daemon).

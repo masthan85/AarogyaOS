@@ -195,6 +195,10 @@ The full list, with reasons, is in [docs/BACKLOG.md](docs/BACKLOG.md) and [docs/
 | [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) | Running it, backups, scaling limits, device checks |
 | [docs/BACKLOG.md](docs/BACKLOG.md), [docs/adr](docs/adr) | What is left and why decisions were made |
 
+## Try it
+
+With Docker Desktop: follow [Try it with Docker Desktop](docs/DEVELOPMENT.md#try-it-with-docker-desktop-windows-mac-or-linux). It starts the database and API, creates a demo clinic with invented users and a patient, and tells you how to point the mobile app at it.
+
 ## Quick start
 
 ```bash

@@ -41,6 +41,14 @@ services:
       AAROGYA_FIELD_ENCRYPTION_KEY: ${AAROGYA_FIELD_ENCRYPTION_KEY:?set in .env}
       AAROGYA_SPEECH_PROVIDER: ${AAROGYA_SPEECH_PROVIDER:-}
       AAROGYA_AUDIO_STORE_PATH: /var/lib/aarogya/audio
+      # Optional providers, all off unless set (see docs/SARVAM.md). SARVAM_API_KEY is accepted too, so a
+      # .env written during Sarvam set-up works as it is.
+      AAROGYA_SARVAM_API_KEY: ${AAROGYA_SARVAM_API_KEY:-${SARVAM_API_KEY:-}}
+      AAROGYA_SARVAM_MODE: ${AAROGYA_SARVAM_MODE:-transcribe}
+      AAROGYA_SARVAM_LLM_MODEL: ${AAROGYA_SARVAM_LLM_MODEL:-sarvam-105b}
+      AAROGYA_LLM_PROVIDER: ${AAROGYA_LLM_PROVIDER:-}
+      AAROGYA_TRANSLATION_PROVIDER: ${AAROGYA_TRANSLATION_PROVIDER:-}
+      AAROGYA_TTS_PROVIDER: ${AAROGYA_TTS_PROVIDER:-}
     volumes:
       - audio:/var/lib/aarogya/audio
     depends_on:
