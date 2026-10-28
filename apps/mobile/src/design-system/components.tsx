@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   Switch,
   StyleSheet,
   Text,
@@ -10,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { MIN_TOUCH, radius, space, useTheme } from './tokens';
+import { elevation, MIN_TOUCH, MIN_TOUCH_SMALL, radius, space, type, useIsDark, useTheme } from './tokens';
 
 export function Button({
   title,
@@ -18,28 +19,37 @@ export function Button({
   loading,
   disabled,
   variant = 'primary',
+  size = 'md',
 }: {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger';
+  /** primary: the one main action. secondary: a quiet tinted button. ghost: text only. danger: destructive. */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'md' | 'sm';
 }) {
   const t = useTheme();
-  const bg = variant === 'primary' ? t.primary : variant === 'danger' ? t.danger : 'transparent';
-  const fg = variant === 'primary' ? t.primaryText : variant === 'danger' ? '#fff' : t.primary;
+  const bg = { primary: t.primary, secondary: t.primarySoft, ghost: 'transparent', danger: t.danger }[variant];
+  const fg = { primary: t.primaryText, secondary: t.primary, ghost: t.primary, danger: t.dangerText }[variant];
   const off = disabled || loading;
+  const small = size === 'sm';
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       onPress={onPress}
       disabled={off}
-      style={[
+      style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, borderColor: t.primary, opacity: off ? 0.6 : 1 },
+        small && styles.buttonSmall,
+        { backgroundColor: bg, opacity: off ? 0.55 : pressed ? 0.85 : 1 },
       ]}>
-      {loading ? <ActivityIndicator color={fg} /> : <Text style={[styles.buttonText, { color: fg }]}>{title}</Text>}
+      {loading ? (
+        <ActivityIndicator color={fg} />
+      ) : (
+        <Text style={[styles.buttonText, small && { fontSize: 14 }, { color: fg }]}>{title}</Text>
+      )}
     </Pressable>
   );
 }
@@ -52,7 +62,7 @@ export function TextField({
   const t = useTheme();
   return (
     <View style={{ gap: space.xs }}>
-      <Text style={{ color: t.text, fontWeight: '600' }}>{label}</Text>
+      <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
         placeholderTextColor={t.textMuted}
@@ -67,11 +77,29 @@ export function TextField({
   );
 }
 
-export function Card({ children, title }: { children?: ReactNode; title?: string }) {
+export function Card({
+  children,
+  title,
+  tone = 'default',
+}: {
+  children?: ReactNode;
+  title?: string;
+  /** ai: software-suggested content; warning and danger: needs attention. A coloured edge plus a tint, never colour alone. */
+  tone?: 'default' | 'ai' | 'warning' | 'danger';
+}) {
   const t = useTheme();
+  const dark = useIsDark();
+  const accent = { default: null, ai: t.ai, warning: t.warning, danger: t.danger }[tone];
+  const tint = { default: t.surface, ai: t.aiSoft, warning: t.warningSoft, danger: t.dangerSoft }[tone];
   return (
-    <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border }]}>
-      {title ? <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{title}</Text> : null}
+    <View
+      style={[
+        styles.card,
+        elevation(dark),
+        { backgroundColor: tint, borderColor: accent ?? t.border },
+        accent ? { borderLeftWidth: 4 } : null,
+      ]}>
+      {title ? <Text style={[type.h3, { color: t.text }]}>{title}</Text> : null}
       {children}
     </View>
   );
@@ -81,10 +109,11 @@ export type ChipTone = 'neutral' | 'success' | 'warning' | 'danger' | 'ai';
 
 export function StatusChip({ label, tone = 'neutral' }: { label: string; tone?: ChipTone }) {
   const t = useTheme();
-  const colour = { neutral: t.textMuted, success: t.success, warning: t.warning, danger: t.danger, ai: t.ai }[tone];
+  const fg = { neutral: t.textMuted, success: t.success, warning: t.warning, danger: t.danger, ai: t.ai }[tone];
+  const bg = { neutral: t.neutralSoft, success: t.successSoft, warning: t.warningSoft, danger: t.dangerSoft, ai: t.aiSoft }[tone];
   return (
-    <View style={[styles.chip, { borderColor: colour }]}>
-      <Text style={{ color: colour, fontWeight: '600', fontSize: 13 }}>{label}</Text>
+    <View style={[styles.chip, { backgroundColor: bg }]}>
+      <Text style={{ color: fg, fontWeight: '700', fontSize: 12.5 }}>{label}</Text>
     </View>
   );
 }
@@ -122,11 +151,11 @@ const styles = StyleSheet.create({
   button: {
     minHeight: MIN_TOUCH,
     borderRadius: radius.md,
-    borderWidth: 1.5,
     paddingHorizontal: space.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  buttonSmall: { minHeight: MIN_TOUCH_SMALL, paddingHorizontal: 14 },
   buttonText: { fontSize: 16, fontWeight: '700' },
   input: {
     minHeight: MIN_TOUCH,
@@ -135,8 +164,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     fontSize: 16,
   },
-  card: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.sm },
-  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
+  card: { borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: radius.lg, padding: space.md, gap: space.sm },
+  chip: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
   center: { padding: space.lg, alignItems: 'center', gap: space.sm },
 });
 
@@ -170,10 +199,10 @@ export function ChoiceChips<T extends string>({
                 justifyContent: 'center',
                 borderRadius: 999,
                 borderWidth: 1.5,
-                borderColor: t.primary,
-                backgroundColor: selected ? t.primary : 'transparent',
+                borderColor: selected ? t.primary : t.border,
+                backgroundColor: selected ? t.primary : t.surface,
               }}>
-              <Text style={{ color: selected ? t.primaryText : t.primary, fontWeight: '600' }}>{o.label}</Text>
+              <Text style={{ color: selected ? t.primaryText : t.text, fontWeight: '600' }}>{o.label}</Text>
             </Pressable>
           );
         })}
@@ -185,12 +214,13 @@ export function ChoiceChips<T extends string>({
 export function AlertBanner({ level, message }: { level: 'CRITICAL' | 'WARNING' | 'INFO'; message: string }) {
   const t = useTheme();
   const colour = level === 'CRITICAL' ? t.danger : level === 'WARNING' ? t.warning : t.textMuted;
+  const bg = level === 'CRITICAL' ? t.dangerSoft : level === 'WARNING' ? t.warningSoft : t.neutralSoft;
   return (
     <View
       accessibilityRole="alert"
-      style={{ borderLeftWidth: 5, borderLeftColor: colour, backgroundColor: t.surface, borderRadius: radius.md, padding: space.sm, borderWidth: 1, borderColor: t.border }}>
-      <Text style={{ color: colour, fontWeight: '700', fontSize: 12 }}>{level}</Text>
-      <Text style={{ color: t.text }}>{message}</Text>
+      style={{ borderLeftWidth: 4, borderLeftColor: colour, backgroundColor: bg, borderRadius: radius.md, padding: space.sm + 2, gap: 2 }}>
+      <Text style={[type.caption, { color: colour, textTransform: 'uppercase' }]}>{level === 'INFO' ? 'Note' : level}</Text>
+      <Text style={[type.small, { color: t.text }]}>{message}</Text>
     </View>
   );
 }
@@ -202,7 +232,7 @@ export function ProvenanceChip({ text, tone }: { text: string; tone: ChipTone })
 
 export function SectionTitle({ children }: { children: ReactNode }) {
   const t = useTheme();
-  return <Text style={{ color: t.textMuted, fontWeight: '700', textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.6 }}>{children}</Text>;
+  return <Text style={[type.overline, { color: t.textMuted }]}>{children}</Text>;
 }
 
 export function MultiChips<T extends string | number>({
@@ -235,10 +265,10 @@ export function MultiChips<T extends string | number>({
                 justifyContent: 'center',
                 borderRadius: 999,
                 borderWidth: 1.5,
-                borderColor: t.primary,
-                backgroundColor: selected ? t.primary : 'transparent',
+                borderColor: selected ? t.primary : t.border,
+                backgroundColor: selected ? t.primary : t.surface,
               }}>
-              <Text style={{ color: selected ? t.primaryText : t.primary, fontWeight: '600' }}>{o.label}</Text>
+              <Text style={{ color: selected ? t.primaryText : t.text, fontWeight: '600' }}>{o.label}</Text>
             </Pressable>
           );
         })}
@@ -270,5 +300,78 @@ export function ToggleRow({
       </View>
       <Switch value={value} onValueChange={onChange} disabled={disabled} accessibilityLabel={label} />
     </View>
+  );
+}
+
+
+/** Circle with the person's initials. Decoration only: the name is always written next to it. */
+export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
+  const t = useTheme();
+  const initials = name
+    .replace(/^(dr|mr|mrs|ms)\.?\s+/i, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: t.primary, fontWeight: '800', fontSize: size * 0.38 }}>{initials || '?'}</Text>
+    </View>
+  );
+}
+
+/**
+ * A row of sections that scrolls sideways, with the current one underlined. Replaces wrapped pills
+ * when there are many sections: one line, so the content starts higher on the screen.
+ */
+export function TabBar<T extends string>({
+  tabs,
+  value,
+  onChange,
+}: {
+  tabs: { value: T; label: string; badge?: number }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  const t = useTheme();
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      accessibilityRole="tablist"
+      style={{ flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: t.border }}
+      contentContainerStyle={{ paddingHorizontal: space.md, gap: space.xs }}>
+      {tabs.map((tab) => {
+        const selected = tab.value === value;
+        return (
+          <Pressable
+            key={tab.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            accessibilityLabel={tab.badge ? `${tab.label}, ${tab.badge} waiting` : tab.label}
+            onPress={() => onChange(tab.value)}
+            style={{
+              minHeight: MIN_TOUCH,
+              paddingHorizontal: space.sm + 2,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              borderBottomWidth: 3,
+              borderBottomColor: selected ? t.primary : 'transparent',
+            }}>
+            <Text style={{ color: selected ? t.primary : t.textMuted, fontWeight: selected ? '800' : '600', fontSize: 15 }}>{tab.label}</Text>
+            {tab.badge ? (
+              <View style={{ minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 6, backgroundColor: t.ai, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: t.surface, fontWeight: '800', fontSize: 12 }}>{tab.badge}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }

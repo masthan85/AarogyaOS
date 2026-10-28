@@ -11,7 +11,7 @@ export default function AppLayout() {
         headerTintColor: t.text,
         contentStyle: { backgroundColor: t.background },
       }}>
-      <Stack.Screen name="index" options={{ title: 'AarogyaOS' }} />
+      <Stack.Screen name="index" options={{ title: 'AarogyaOS', headerStyle: { backgroundColor: t.hero }, headerTintColor: t.heroText, headerShadowVisible: false }} />
       <Stack.Screen name="facilities" options={{ title: 'Facilities' }} />
       <Stack.Screen name="patients/index" options={{ title: 'Patients' }} />
       <Stack.Screen name="patients/new" options={{ title: 'New patient' }} />

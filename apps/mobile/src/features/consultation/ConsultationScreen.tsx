@@ -3,10 +3,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { analyseInteraction, getPatientInteractions } from '@/api/endpoints';
+import { analyseInteraction, getPatientInteractions, getReviewBundle } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
-import { Card, ChoiceChips, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { Avatar, ErrorState, LoadingState, StatusChip, TabBar } from '@/design-system/components';
+import { space, type, useTheme } from '@/design-system/tokens';
+import { buildDraft } from '@/domain/emrDraft';
 import { can } from '@/domain/permissions';
 import { ConversationPanel } from '@/features/recording/ConversationPanel';
 import { RecordingBar } from '@/features/recording/RecordingBar';
@@ -98,6 +99,10 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       });
   }, [endedId, canAssist, id, qc]);
 
+  // How many findings still wait for the doctor, shown on the Draft EMR tab so it is never forgotten.
+  const review = useQuery({ queryKey: ['ai-review', id], queryFn: () => getReviewBundle(id), enabled: canAssist, gcTime: 0 });
+  const waiting = review.data?.ai_enabled ? buildDraft(review.data.candidates).pending : 0;
+
   const letterhead = useLetterhead(data);
   const detail = data.detail;
   if (!detail) return null;
@@ -122,34 +127,31 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
   return (
     <View style={{ flex: 1 }}>
       {/* Patient header: identity and visit state are always on screen. */}
-      <View style={{ padding: space.md, paddingBottom: 0, gap: space.sm }}>
-        <Card>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: space.sm }}>
-            <View>
-              <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>{p?.full_name ?? 'Patient'}</Text>
-              <Text style={{ color: t.textMuted }}>{p ? `${p.mrn} · ${p.age_years ?? '?'} yrs · ${p.administrative_gender}` : ''}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: space.sm }}>
-              {detail.encounter.triage_category ? <StatusChip label={detail.encounter.triage_category.toLowerCase()} tone={detail.encounter.triage_category === 'ROUTINE' ? 'neutral' : 'danger'} /> : null}
-              <StatusChip label={closed ? 'Completed' : 'In consultation'} tone={closed ? 'neutral' : 'success'} />
-            </View>
+      <View style={{ backgroundColor: t.surface, paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.sm, gap: space.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm + 2 }}>
+          <Avatar name={p?.full_name ?? 'Patient'} />
+          <View style={{ flex: 1 }}>
+            <Text style={[type.h2, { color: t.text }]} numberOfLines={1}>{p?.full_name ?? 'Patient'}</Text>
+            <Text style={[type.small, { color: t.textMuted }]} numberOfLines={1}>{p ? `${p.mrn} · ${p.age_years ?? '?'} yrs · ${p.administrative_gender}` : ''}</Text>
           </View>
-        </Card>
+          <View style={{ alignItems: 'flex-end', gap: space.xs }}>
+            {detail.encounter.triage_category && detail.encounter.triage_category !== 'ROUTINE' ? <StatusChip label={detail.encounter.triage_category.toLowerCase()} tone="danger" /> : null}
+            <StatusChip label={closed ? 'Completed' : 'In consultation'} tone={closed ? 'neutral' : 'success'} />
+          </View>
+        </View>
         {/* Visible on every tab while a recording exists: the state must never be out of sight. */}
         <RecordingBar rec={rec} />
       </View>
-      <View style={{ padding: space.md }}>
-        <ChoiceChips value={tab} onChange={setTab} options={tabs} />
-      </View>
+      <TabBar value={tab} onChange={setTab} tabs={tabs.map((x) => ({ ...x, badge: x.value === 'emr' ? waiting : undefined }))} />
       {wide ? (
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          <ScrollView style={{ flex: 2 }} contentContainerStyle={{ padding: space.md, paddingTop: 0 }}>{panel}</ScrollView>
-          <ScrollView style={{ flex: 1.3 }} contentContainerStyle={{ padding: space.md, paddingTop: 0 }}>
+          <ScrollView style={{ flex: 2 }} contentContainerStyle={{ padding: space.md }}>{panel}</ScrollView>
+          <ScrollView style={{ flex: 1.3 }} contentContainerStyle={{ padding: space.md }}>
             <ContextPanel data={data} />
           </ScrollView>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: space.md, paddingTop: 0 }} keyboardShouldPersistTaps="handled">{panel}</ScrollView>
+        <ScrollView contentContainerStyle={{ padding: space.md, gap: 0 }} keyboardShouldPersistTaps="handled">{panel}</ScrollView>
       )}
     </View>
   );
