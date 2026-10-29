@@ -5,7 +5,7 @@ import { Alert, Text, View } from 'react-native';
 import { approveDocument, draftReferralLetter, draftVisitSummary, editDocument, getDocuments, getDocumentSpeech } from '@/api/endpoints';
 import type { ClinicalDocument } from '@/api/schemas';
 import { Button, Card, ChoiceChips, EmptyState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { canReadAloud, currentDocuments, documentTitle, translationNote } from '@/domain/documents';
 import { LANGUAGE_OPTIONS } from '@/domain/languages';
 import { documentHtml, type Letterhead } from '@/domain/print';
@@ -49,7 +49,7 @@ export function DocumentsPanel({ encId, patientLanguage, letterhead }: { encId: 
             options={[{ value: 'en-IN', label: 'English' }, { value: preferred, label: LANGUAGE_OPTIONS.find((l) => l.tag === preferred)?.label ?? preferred }]} />
         ) : null}
         <Button title="Draft summary" loading={summary.pending} onPress={() => void summary.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           Lists signed medicines, ordered tests, follow-ups and settled diagnoses. Suspected diagnoses are left out.
         </Text>
       </Card>
@@ -58,7 +58,7 @@ export function DocumentsPanel({ encId, patientLanguage, letterhead }: { encId: 
         <TextField label="Reason for referral" value={reason} onChangeText={setReason} multiline />
         <TextField label="Anything else to add (optional)" value={extra} onChangeText={setExtra} multiline />
         <Button title="Draft letter" disabled={recipient.trim().length < 2 || reason.trim().length < 3} loading={letter.pending} onPress={() => void letter.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           Includes recorded diagnoses (with how certain they are), allergies, medicines, notes and results. Anything the patient reported but nobody has checked is marked as such.
         </Text>
       </Card>
@@ -127,7 +127,7 @@ function DocumentCard({ doc, letterhead, onChanged }: { doc: ClinicalDocument; l
           <Button title="Listen" variant="secondary" loading={listen.pending} onPress={() => void listen.run()} />
         )
       ) : null}
-      {!draft ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Approved. Sharing and printing use this phone only; nothing is sent from the server. Reading aloud uses the AI service and needs the patient's consent.</Text> : null}
+      {!draft ? <Text style={[type.caption, { color: t.textMuted }]}>Approved. Sharing and printing use this phone only; nothing is sent from the server. Reading aloud uses the AI service and needs the patient's consent.</Text> : null}
     </Card>
   );
 }

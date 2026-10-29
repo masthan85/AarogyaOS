@@ -5,7 +5,7 @@ import { ApiError } from '@/api/client';
 import { createPrescription, signPrescription, updatePrescription, voidPrescription, type RxItemInput } from '@/api/endpoints';
 import { type Prescription, type SafetyWarning, safetyWarningSchema } from '@/api/schemas';
 import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { itemsFromPrescription, parseNumber } from '@/domain/clinical';
 import { parseFrequency } from '@/domain/dosing';
 import { prescriptionHtml, type Letterhead } from '@/domain/print';
@@ -136,7 +136,7 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
         <Button title="Add medicine to prescription" variant="secondary" disabled={!valid} onPress={addItem} />
         {editing ? <Button title="Stop editing" variant="secondary" onPress={() => { setEditing(null); setItems([]); }} /> : null}
         <Button title={editing ? `Save changes (${items.length})` : `Save draft (${items.length})`} disabled={items.length === 0} loading={save.pending} onPress={() => void save.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           Only you can sign. Safety checks cover allergy name matches and duplicates only — interactions, contraindications and doses are not checked.
         </Text>
       </Card>

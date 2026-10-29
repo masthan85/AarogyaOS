@@ -14,7 +14,7 @@ import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
 
 /** One finding the software heard, with the words it came from and the doctor's three choices. */
-function FindingRow({ c, allowed, onDone, showKind }: { c: Candidate; allowed: boolean; onDone: () => void; showKind: boolean }) {
+export function FindingRow({ c, allowed, onDone, showKind }: { c: Candidate; allowed: boolean; onDone: () => void; showKind: boolean }) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(c.text);

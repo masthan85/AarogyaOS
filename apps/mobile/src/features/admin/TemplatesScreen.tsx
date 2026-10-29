@@ -5,7 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { createTemplate, getAllTemplates, updateTemplate } from '@/api/endpoints';
 import type { NoteTemplate } from '@/api/schemas';
 import { Button, Card, ChoiceChips, EmptyState, LoadingState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { useAction } from '@/features/consultation/useAction';
 
 const TYPES = [
@@ -44,7 +44,7 @@ export function TemplatesScreen() {
       {own.map((x) => <TemplateCard key={x.id} template={x} onChanged={refresh} />)}
 
       <Card title="New layout">
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>A layout is only headings. Nothing is pre-filled: every word saved is the doctor's.</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>A layout is only headings. Nothing is pre-filled: every word saved is the doctor's.</Text>
         <TextField label="Name" value={name} onChangeText={setName} />
         <TextField label="Specialty (optional)" value={specialty} onChangeText={setSpecialty} />
         {sections.map((s, i) => (

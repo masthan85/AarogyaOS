@@ -6,7 +6,7 @@ import { getFollowUps, getOrganisation, getResultsAwaitingReview } from '@/api/e
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, SectionTitle } from '@/design-system/components';
 import { elevation, MIN_TOUCH, radius, space, type, useIsDark, useTheme } from '@/design-system/tokens';
-import { addDays, toDateString } from '@/domain/dates';
+import { toDateString } from '@/domain/dates';
 import { can, roleLabel } from '@/domain/permissions';
 import { isCritical } from '@/domain/worklists';
 

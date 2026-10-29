@@ -7,7 +7,7 @@ import { getPatientDispensings, getPatientPrescriptions, recordDispensing } from
 import { useAuth } from '@/auth/AuthProvider';
 import type { PatientHit } from '@/api/schemas';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { dispenseState } from '@/domain/worklists';
@@ -28,7 +28,7 @@ function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: ()
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
       <Card>
-        <Text style={{ color: t.text, fontSize: 18, fontWeight: '700' }}>{patient.full_name}</Text>
+        <Text style={[type.h2, { color: t.text }]}>{patient.full_name}</Text>
         <Text style={{ color: t.textMuted }}>{patient.mrn} · {patient.age_years ?? '?'} yrs</Text>
         <Button title="Choose a different patient" variant="secondary" onPress={onBack} />
       </Card>
@@ -47,7 +47,7 @@ function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: ()
               tone={rx.status === 'SIGNED' ? 'success' : 'danger'}
             />
           </View>
-          {rx.signed_at ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Signed {formatDateTime(rx.signed_at)}</Text> : null}
+          {rx.signed_at ? <Text style={[type.caption, { color: t.textMuted }]}>Signed {formatDateTime(rx.signed_at)}</Text> : null}
           {rx.status === 'SIGNED' ? (() => {
             const st = dispenseState((given.data ?? []).filter((d) => d.prescription_id === rx.id));
             return (

@@ -5,7 +5,7 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { createPractitioner, createUser, deactivateUser, getFacilities, getPractitionersFull, getRoles, getUsers, setWorkingHours } from '@/api/endpoints';
 import type { PractitionerFull, StaffUser } from '@/api/schemas';
 import { Button, Card, ChoiceChips, EmptyState, LoadingState, MultiChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { describeHours, emailProblem, hoursFor, isDoctorUser, passwordProblem, timeProblem, WEEKDAYS } from '@/domain/admin';
 import { roleLabel } from '@/domain/permissions';
 import { useAction } from '@/features/consultation/useAction';
@@ -46,7 +46,7 @@ export function StaffScreen() {
           options={(roles.data ?? []).filter((r) => r.key !== 'super_admin').map((r) => ({ value: r.key, label: roleLabel(r.key) }))} />
         {problem ? <Text style={{ color: t.danger }}>{problem}</Text> : null}
         <Button title="Add" disabled={!name.trim() || !!emailProblem(email) || !!passwordProblem(password)} loading={add.pending} onPress={() => void add.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>Tell them the password in person and ask them to change it. Doctors also need a profile below before they can be booked.</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>Tell them the password in person and ask them to change it. Doctors also need a profile below before they can be booked.</Text>
       </Card>
     </ScrollView>
   );

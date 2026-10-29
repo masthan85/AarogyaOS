@@ -14,7 +14,7 @@ import {
 } from '@/api/endpoints';
 import type { Observation } from '@/api/schemas';
 import { AlertBanner, Button, Card, ChoiceChips, ErrorState, LoadingState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { formatVital, interpretationLabel, interpretationTone, parseNumber, VITAL_LABELS } from '@/domain/clinical';
 import { FactRow } from '@/features/consultation/FactRow';
 import { useAction } from '@/features/consultation/useAction';
@@ -100,7 +100,7 @@ function TriageForm({ encounterId, name }: { encounterId: string; name?: string 
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
       <Card>
-        <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>{data.patient?.full_name ?? name ?? 'Patient'}</Text>
+        <Text style={[type.title, { color: t.text }]}>{data.patient?.full_name ?? name ?? 'Patient'}</Text>
         <Text style={{ color: t.textMuted }}>
           {data.patient ? `${data.patient.mrn} · ${data.patient.age_years ?? '?'} yrs · ${data.patient.administrative_gender}` : ''}
         </Text>
@@ -145,7 +145,7 @@ function TriageForm({ encounterId, name }: { encounterId: string; name?: string 
             </View>
           );
         })}
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           Flags use provisional adult reference ranges that have not yet been clinically signed off. Children are not flagged.
         </Text>
       </Card>
@@ -177,7 +177,7 @@ function TriageForm({ encounterId, name }: { encounterId: string; name?: string 
         <ChoiceChips value={(detail.encounter.triage_category ?? undefined) as 'ROUTINE' | 'URGENT' | 'EMERGENCY' | undefined}
           onChange={(c) => void category.run(c)}
           options={[{ value: 'ROUTINE', label: 'Routine' }, { value: 'URGENT', label: 'Urgent' }, { value: 'EMERGENCY', label: 'Emergency' }]} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>Your clinical judgement. The app never sets this for you.</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>Your clinical judgement. The app never sets this for you.</Text>
       </Card>
 
       <Button title="Done — back to queue" onPress={() => router.back()} />

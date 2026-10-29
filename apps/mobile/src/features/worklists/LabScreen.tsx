@@ -7,7 +7,7 @@ import { enterResult, getOrders } from '@/api/endpoints';
 import type { WorklistOrder } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, ChoiceChips, EmptyState, ErrorState, LoadingState, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { buildResult, byPriority, emptyResultForm, type ResultForm } from '@/domain/worklists';
@@ -32,7 +32,7 @@ function ResultEntry({ order, onDone }: { order: WorklistOrder; onDone: () => vo
       <TextField label="Test" value={form.testName} onChangeText={set('testName')} />
       <TextField label="Result" value={form.value} onChangeText={set('value')} keyboardType="default" autoCapitalize="none" />
       <TextField label="Unit" value={form.unit} onChangeText={set('unit')} autoCapitalize="none" />
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>
+      <Text style={[type.caption, { color: t.textMuted }]}>
         Ranges are optional. They are used to flag the result as low, high or critical for the doctor. Leave them blank if unsure; the
         result is then marked as having no range.
       </Text>
@@ -84,7 +84,7 @@ export function LabScreen() {
               </View>
               <Text style={{ color: t.text }}>{o.patient_name ?? 'Patient'} · {o.patient_mrn ?? ''}</Text>
               {o.reason ? <Text style={{ color: t.textMuted }}>Reason: {o.reason}</Text> : null}
-              {o.ordered_at ? <Text style={{ color: t.textMuted, fontSize: 12 }}>Ordered {formatDateTime(o.ordered_at)}</Text> : null}
+              {o.ordered_at ? <Text style={[type.caption, { color: t.textMuted }]}>Ordered {formatDateTime(o.ordered_at)}</Text> : null}
               {canEnter ? (
                 open === o.id ? (
                   <ResultEntry order={o} onDone={done} />

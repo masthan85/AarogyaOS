@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import { addNote, getNoteTemplates } from '@/api/endpoints';
 import type { NoteTemplate } from '@/api/schemas';
 import { Button, Card, ChoiceChips, SectionTitle, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { filledSections, notesFromTemplate } from '@/domain/documents';
 
 import { FactRow } from './FactRow';
@@ -90,7 +90,7 @@ function TemplateForm({ encId, template, onSaved, onPartial }: { encId: string; 
         <TextField key={sec.title} label={sec.title} placeholder={sec.hint || undefined} multiline
           value={values[sec.title] ?? ''} onChangeText={(v) => setValues((prev) => ({ ...prev, [sec.title]: v }))} />
       ))}
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>Empty sections are skipped. Each filled section is saved as its own note.</Text>
+      <Text style={[type.caption, { color: t.textMuted }]}>Empty sections are skipped. Each filled section is saved as its own note.</Text>
       <Button title={`Save ${filledSections(template, values)} section(s)`} disabled={filledSections(template, values) === 0}
         loading={save.pending} onPress={() => void save.run()} />
     </View>

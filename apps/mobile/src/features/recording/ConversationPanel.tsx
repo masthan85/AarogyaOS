@@ -6,7 +6,7 @@ import { Pressable, Switch, Text, View } from 'react-native';
 import { getPatientConsents } from '@/api/endpoints';
 import type { Segment } from '@/api/schemas';
 import { Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { radius, space, useTheme } from '@/design-system/tokens';
+import { radius, space, useTheme, type } from '@/design-system/tokens';
 import { formatClock, missingForRecording, needsCheck, shownText, PURPOSE_LABELS, ROLE_LABELS, ROLE_OPTIONS } from '@/domain/recording';
 
 import type { RecordingSession } from './useRecordingSession';
@@ -45,11 +45,11 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
             <Switch value={ai} onValueChange={onAiChange} accessibilityLabel="AI assistance" />
           </View>
           {simulated ? (
-            <Text style={{ color: t.textMuted, fontSize: 12 }}>
+            <Text style={[type.caption, { color: t.textMuted }]}>
               Development build: audio is simulated and the transcript is a scripted sample, not your conversation.
             </Text>
           ) : (
-            <Text style={{ color: t.textMuted, fontSize: 12 }}>
+            <Text style={[type.caption, { color: t.textMuted }]}>
               The microphone is used only between Start and Stop, only while this screen is open, and the audio is not saved on this phone.
             </Text>
           )}
@@ -65,12 +65,12 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
       {rec.segments.map((s) => <Bubble key={s.id} s={s} rec={rec} />)}
       {rec.partial ? (
         <View style={{ padding: space.sm, borderRadius: radius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border }}>
-          <Text style={{ color: t.textMuted, fontSize: 12 }}>Listening · not saved</Text>
+          <Text style={[type.caption, { color: t.textMuted }]}>Listening · not saved</Text>
           <Text style={{ color: t.textMuted, fontStyle: 'italic' }}>{rec.partial.text}…</Text>
         </View>
       ) : null}
       {rec.segments.length > 0 ? (
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           This is what the speech service heard, plus any corrections staff made (the original is kept). It is not a clinical record until you confirm
           information from it. Tap a speaker label to say who is speaking.
         </Text>
@@ -100,12 +100,12 @@ function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
         </Pressable>
         {s.language ? <StatusChip label={s.secondary_language ? `${s.language} + ${s.secondary_language}` : s.language} /> : null}
         {needsCheck(s) ? <StatusChip label="please check" tone="warning" /> : null}
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>{formatClock(s.start_ms / 1000)}</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>{formatClock(s.start_ms / 1000)}</Text>
       </View>
-      <Text style={{ color: t.text, fontSize: 16 }}>{shownText(s)}</Text>
+      <Text style={[type.body, { color: t.text }]}>{shownText(s)}</Text>
       {corrected ? (
         <Pressable accessibilityRole="button" onPress={() => setShowOriginal((v) => !v)} hitSlop={8}>
-          <Text style={{ color: t.textMuted, fontSize: 12 }}>
+          <Text style={[type.caption, { color: t.textMuted }]}>
             {showOriginal ? `Heard: ${s.raw_text}` : 'Corrected by staff. Tap to see what was heard.'}
           </Text>
         </Pressable>
@@ -121,7 +121,7 @@ function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
         </View>
       ) : (
         <Pressable accessibilityRole="button" onPress={() => { setDraft(shownText(s)); setFixing(true); }} hitSlop={8}>
-          <Text style={{ color: t.primary, fontSize: 12 }}>Correct this line</Text>
+          <Text style={[type.caption, { color: t.primary }]}>Correct this line</Text>
         </Pressable>
       )}
       {editing && s.speaker_id ? (

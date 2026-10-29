@@ -7,7 +7,7 @@ import { captureConsent, type ConsentInput, getConsentPolicies, getPatient, getP
 import type { PurposeStatus } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { AlertBanner, Button, Card, ChoiceChips, ErrorState, LoadingState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { can } from '@/domain/permissions';
 import { CONSENT_GROUPS, PURPOSE_LABELS } from '@/domain/recording';
 import { useAction } from '@/features/consultation/useAction';
@@ -51,7 +51,7 @@ export function ConsentScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
       <Card>
-        <Text style={{ color: t.text, fontSize: 20, fontWeight: '800' }}>{patient.data?.full_name ?? 'Patient'}</Text>
+        <Text style={[type.title, { color: t.text }]}>{patient.data?.full_name ?? 'Patient'}</Text>
         <Text style={{ color: t.textMuted }}>
           Read each item to the patient in their language ({patient.data?.preferred_language}). Each one is a separate decision.
         </Text>
@@ -91,7 +91,7 @@ export function ConsentScreen() {
                     <Text style={{ color: t.primary, fontWeight: '600' }} onPress={() => setOpen(open === purpose ? null : purpose)}>
                       {open === purpose ? 'Hide wording' : 'Show wording to read out'}
                     </Text>
-                    {open === purpose ? <Text style={{ color: t.text, fontSize: 16 }}>{w.body}</Text> : null}
+                    {open === purpose ? <Text style={[type.body, { color: t.text }]}>{w.body}</Text> : null}
                   </>
                 ) : <Text style={{ color: t.danger }}>No wording published yet. Ask an administrator.</Text>}
                 {canCapture && !st?.active && w ? (

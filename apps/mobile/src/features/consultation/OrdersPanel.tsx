@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { cancelOrder, createOrder, placeOrder } from '@/api/endpoints';
 import { Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
@@ -49,7 +49,7 @@ export function OrdersPanel({ encId, data }: { encId: string; data: EncounterDat
         <ChoiceChips value={priority} onChange={setPriority} options={[{ value: 'ROUTINE', label: 'Routine' }, { value: 'URGENT', label: 'Urgent' }, { value: 'STAT', label: 'Immediate' }]} />
         <TextField label="Reason (optional)" value={reason} onChangeText={setReason} />
         <Button title="Save as draft" variant="secondary" disabled={name.trim().length < 2} loading={create.pending} onPress={() => void create.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>Nothing reaches the lab until you place the order.</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>Nothing reaches the lab until you place the order.</Text>
       </Card>
     </View>
   );

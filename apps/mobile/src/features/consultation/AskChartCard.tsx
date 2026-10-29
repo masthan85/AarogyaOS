@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 import { askChart } from '@/api/endpoints';
 import type { AskResult } from '@/api/schemas';
 import { Button, Card, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 
 import { useAction } from './useAction';
 
@@ -29,9 +29,9 @@ export function AskChartCard({ patientId }: { patientId: string }) {
             <StatusChip label="Answered by software from the chart" tone="ai" />
             {result.is_development ? <StatusChip label="development model" tone="warning" /> : null}
           </View>
-          <Text style={{ color: t.text, fontSize: 16 }}>{a.text}</Text>
+          <Text style={[type.body, { color: t.text }]}>{a.text}</Text>
           {a.citations.map((c) => (
-            <Text key={c.ref} style={{ color: t.textMuted, fontSize: 12 }}>Source: {c.label}{c.date ? ` · ${c.date}` : ''}</Text>
+            <Text key={c.ref} style={[type.caption, { color: t.textMuted }]}>Source: {c.label}{c.date ? ` · ${c.date}` : ''}</Text>
           ))}
         </View>
       ))}
@@ -44,7 +44,7 @@ export function AskChartCard({ patientId }: { patientId: string }) {
         </View>
       ) : null}
       {result && result.matches.length === 0 && !result.answered ? <Text style={{ color: t.textMuted }}>Nothing in the recorded chart matches.</Text> : null}
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>Only recorded, non-rejected entries are searched. Unreviewed AI suggestions are not part of the chart.</Text>
+      <Text style={[type.caption, { color: t.textMuted }]}>Only recorded, non-rejected entries are searched. Unreviewed AI suggestions are not part of the chart.</Text>
     </Card>
   );
 }

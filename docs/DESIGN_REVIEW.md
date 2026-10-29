@@ -23,10 +23,22 @@ Method: I rendered the real app in a headless browser at phone width (390 px, li
 
 Before and after: [home](design/home-before.png) → [home](design/home-after.png); [Draft EMR](design/draft-emr-before.png) → [Draft EMR](design/draft-emr-after.png).
 
+## Second pass: the other screens
+
+The same system was then carried through the rest of the app, checked in the same way:
+
+- **Sign-in**: a brand mark and heading, with the form in a card.
+- **Short choices** (Name / Mobile / MRN, Lab / Imaging / Other, Routine / Urgent / Immediate, Suspected / Provisional / Confirmed) are now one connected control; longer lists still wrap as chips.
+- **Findings from the assistant** use one row design in both the Assist tab and the Draft EMR tab (the older heavier cards are gone).
+- **Lists that open another screen** (Administration) use a new `NavRow` with an arrow; introductory text uses a `Lead` style; empty states sit in a tinted box.
+- **Text sizes** on about twenty screens were moved from ad hoc numbers to the shared type scale (a scripted change, then looked at).
+- **Fixes**: the tab bar no longer collapses on long pages; the recording bar is a little shorter.
+
+Looked at in light and dark: sign-in, home (doctor and administrator), patients, appointments, queue, results, follow-ups, pharmacy, settings, administration, and every consultation tab. Not looked at individually: triage, consent, patient profile and new-patient forms, the booking form, most administration sub-screens, lab entry, and cover; they use the same components and should look consistent, but check them.
+
 ## Not done
 
-- Only the home screen, consultation header, recording bar and Draft EMR were redesigned. Other screens (queue, patients, forms, admin, worklists) pick up the new buttons, chips, cards and colours automatically but have not been reworked or reviewed one by one.
+- Layouts were not reworked screen by screen beyond what is listed above; everything else follows from the shared components.
 - No icons: the project has no icon library. Meaning is carried by words, position and colour together. Adding icons is a dependency decision for later.
 - Not checked on a phone, with large system fonts, with a screen reader, or in Telugu, Hindi or other long scripts. Text sizes use fixed points and some rows may need to wrap differently.
-- The assistant's "Assist" tab still uses the older, heavier finding cards.
 - The new look is a proposal: show it to a doctor and a receptionist before settling on it.

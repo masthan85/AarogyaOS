@@ -7,8 +7,8 @@ import { z } from 'zod';
 
 import { ApiError } from '@/api/client';
 import { useAuth } from '@/auth/AuthProvider';
-import { Button, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { Button, Card, TextField } from '@/design-system/components';
+import { radius, space, type, useTheme } from '@/design-system/tokens';
 
 const formSchema = z.object({
   organisationSlug: z.string().trim().toLowerCase().optional(),
@@ -45,12 +45,17 @@ export function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: space.lg }}>
-          <View style={{ width: '100%', maxWidth: 480, alignSelf: 'center', gap: space.md }}>
-            <Text style={{ color: t.primary, fontSize: 32, fontWeight: '800' }}>AarogyaOS</Text>
-            <Text style={{ color: t.textMuted, marginBottom: space.md }}>
-              AI-native clinical operating system. Sign in with your organisation account.
-            </Text>
-
+          <View style={{ width: '100%', maxWidth: 480, alignSelf: 'center', gap: space.lg }}>
+            <View style={{ gap: space.sm }}>
+              <View
+                accessibilityElementsHidden
+                style={{ width: 56, height: 56, borderRadius: radius.lg, backgroundColor: t.hero, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: t.heroText, fontSize: 28, fontWeight: '800' }}>A</Text>
+              </View>
+              <Text style={[type.display, { color: t.text }]}>AarogyaOS</Text>
+              <Text style={[type.body, { color: t.textMuted }]}>Sign in with your organisation account.</Text>
+            </View>
+            <Card>
             <Controller
               control={control}
               name="organisationSlug"
@@ -101,11 +106,12 @@ export function LoginScreen() {
               )}
             />
             {formError ? (
-              <Text accessibilityRole="alert" style={{ color: t.danger }}>
+              <Text accessibilityRole="alert" style={[type.small, { color: t.danger }]}>
                 {formError}
               </Text>
             ) : null}
             <Button title="Sign in" onPress={onSubmit} loading={isSubmitting} />
+            </Card>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

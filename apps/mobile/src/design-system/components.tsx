@@ -128,11 +128,12 @@ export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   );
 }
 
-export function EmptyState({ message }: { message: string }) {
+export function EmptyState({ message, title }: { message: string; title?: string }) {
   const t = useTheme();
   return (
-    <View style={styles.center}>
-      <Text style={{ color: t.textMuted, textAlign: 'center' }}>{message}</Text>
+    <View style={[styles.center, { backgroundColor: t.neutralSoft, borderRadius: radius.lg, marginVertical: space.xs }]}>
+      {title ? <Text style={[type.h3, { color: t.text, textAlign: 'center' }]}>{title}</Text> : null}
+      <Text style={[type.small, { color: t.textMuted, textAlign: 'center' }]}>{message}</Text>
     </View>
   );
 }
@@ -181,32 +182,60 @@ export function ChoiceChips<T extends string>({
   onChange: (v: T) => void;
 }) {
   const t = useTheme();
+  // A few short choices read best as one connected control; many or long ones wrap as separate chips.
+  const segmented = options.length >= 2 && options.length <= 4 && options.reduce((n, o) => n + o.label.length, 0) <= 30;
   return (
     <View style={{ gap: space.xs }}>
-      {label ? <Text style={{ color: t.text, fontWeight: '600' }}>{label}</Text> : null}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-        {options.map((o) => {
-          const selected = o.value === value;
-          return (
-            <Pressable
-              key={o.value}
-              accessibilityRole="radio"
-              accessibilityState={{ selected }}
-              onPress={() => onChange(o.value)}
-              style={{
-                minHeight: MIN_TOUCH,
-                paddingHorizontal: space.md,
-                justifyContent: 'center',
-                borderRadius: 999,
-                borderWidth: 1.5,
-                borderColor: selected ? t.primary : t.border,
-                backgroundColor: selected ? t.primary : t.surface,
-              }}>
-              <Text style={{ color: selected ? t.primaryText : t.text, fontWeight: '600' }}>{o.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {label ? <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text> : null}
+      {segmented ? (
+        <View style={{ flexDirection: 'row', backgroundColor: t.neutralSoft, borderRadius: radius.md, padding: 3, gap: 3 }}>
+          {options.map((o) => {
+            const selected = o.value === value;
+            return (
+              <Pressable
+                key={o.value}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                onPress={() => onChange(o.value)}
+                style={{
+                  flex: 1,
+                  minHeight: MIN_TOUCH - 6,
+                  paddingHorizontal: 6,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: radius.md - 3,
+                  backgroundColor: selected ? t.primary : 'transparent',
+                }}>
+                <Text style={{ color: selected ? t.primaryText : t.text, fontWeight: selected ? '800' : '600', fontSize: 15, textAlign: 'center' }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          {options.map((o) => {
+            const selected = o.value === value;
+            return (
+              <Pressable
+                key={o.value}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                onPress={() => onChange(o.value)}
+                style={{
+                  minHeight: MIN_TOUCH,
+                  paddingHorizontal: space.md,
+                  justifyContent: 'center',
+                  borderRadius: 999,
+                  borderWidth: 1.5,
+                  borderColor: selected ? t.primary : t.border,
+                  backgroundColor: selected ? t.primary : t.surface,
+                }}>
+                <Text style={{ color: selected ? t.primaryText : t.text, fontWeight: '600' }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -343,7 +372,7 @@ export function TabBar<T extends string>({
       horizontal
       showsHorizontalScrollIndicator={false}
       accessibilityRole="tablist"
-      style={{ flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: t.border }}
+      style={{ flexGrow: 0, flexShrink: 0, borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: t.border }}
       contentContainerStyle={{ paddingHorizontal: space.md, gap: space.xs }}>
       {tabs.map((tab) => {
         const selected = tab.value === value;
@@ -373,5 +402,35 @@ export function TabBar<T extends string>({
         );
       })}
     </ScrollView>
+  );
+}
+
+
+/** An introductory sentence or two under a screen's title. */
+export function Lead({ children }: { children: ReactNode }) {
+  const t = useTheme();
+  return <Text style={[type.small, { color: t.textMuted, lineHeight: 20 }]}>{children}</Text>;
+}
+
+/** A row that opens another screen: title, one line of help, and an arrow. */
+export function NavRow({ title, description, onPress }: { title: string; description?: string; onPress: () => void }) {
+  const t = useTheme();
+  const dark = useIsDark();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={description ? `${title}. ${description}` : title}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        elevation(dark),
+        { backgroundColor: t.surface, borderColor: t.border, flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: MIN_TOUCH, opacity: pressed ? 0.85 : 1 },
+      ]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[type.h3, { color: t.text }]}>{title}</Text>
+        {description ? <Text style={[type.small, { color: t.textMuted }]}>{description}</Text> : null}
+      </View>
+      <Text style={{ color: t.textMuted, fontSize: 22 }} accessibilityElementsHidden>›</Text>
+    </Pressable>
   );
 }

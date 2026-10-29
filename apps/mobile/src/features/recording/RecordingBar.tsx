@@ -19,21 +19,26 @@ export function RecordingBar({ rec }: { rec: RecordingSession }) {
 
   const bg = indicator.isRecording ? t.dangerSoft : indicator.tone === 'warning' ? t.warningSoft : t.neutralSoft;
 
+  const development = [
+    rec.interaction?.is_development ? 'DEVELOPMENT: synthetic transcript' : null,
+    rec.captureKind === 'simulated' ? 'simulated audio' : null,
+  ].filter(Boolean);
+
   return (
     <View
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
-      style={{ borderLeftWidth: 4, borderLeftColor: colour, borderRadius: radius.md, padding: space.sm + 2, gap: space.sm, backgroundColor: bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' }}>
+      style={{ borderLeftWidth: 4, borderLeftColor: colour, borderRadius: radius.md, padding: space.sm + 2, gap: space.xs + 2, backgroundColor: bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: indicator.isRecording ? t.danger : 'transparent', borderWidth: 2, borderColor: colour }} />
-        <Text style={[type.h3, { color: colour }]}>{indicator.label}</Text>
+        <Text style={[type.h3, { color: colour, flex: 1 }]}>{indicator.label}</Text>
         <Text style={[type.small, { color: t.text, fontVariant: ['tabular-nums'] }]}>{formatClock(rec.seconds)}</Text>
-        {rec.interaction?.ai_processing ? <StatusChip label="AI assist on" tone="ai" /> : null}
       </View>
-      {rec.interaction?.is_development || rec.captureKind === 'simulated' ? (
-        <Text style={[type.caption, { color: t.warning }]}>
-          {[rec.interaction?.is_development ? 'DEVELOPMENT: synthetic transcript' : null, rec.captureKind === 'simulated' ? 'simulated audio' : null].filter(Boolean).join(' · ')}
-        </Text>
+      {rec.interaction?.ai_processing || development.length > 0 ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.sm }}>
+          {rec.interaction?.ai_processing ? <StatusChip label="AI assist on" tone="ai" /> : null}
+          {development.length > 0 ? <Text style={[type.caption, { color: t.warning, flexShrink: 1 }]}>{development.join(' · ')}</Text> : null}
+        </View>
       ) : null}
       {rec.message ? <Text style={[type.small, { color: t.text }]}>{rec.message}</Text> : null}
       <View style={{ flexDirection: 'row', gap: space.sm }}>

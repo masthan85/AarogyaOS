@@ -1,9 +1,9 @@
 import { router, type Href } from 'expo-router';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
-import { Card } from '@/design-system/components';
-import { MIN_TOUCH, space, useTheme } from '@/design-system/tokens';
+import { Lead, NavRow } from '@/design-system/components';
+import { space } from '@/design-system/tokens';
 import { can } from '@/domain/permissions';
 
 const ITEMS: { title: string; description: string; permission: string; href: Href }[] = [
@@ -15,18 +15,13 @@ const ITEMS: { title: string; description: string; permission: string; href: Hre
 ];
 
 export function AdminHome() {
-  const t = useTheme();
   const { me } = useAuth();
   const items = ITEMS.filter((i) => can(me, i.permission));
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
-      {items.length === 0 ? <Text style={{ color: t.textMuted }}>Your role has no administration screens.</Text> : null}
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.sm }}>
+      {items.length === 0 ? <Lead>Your role has no administration screens.</Lead> : null}
       {items.map((i) => (
-        <Pressable key={i.title} accessibilityRole="button" onPress={() => router.push(i.href)} style={{ minHeight: MIN_TOUCH }}>
-          <Card title={i.title}>
-            <Text style={{ color: t.textMuted }}>{i.description}</Text>
-          </Card>
-        </Pressable>
+        <NavRow key={i.title} title={i.title} description={i.description} onPress={() => router.push(i.href)} />
       ))}
     </ScrollView>
   );

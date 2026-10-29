@@ -3,7 +3,7 @@ import { Alert, Text, View } from 'react-native';
 
 import { addCondition, confirmCondition } from '@/api/endpoints';
 import { Button, Card, ChoiceChips, SectionTitle, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 
 import { FactRow } from './FactRow';
 import { useAction } from './useAction';
@@ -44,7 +44,7 @@ export function DiagnosisPanel({ encId, data }: { encId: string; data: Encounter
         <ChoiceChips label="How sure are you?" value={certainty} onChange={setCertainty}
           options={[{ value: 'SUSPECTED', label: 'Suspected' }, { value: 'PROVISIONAL', label: 'Provisional' }, { value: 'CONFIRMED', label: 'Confirmed' }]} />
         <Button title="Add" disabled={display.trim().length < 2} loading={add.pending} onPress={() => void add.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           ICD / SNOMED coding will appear here once a terminology service is connected. Nothing here is coded automatically.
         </Text>
       </Card>
