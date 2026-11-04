@@ -26,6 +26,7 @@ from app.core.observability import (
 from app.core.ratelimit import RateLimiter
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
+from app.modules.billing.router import router as billing_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
 from app.modules.cover.router import router as cover_router
@@ -151,6 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         templates_router,
         cover_router,
         pharmacy_router,
+        billing_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

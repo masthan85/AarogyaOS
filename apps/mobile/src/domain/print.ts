@@ -1,4 +1,6 @@
-import type { ClinicalDocument, Prescription } from '@/api/schemas';
+import type { ClinicalDocument, Invoice, Prescription } from '@/api/schemas';
+
+import { formatRupees, METHOD_LABELS } from './billing';
 
 /** Everything that goes into a printed page is escaped: text from patients and doctors is untrusted. */
 export const escapeHtml = (s: string): string =>
@@ -57,4 +59,26 @@ export function prescriptionHtml(rx: Prescription, h: Letterhead): string | null
     <table><tr><th>#</th><th>Medicine</th><th>Dose</th><th>Route</th><th>How often</th><th>For</th><th>Notes</th></tr>${rows}</table>
     <div class="foot">Signed electronically in AarogyaOS by ${escapeHtml(h.doctor)}${when ? ` on ${escapeHtml(when)}` : ''}.
     Check that this form meets the prescription rules that apply where you practise.</div>`);
+}
+
+/** Only an issued invoice may be printed. It carries charges and payments, never anything clinical. */
+export function invoiceHtml(inv: Invoice, organisation: string): string | null {
+  if (inv.status !== 'ISSUED' || !inv.number) return null;
+  const when = inv.issued_at ? new Date(inv.issued_at).toLocaleDateString() : '';
+  const rows = inv.lines
+    .map(
+      (l, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(l.description)}</td><td style="text-align:right">${l.quantity}</td>
+        <td style="text-align:right">${escapeHtml(formatRupees(l.unit_price_paise))}</td><td style="text-align:right">${escapeHtml(formatRupees(l.total_paise))}</td></tr>`,
+    )
+    .join('');
+  const paid = inv.payments
+    .map((p) => `<div>${escapeHtml(new Date(p.received_at).toLocaleDateString())}: ${escapeHtml(formatRupees(p.amount_paise))} by ${escapeHtml(METHOD_LABELS[p.method] ?? p.method)}${p.reference ? ` (ref. ${escapeHtml(p.reference)})` : ''}</div>`)
+    .join('');
+  return page(`<div class="head"><h1>${escapeHtml(organisation)}</h1><div>Invoice ${escapeHtml(inv.number)}${when ? ` · ${escapeHtml(when)}` : ''}</div></div>
+    <div><strong>${escapeHtml(inv.patient_name)}</strong> <span class="muted">MRN ${escapeHtml(inv.patient_mrn)}</span></div>
+    <table style="margin-top:12px"><tr><th>#</th><th>Charge</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table>
+    <h2>Total ${escapeHtml(formatRupees(inv.total_paise))}</h2>
+    ${paid ? `<div class="muted">Received</div>${paid}` : ''}
+    <div><strong>${inv.balance_paise > 0 ? `Balance due ${escapeHtml(formatRupees(inv.balance_paise))}` : 'Paid in full'}</strong></div>
+    <div class="foot">Amounts are as entered by the clinic. Tax, if any, is not calculated by AarogyaOS.</div>`);
 }

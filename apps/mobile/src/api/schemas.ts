@@ -632,3 +632,33 @@ export const dispensingSchema = z.object({
   created_at: z.string(),
 });
 export type Dispensing = z.infer<typeof dispensingSchema>;
+
+// ---- billing ---------------------------------------------------------------------------------
+
+export const invoiceSchema = z.object({
+  id: z.string(),
+  number: z.string().nullable(),
+  status: z.enum(['DRAFT', 'ISSUED', 'VOID']),
+  patient_id: z.string(),
+  patient_name: z.string(),
+  patient_mrn: z.string(),
+  encounter_id: z.string().nullable(),
+  lines: z.array(z.object({ description: z.string(), quantity: z.number(), unit_price_paise: z.number(), total_paise: z.number() })),
+  total_paise: z.number(),
+  paid_paise: z.number(),
+  balance_paise: z.number(),
+  payments: z.array(z.object({ id: z.string(), amount_paise: z.number(), method: z.string(), reference: z.string().nullable(), received_at: z.string() })),
+  created_at: z.string(),
+  issued_at: z.string().nullable(),
+  void_reason: z.string().nullable(),
+});
+export const toBillSchema = z.object({
+  encounter_id: z.string(),
+  patient_id: z.string(),
+  patient_name: z.string(),
+  patient_mrn: z.string(),
+  ended_at: z.string().nullable(),
+  practitioner_name: z.string().nullable(),
+});
+export type Invoice = z.infer<typeof invoiceSchema>;
+export type ToBill = z.infer<typeof toBillSchema>;

@@ -74,6 +74,8 @@ PERMISSIONS: dict[str, str] = {
     "summary:write": "Draft, edit and approve patient visit summaries",
     "summary:read": "Read patient visit summaries",
     "fhir:export": "Export a visit or patient as FHIR (read-only)",
+    "billing:read": "View invoices and payments (no clinical information)",
+    "billing:write": "Create, issue and void invoices; record payments",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -141,7 +143,15 @@ _DOCTOR = [
     "speaker:assign",
     "transcript:correct",
 ]
-_RECEPTION = [*_RECEPTION, "followup:read", *_CONSENT, "interaction:reception", "transcript:read"]
+_RECEPTION = [
+    *_RECEPTION,
+    "followup:read",
+    *_CONSENT,
+    "interaction:reception",
+    "transcript:read",
+    "billing:read",
+    "billing:write",
+]
 _LAB = [*_READ_STRUCTURE, "patient:search", "order:read", "result:enter"]
 _ADMIN = [
     *_READ_STRUCTURE,
@@ -159,6 +169,7 @@ _ADMIN = [
     "usage:read",
     "knowledge:manage",
     "knowledge:read",
+    "billing:read",
 ]
 
 # key -> (display name, is_platform, permissions)
@@ -179,6 +190,12 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
     "billing_staff": (
         "Billing Staff",
         False,
-        [*_READ_STRUCTURE, "patient:search", "appointment:read"],
+        [
+            *_READ_STRUCTURE,
+            "patient:search",
+            "appointment:read",
+            "billing:read",
+            "billing:write",
+        ],
     ),
 }

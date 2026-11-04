@@ -16,6 +16,7 @@ def test_demo_data_is_created_once_and_the_accounts_work(settings: Settings) -> 
             "reception@demo.example.com",
             "pharmacist@demo.example.com",
             "lab@demo.example.com",
+            "billing@demo.example.com",
         ):
             r = client.post(
                 "/api/v1/auth/login",

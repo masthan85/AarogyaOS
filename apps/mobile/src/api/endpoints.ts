@@ -39,6 +39,8 @@ import {
   medicationSchema,
   orderSchema,
   colleagueSchema,
+  invoiceSchema,
+  toBillSchema,
   dispensingSchema,
   coverSchema,
   followUpSchema,
@@ -432,3 +434,20 @@ export const getPatientDispensings = (patientId: string) =>
   api.request(`/patients/${patientId}/dispensings`, z.array(dispensingSchema));
 export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PARTIALLY_DISPENSED' | 'NOT_DISPENSED'; note?: string }) =>
   api.request(`/prescriptions/${rxId}/dispensing`, dispensingSchema, { method: 'POST', body });
+
+// ---- billing ---------------------------------------------------------------------------------
+
+export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'OTHER';
+export const getToBill = () => api.request('/billing/to-bill', z.array(toBillSchema));
+export const getInvoices = (params: { unpaid?: boolean; status?: string }) =>
+  api.request(`/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status })}`, z.array(invoiceSchema));
+export const getInvoice = (id: string) => api.request(`/invoices/${id}`, invoiceSchema);
+export const createInvoice = (body: { patient_id: string; encounter_id?: string }) =>
+  api.request('/invoices', invoiceSchema, { method: 'POST', body });
+export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number }[]) =>
+  api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
+export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });
+export const payInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reference?: string }) =>
+  api.request(`/invoices/${id}/payments`, invoiceSchema, { method: 'POST', body });
+export const voidInvoice = (id: string, reason: string) =>
+  api.request(`/invoices/${id}/void`, invoiceSchema.nullable(), { method: 'POST', body: { reason } });

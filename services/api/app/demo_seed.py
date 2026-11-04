@@ -29,6 +29,7 @@ STAFF = [
     ("receptionist", "reception@demo.example.com", "Demo Receptionist"),
     ("pharmacist", "pharmacist@demo.example.com", "Demo Pharmacist"),
     ("lab_technician", "lab@demo.example.com", "Demo Lab Technician"),
+    ("billing_staff", "billing@demo.example.com", "Demo Billing Clerk"),
 ]
 
 
@@ -181,7 +182,7 @@ def run(settings: Settings) -> int:
             print("Demo organisation created.")
     print(f"\nSign in with organisation '{SLUG}' and password '{PASSWORD}':")
     print("  admin@demo.example.com  doctor@demo.example.com  nurse@demo.example.com")
-    print("  reception@demo.example.com")
+    print("  reception@demo.example.com  billing@demo.example.com")
     print("  pharmacist@demo.example.com  lab@demo.example.com")
     print("These are demo accounts with a published password: never use them with real data.")
     return 0

@@ -24,6 +24,7 @@ export const DASHBOARD_ACTIONS: DashboardAction[] = [
   { key: 'queue', title: 'Queue', description: 'Who is waiting, calling', group: 'today', permission: 'queue:read', href: '/queue' },
   { key: 'appointments', title: 'Appointments', description: 'Day view and booking', group: 'today', permission: 'appointment:read', href: '/appointments' },
   { key: 'patients', title: 'Patients', description: 'Find or register', group: 'today', permission: 'patient:search', href: '/patients' },
+  { key: 'billing', title: 'Billing', description: 'Invoices and payments', group: 'today', permission: 'billing:read', href: '/billing' },
   { key: 'results', title: 'Results to review', description: 'Critical first', group: 'clinical', permission: 'result:review', href: '/results' },
   { key: 'follow-ups', title: 'Follow-ups', description: 'Due to be seen again', group: 'clinical', permission: 'followup:read', href: '/follow-ups' },
   { key: 'lab', title: 'Orders and results', description: 'Enter lab and radiology results', group: 'clinical', permission: 'result:enter', href: '/lab' },

@@ -132,3 +132,18 @@ While an arrangement is active, `GET /results/awaiting-review` for the covering 
 | `GET /patients/{id}/dispensings` | `prescription:read` | Newest first |
 
 Append-only (database trigger). Records the decision and who made it; there is no stock, brand or batch tracking and no interaction check.
+
+## Billing (migration 0011)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `GET /billing/to-bill` | `billing:write` | Visits finished in the last 7 days with no invoice (a void one does not count): patient name, MRN, doctor, time. Nothing clinical |
+| `GET /invoices` | `billing:read` | `?status=DRAFT\|ISSUED\|VOID`, `?patient_id=`, `?unpaid=true` (issued with a balance) |
+| `POST /invoices` | `billing:write` | `{patient_id, encounter_id?}`; one live invoice per visit |
+| `GET /invoices/{id}` | `billing:read` | Lines, payments, `total_paise`, `paid_paise`, `balance_paise` |
+| `PUT /invoices/{id}/lines` | `billing:write` | Replaces the charges of a draft (up to 30; whole paise; quantity 1 to 999) |
+| `POST /invoices/{id}/issue` | `billing:write` | Needs a charge and a total above zero; assigns `INV-000001` style numbers per organisation and freezes the invoice |
+| `POST /invoices/{id}/payments` | `billing:write` | `{amount_paise, method: CASH\|UPI\|CARD\|OTHER, reference?}`; never more than the balance |
+| `POST /invoices/{id}/void` | `billing:write` | Discards a draft (returns `null`), or voids an issued invoice that has no payments. Refunds are not built |
+
+Roles: billing staff and reception read and write; administrators read; doctors, nurses, lab and pharmacy have no billing access. Billing staff see names, MRNs and amounts, never the clinical record.

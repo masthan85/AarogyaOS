@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 
 import app.modules.ai.models
 import app.modules.audit.models
+import app.modules.billing.models
 import app.modules.clinical.models
 import app.modules.consent.models
 import app.modules.cover.models
