@@ -147,3 +147,11 @@ Append-only (database trigger). Records the decision and who made it; there is n
 | `POST /invoices/{id}/void` | `billing:write` | Discards a draft (returns `null`), or voids an issued invoice that has no payments. Refunds are not built |
 
 Roles: billing staff and reception read and write; administrators read; doctors, nurses, lab and pharmacy have no billing access. Billing staff see names, MRNs and amounts, never the clinical record.
+
+## Procedures, immunisations and referrals (migration 0012)
+All three are ordinary clinical facts: provenance, verification state, and corrections that add a new version.
+- `GET /patients/{id}/history` — current procedures, vaccines and referrals (`patient:clinical`).
+- `POST /encounters/{id}/procedures`, `PUT /procedures/{id}` — doctors (`procedure:record`). Date performed cannot be in the future.
+- `POST /encounters/{id}/immunisations`, `PUT /immunisations/{id}` — nurses and doctors (`immunisation:record`). A nurse's entry stays unverified until a doctor confirms it. The next dose must be due after this one.
+- `POST /encounters/{id}/referrals`, `PUT /referrals/{id}` — doctors (`referral:write`). Status: requested, accepted, completed, declined, cancelled. A closed referral cannot be changed; start a new one.
+- Confirm or reject with the existing `POST /clinical/{procedures|immunisations|referrals}/{id}/verify`.

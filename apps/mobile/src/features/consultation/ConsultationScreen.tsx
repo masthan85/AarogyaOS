@@ -18,6 +18,7 @@ import { DocumentsPanel } from './DocumentsPanel';
 import { ContextPanel } from './ContextPanel';
 import { DiagnosisPanel } from './DiagnosisPanel';
 import { EmrDraftPanel } from './EmrDraftPanel';
+import { HistoryPanel } from './HistoryPanel';
 import { FinishPanel } from './FinishPanel';
 import { FollowUpPanel } from './FollowUpPanel';
 import { NotesPanel } from './NotesPanel';
@@ -26,7 +27,7 @@ import { PrescriptionPanel } from './PrescriptionPanel';
 import { type EncounterData, useEncounterData } from './useEncounterData';
 import { useLetterhead } from './useLetterhead';
 
-type Tab = 'context' | 'conversation' | 'emr' | 'assist' | 'notes' | 'diagnosis' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
+type Tab = 'context' | 'conversation' | 'emr' | 'assist' | 'notes' | 'diagnosis' | 'history' | 'orders' | 'prescription' | 'followup' | 'documents' | 'finish';
 const TABS: { value: Tab; label: string }[] = [
   { value: 'context', label: 'Patient' },
   { value: 'conversation', label: 'Conversation' },
@@ -34,6 +35,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'assist', label: 'Assist' },
   { value: 'notes', label: 'Notes' },
   { value: 'diagnosis', label: 'Diagnosis' },
+  { value: 'history', label: 'Procedures' },
   { value: 'orders', label: 'Tests' },
   { value: 'prescription', label: 'Prescription' },
   { value: 'followup', label: 'Follow-up' },
@@ -116,6 +118,7 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       {tab === 'assist' ? <AssistPanel encId={id} data={data} rec={rec} isDoctor={can(me, 'note:clinical')} /> : null}
       {tab === 'notes' ? <NotesPanel encId={id} data={data} /> : null}
       {tab === 'diagnosis' ? <DiagnosisPanel encId={id} data={data} /> : null}
+      {tab === 'history' ? <HistoryPanel encId={id} patientId={patientId} /> : null}
       {tab === 'orders' ? <OrdersPanel encId={id} data={data} /> : null}
       {tab === 'prescription' ? <PrescriptionPanel encId={id} data={data} letterhead={letterhead} /> : null}
       {tab === 'followup' ? <FollowUpPanel encId={id} data={data} /> : null}

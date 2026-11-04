@@ -662,3 +662,40 @@ export const toBillSchema = z.object({
 });
 export type Invoice = z.infer<typeof invoiceSchema>;
 export type ToBill = z.infer<typeof toBillSchema>;
+
+export const procedureSchema = z.object({
+  ...fact,
+  display: z.string(),
+  status: z.string(),
+  performed_on: z.string(),
+  body_site: z.string().nullable(),
+  outcome: z.string().nullable(),
+  complications: z.string().nullable(),
+});
+export const immunisationSchema = z.object({
+  ...fact,
+  vaccine: z.string(),
+  dose_number: z.number().nullable(),
+  given_on: z.string(),
+  given_here: z.boolean(),
+  batch_number: z.string().nullable(),
+  site: z.string().nullable(),
+  next_due_on: z.string().nullable(),
+  note: z.string().nullable(),
+});
+export const referralSchema = z.object({
+  ...fact,
+  to_specialty: z.string(),
+  to_name: z.string().nullable(),
+  reason: z.string(),
+  urgency: z.string(),
+  status: z.string(),
+  outcome_note: z.string().nullable(),
+});
+export const historySchema = z.object({
+  procedures: z.array(procedureSchema),
+  immunisations: z.array(immunisationSchema),
+  referrals: z.array(referralSchema),
+});
+export type PatientHistory = z.infer<typeof historySchema>;
+export type Referral = z.infer<typeof referralSchema>;

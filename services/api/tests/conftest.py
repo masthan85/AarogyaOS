@@ -33,6 +33,7 @@ PASSWORD = "correct-horse-battery"  # noqa: S105
 TENANT_TABLES = (
     "ai_suggestion_actions, ai_suggestions, ai_candidates, ai_extractions, ai_usage, "
     "knowledge_chunks, knowledge_documents, patient_summaries, payments, invoice_lines, invoices, invoice_counters, dispensings, note_templates, cover_arrangements, "
+    "referrals, immunisations, procedure_records, "
     "speech_usage, audio_assets, transcript_corrections, transcript_segments, interaction_speakers, clinical_interactions, "
     "consents, consent_policies, "
     "follow_ups, investigation_results, service_requests, prescription_items, prescriptions, "

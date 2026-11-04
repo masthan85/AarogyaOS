@@ -6,6 +6,7 @@ Billing (done, basic): draft → issued invoices from finished visits or ad-hoc 
 part and full payments (cash/UPI/card/other), void with reason, to-bill list, PDF/print, receptionist and billing-staff roles.
 **Open:** refunds and credit notes, GST/tax lines and invoice-number rules for your CA, price list / service catalogue,
 insurance and TPA claims, payment-gateway integration, end-of-day cash reconciliation.
+Procedures, vaccines, referrals (done, basic): recorded as verified clinical facts with a consultation tab. **Open:** vaccine schedule and overdue reminders (needs a clinically signed-off schedule), referral letter and sending, coding via a terminology service, procedure consent and operative notes.
 P2 Patients (done): registration, duplicate detection, minimal-field search, appointments, check-in, walk-ins,
 queue, timeline, encrypted ABHA identifier field, practitioners and working hours.
 P2 follow-ups: patient photo (needs object store, Phase 4), duplicate merge workflow, admin UI for practitioners

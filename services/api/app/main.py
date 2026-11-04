@@ -27,6 +27,7 @@ from app.core.ratelimit import RateLimiter
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.billing.router import router as billing_router
+from app.modules.clinical.history import router as history_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
 from app.modules.cover.router import router as cover_router
@@ -143,6 +144,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         patients_router,
         scheduling_router,
         clinical_router,
+        history_router,
         consent_router,
         languages_router,
         interactions_router,

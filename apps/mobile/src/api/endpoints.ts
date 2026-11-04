@@ -36,6 +36,10 @@ import {
   observationSchema,
   allergySchema,
   conditionSchema,
+  historySchema,
+  immunisationSchema,
+  procedureSchema,
+  referralSchema,
   medicationSchema,
   orderSchema,
   colleagueSchema,
@@ -451,3 +455,19 @@ export const payInvoice = (id: string, body: { amount_paise: number; method: Pay
   api.request(`/invoices/${id}/payments`, invoiceSchema, { method: 'POST', body });
 export const voidInvoice = (id: string, reason: string) =>
   api.request(`/invoices/${id}/void`, invoiceSchema.nullable(), { method: 'POST', body: { reason } });
+
+export const getHistory = (patientId: string) => api.request(`/patients/${patientId}/history`, historySchema);
+export const addProcedure = (
+  encId: string,
+  body: { display: string; performed_on: string; body_site?: string; outcome?: string; complications?: string },
+) => api.request(`/encounters/${encId}/procedures`, procedureSchema, { method: 'POST', body });
+export const addImmunisation = (
+  encId: string,
+  body: { vaccine: string; given_on: string; dose_number?: number; batch_number?: string; next_due_on?: string; given_here?: boolean },
+) => api.request(`/encounters/${encId}/immunisations`, immunisationSchema, { method: 'POST', body });
+export const addReferral = (
+  encId: string,
+  body: { to_specialty: string; reason: string; to_name?: string; urgency?: 'ROUTINE' | 'URGENT' | 'EMERGENCY' },
+) => api.request(`/encounters/${encId}/referrals`, referralSchema, { method: 'POST', body });
+export const updateReferral = (id: string, body: { status?: string; outcome_note?: string }) =>
+  api.request(`/referrals/${id}`, referralSchema, { method: 'PUT', body });

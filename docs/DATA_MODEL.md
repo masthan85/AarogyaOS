@@ -77,3 +77,6 @@ Separate mapping layer; resources never stored as the source of truth.
 `dispensings` (tenant-scoped, forced RLS, append-only, migration 0010): a pharmacist's record per prescription: status, optional note (300 characters, free text, so keep clinical detail out), who. The newest row is the current state.
 
 `invoices`, `invoice_lines`, `payments`, `invoice_counters` (tenant-scoped, forced RLS, migration 0011). Money is whole paise. A draft can be edited or deleted; once issued, database triggers refuse any change to the invoice or its lines except to void it, refuse deleting it, and make payments append-only (a payment can only be added to an issued invoice). Numbers run on per organisation without gaps for issued invoices. No tax is calculated: staff enter the amounts. Not built: refunds, credit notes, insurance or TPA claims, tax invoices, a patient-facing receipt portal.
+
+## Procedures, immunisations, referrals (0012)
+`procedure_records`, `immunisations` and `referrals` use the clinical fact columns (provenance, verification, `supersedes_id`, `is_current`), forced RLS and the `guard_clinical_fact` trigger, so rows are append-only and cannot be deleted. Codes (`code`, `code_system`) stay empty until a terminology service is connected.
