@@ -49,7 +49,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Audit log and event outbox with no clinical content; readiness check that waits for migrations; Prometheus metrics without identifiers; security headers and request limits; scheduled maintenance jobs; encrypted backup and a restore drill; optional pgvector search.
 
 **Administration (mobile, role-gated)**
-- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts; the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
+- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts (built-in General consultation, Follow-up review and Neurosurgery consultation; a doctor's own specialty's layout is offered first on the Notes tab); the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
 - Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
 
 **Mobile app (Expo / React Native)**

@@ -52,3 +52,13 @@ export const translationNote = (d: ClinicalDocument): string | null => {
 /** Reading aloud is offered only for approved text, in languages the voice service covers. */
 export const SPEECH_LANGUAGES = new Set(['en-IN', 'hi-IN', 'bn-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'od-IN', 'pa-IN', 'ta-IN', 'te-IN']);
 export const canReadAloud = (d: ClinicalDocument): boolean => d.status === 'APPROVED' && SPEECH_LANGUAGES.has(d.language);
+
+/**
+ * The layout to offer first: the one made for the treating doctor's specialty, if there is one.
+ * Only a suggestion: it is selected on opening the Notes tab and the doctor can switch to a free note.
+ */
+export function layoutForSpecialty(templates: NoteTemplate[], specialty: string | null | undefined): NoteTemplate | null {
+  const want = specialty?.trim().toLowerCase();
+  if (!want) return null;
+  return templates.find((t) => t.specialty?.trim().toLowerCase() === want) ?? null;
+}

@@ -56,3 +56,5 @@ of summaries** (needs a translation provider); **radiology reporting**; **nurse 
 Sarvam breadth (docs/SARVAM.md): translation, read-aloud and chat adapters added. Not yet: batch transcription with speaker labels, document digitisation and translation of outside reports (both need a live run and stored files), pronunciation dictionary for drug names.
 
 Added: administration screens (organisation switches, consent wording, staff and roles, doctor profiles and hours, note layouts, reference library, usage and audit) and PDF share/print of approved documents and signed prescriptions (phone-generated, so every Indian script renders). Both are compile- and unit-tested only, not run on a device.
+
+Added: built-in "Neurosurgery consultation" note layout (history; past history; consciousness and cranial nerves; motor and sensory; reflexes, gait and spine; imaging and results reviewed; assessment; plan), offered first to doctors whose profile specialty is Neurosurgery. The section list is a reasonable starting structure, not agreed with a neurosurgeon: have one review it, then adjust it under Administration, Note layouts.

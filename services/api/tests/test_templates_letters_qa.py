@@ -32,6 +32,16 @@ def test_built_in_layouts_are_available_to_doctors_only(client: TestClient, org_
     v = make_visit(client, org_a, stage="consult")
     names = [t["name"] for t in get(client, v.doctor, "/note-templates").json()]
     assert "General consultation" in names and "Follow-up review" in names
+    neuro = next(
+        t
+        for t in get(client, v.doctor, "/note-templates").json()
+        if t["id"] == "builtin:neurosurgery"
+    )
+    assert neuro["specialty"] == "Neurosurgery" and neuro["builtin"] is True
+    titles = [s["title"] for s in neuro["sections"]]
+    assert len(titles) == len(set(titles)) and "Imaging and results reviewed" in titles
+    # Structure only: a layout never carries pre-filled clinical content.
+    assert all(set(s) == {"note_type", "title", "hint"} for s in neuro["sections"])
     for h in (v.recep,):
         assert get(client, h, "/note-templates").status_code == 403
 
