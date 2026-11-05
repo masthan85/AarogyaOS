@@ -394,6 +394,87 @@ def service_request(s: Any) -> dict[str, Any]:
     )
 
 
+def procedure(p: Any) -> dict[str, Any]:
+    status = {"COMPLETED": "completed", "ABANDONED": "stopped"}.get(p.status, "unknown")
+    coding = (
+        [{"system": p.code_system, "code": p.code, "display": p.display}]
+        if p.code and p.code_system
+        else []
+    )
+    return _clean(
+        {
+            "resourceType": "Procedure",
+            "id": str(p.id),
+            "meta": _meta(p),
+            "status": status,
+            "code": _clean({"coding": coding, "text": p.display}),
+            "subject": ref("Patient", p.patient_id),
+            "encounter": ref("Encounter", p.encounter_id) if p.encounter_id else None,
+            "performedDateTime": p.performed_on.isoformat(),
+            "bodySite": [{"text": p.body_site}] if p.body_site else [],
+            "outcome": {"text": p.outcome} if p.outcome else None,
+            "complication": [{"text": p.complications}] if p.complications else [],
+        }
+    )
+
+
+def immunization(i: Any) -> dict[str, Any]:
+    coding = (
+        [{"system": i.code_system, "code": i.code, "display": i.vaccine}]
+        if i.code and i.code_system
+        else []
+    )
+    protocol = [{"doseNumberPositiveInt": i.dose_number}] if i.dose_number is not None else []
+    return _clean(
+        {
+            "resourceType": "Immunization",
+            "id": str(i.id),
+            "meta": _meta(i),
+            "status": "completed",
+            "vaccineCode": _clean({"coding": coding, "text": i.vaccine}),
+            "patient": ref("Patient", i.patient_id),
+            "encounter": ref("Encounter", i.encounter_id) if i.encounter_id else None,
+            "occurrenceDateTime": i.given_on.isoformat(),
+            # Given elsewhere means reported by the patient or a record, not given here.
+            "primarySource": bool(i.given_here),
+            "lotNumber": i.batch_number,
+            "site": {"text": i.site} if i.site else None,
+            "note": [{"text": i.note}] if i.note else [],
+            "protocolApplied": protocol,
+        }
+    )
+
+
+def referral(r: Any) -> dict[str, Any]:
+    status = {
+        "REQUESTED": "active",
+        "ACCEPTED": "active",
+        "COMPLETED": "completed",
+        "DECLINED": "revoked",
+        "CANCELLED": "revoked",
+    }.get(r.status, "unknown")
+    return _clean(
+        {
+            "resourceType": "ServiceRequest",
+            "id": str(r.id),
+            "meta": _meta(r),
+            "status": status,
+            "intent": "order",
+            "category": [{"text": "Referral"}],
+            "priority": {"ROUTINE": "routine", "URGENT": "urgent", "EMERGENCY": "stat"}.get(
+                r.urgency
+            ),
+            "code": {"text": f"Referral to {r.to_specialty}"},
+            "subject": ref("Patient", r.patient_id),
+            "encounter": ref("Encounter", r.encounter_id) if r.encounter_id else None,
+            "authoredOn": _iso(r.recorded_at),
+            "reasonCode": [{"text": r.reason}],
+            "performerType": {"text": r.to_specialty},
+            "note": [{"text": r.outcome_note}] if r.outcome_note else [],
+        }
+    )
+
+
 def lab_result(r: Any, encounter_id: uuid.UUID | None, patient_id: uuid.UUID) -> dict[str, Any]:
     value: dict[str, Any] = {}
     if r.value_numeric is not None:
@@ -480,6 +561,9 @@ def composition(
         "MedicationRequest": "Medicines prescribed",
         "MedicationStatement": "Medicines the patient takes",
         "ServiceRequest": "Tests ordered",
+        "Procedure": "Procedures",
+        "Immunization": "Vaccines",
+        "Referral": "Referrals",
     }
     for rtype, title in titles.items():
         entries = sections_refs.get(rtype, [])

@@ -38,6 +38,7 @@ from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
 from app.modules.pharmacy.router import router as pharmacy_router
+from app.modules.retention.router import router as retention_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.templates.router import router as templates_router
@@ -155,6 +156,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         cover_router,
         pharmacy_router,
         billing_router,
+        retention_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

@@ -498,3 +498,10 @@ export const getDay = (on: string) => api.request(`/billing/day?on=${on}`, daySc
 export const closeDay = (body: { business_date: string; counted_cash_paise: number; note?: string }) =>
   api.request('/billing/day/close', daySchema, { method: 'POST', body });
 export type { LineBody };
+
+export const integritySchema = z.object({ sealed: z.boolean(), intact: z.boolean().nullable(), message: z.string() });
+export const getPrescriptionIntegrity = (id: string) => api.request(`/prescriptions/${id}/integrity`, integritySchema);
+export const holdSchema = z.object({ id: z.string(), patient_id: z.string(), reason: z.string(), placed_at: z.string(), released_at: z.string().nullable(), release_reason: z.string().nullable() });
+export const getHolds = (patientId: string) => api.request(`/legal-holds?patient_id=${patientId}`, z.array(holdSchema));
+export const placeHold = (patientId: string, reason: string) => api.request(`/patients/${patientId}/legal-holds`, holdSchema, { method: 'POST', body: { reason } });
+export const releaseHold = (id: string, reason: string) => api.request(`/legal-holds/${id}/release`, holdSchema, { method: 'POST', body: { reason } });

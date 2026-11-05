@@ -175,6 +175,7 @@ class Prescription(Base, TimestampMixin):
     source: Mapped[str] = mapped_column(String(20), default="DOCTOR_ENTERED")
     signed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     signed_by: Mapped[uuid.UUID | None] = mapped_column()
+    seal: Mapped[str | None] = mapped_column(String(64))  # keyed hash taken when signed
     # Warnings the doctor saw and acknowledged at signing, and which checks could not run.
     safety_snapshot: Mapped[dict[str, object] | None] = mapped_column(JSONB)
     void_reason: Mapped[str | None] = mapped_column(String(300))

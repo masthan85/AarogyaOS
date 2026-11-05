@@ -6,6 +6,7 @@ Billing (done, basic): draft → issued invoices from finished visits or ad-hoc 
 part and full payments (cash/UPI/card/other), void with reason, to-bill list, PDF/print, receptionist and billing-staff roles.
 **Open:** accountant sign-off of tax handling (CGST/SGST split, place of supply, tax-invoice wording), payment-gateway integration (needs a provider account), sending claims to insurers/TPAs, per-user cash drawers.
 Procedures, vaccines, referrals (done, basic): recorded as verified clinical facts with a consultation tab. **Open:** vaccine schedule and overdue reminders (needs a clinically signed-off schedule), referral letter and sending, coding via a terminology service, procedure consent and operative notes.
+Seals and legal holds (done, basic): signed prescriptions carry a tamper-evident seal; administrators can place legal holds that stop the audio purge. **Open:** a real digital signature (certificate-based or Aadhaar eSign, needs a provider and legal advice), sealing notes, summaries and invoices, a records-retention schedule (how long each record type must be kept is a legal question for your adviser, so nothing is ever auto-deleted today), holds that also freeze patient-data erasure requests once such a workflow exists.
 P2 Patients (done): registration, duplicate detection, minimal-field search, appointments, check-in, walk-ins,
 queue, timeline, encrypted ABHA identifier field, practitioners and working hours.
 P2 follow-ups: patient photo (needs object store, Phase 4), duplicate merge workflow, admin UI for practitioners

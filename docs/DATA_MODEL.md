@@ -83,3 +83,6 @@ Separate mapping layer; resources never stored as the source of truth.
 
 ## Billing additions (0013)
 `invoice_lines.tax_rate_bp`, `invoices.tax_paise` and `seller_gstin` (frozen with the invoice), `invoice_counters.last_credit_note`; tables `billing_settings`, `service_prices`, `credit_notes`, `refunds`, `cash_closings` and `insurance_claims`, all with forced RLS. Credit notes, refunds and cash closings are append-only by trigger, and the first two can only be added to an issued invoice. Claims are ordinary editable rows with an audit entry per change.
+
+## Seals and legal holds (0014)
+`prescriptions.seal` (set once at signing; the existing guard already blocks later changes) and `legal_holds` (forced RLS; a trigger allows one release and nothing else, and refuses deletes).

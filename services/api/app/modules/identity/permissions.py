@@ -16,6 +16,8 @@ PERMISSIONS: dict[str, str] = {
     "user:manage": "Create, deactivate and assign roles to staff users",
     "role:read": "View roles",
     "audit:read": "View the audit log",
+    "legalhold:read": "See which patients are under a legal hold",
+    "legalhold:manage": "Place and release legal holds that stop deletion",
     # Phase 2: patient access is deliberately NOT part of the admin roles.
     "patient:search": "Search patients (minimal fields only)",
     "patient:read": "View a patient's demographics",
@@ -173,6 +175,8 @@ _ADMIN = [
     "user:manage",
     "role:read",
     "audit:read",
+    "legalhold:read",
+    "legalhold:manage",
     "consent:manage",
     "consent:policy",
     "usage:read",

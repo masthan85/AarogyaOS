@@ -542,3 +542,35 @@ def test_withdrawing_retention_consent_queues_the_audio_for_deletion(
         get(client, v.admin, "/audit-logs", action="AUDIO_PURGED").json()[0]["reason"]
         == "CONSENT_WITHDRAWN"
     )
+
+
+def test_a_legal_hold_stops_audio_deletion_until_it_is_released(
+    client: TestClient, org_a: H, db: Session
+) -> None:
+    v = recording_ready(client, org_a, retain_days=30)
+    session = start_session(client, v)
+    with connect(client, session, None) as ws:
+        authed(ws, token_of(v.doctor))
+        stream(ws, 2)
+        ws.send_json({"type": "stop"})
+        closes_with(ws)
+    store = client.app.state.audio_store  # type: ignore[attr-defined]
+    key = audio_rows(db)[0][0]
+    hold = post(
+        client,
+        v.admin,
+        f"/patients/{v.patient['id']}/legal-holds",
+        {"reason": "Court notice 12/2026"},
+    )
+    assert hold.status_code == 201, hold.text
+    history = get(client, v.recep, f"/patients/{v.patient['id']}/consents").json()["history"]
+    retention = next(c for c in history if c["purpose"] == "AUDIO_RETENTION")
+    post(client, v.recep, f"/consents/{retention['id']}/withdraw", {"reason": "Please delete it"})
+    assert purge_due_audio(db, store, datetime.now(UTC) + timedelta(days=40)) == 0
+    assert store.exists(key)  # held, even though consent was withdrawn and retention expired
+    rel = post(
+        client, v.admin, f"/legal-holds/{hold.json()['id']}/release", {"reason": "Matter closed"}
+    )
+    assert rel.status_code == 200, rel.text
+    assert purge_due_audio(db, store, datetime.now(UTC) + timedelta(days=40)) == 1
+    assert not store.exists(key)

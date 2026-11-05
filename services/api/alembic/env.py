@@ -15,6 +15,7 @@ import app.modules.languages.models
 import app.modules.ops.models
 import app.modules.patients.models
 import app.modules.pharmacy.models
+import app.modules.retention.models
 import app.modules.scheduling.models
 import app.modules.summaries.models
 import app.modules.templates.models

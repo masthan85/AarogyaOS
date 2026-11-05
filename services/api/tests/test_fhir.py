@@ -71,6 +71,30 @@ def done(client: TestClient, org_a: H) -> Visit:
     )
     assert signed.status_code == 200, signed.text
     assert post(client, v.doctor, f"/orders/{order['id']}/place").status_code == 200
+    for url, body in (
+        (
+            "procedures",
+            {"display": "Wound dressing", "performed_on": "2026-11-01", "body_site": "Left arm"},
+        ),
+        (
+            "immunisations",
+            {
+                "vaccine": "Tetanus toxoid",
+                "given_on": "2026-11-01",
+                "dose_number": 2,
+                "batch_number": "B77",
+            },
+        ),
+        (
+            "referrals",
+            {
+                "to_specialty": "Cardiology",
+                "reason": "Chest pain <on> exertion",
+                "urgency": "URGENT",
+            },
+        ),
+    ):
+        assert post(client, v.doctor, f"/encounters/{e}/{url}", body).status_code == 201, url
     assert post(client, v.doctor, f"/encounters/{e}/complete").status_code == 200, "complete"
     return v
 
@@ -106,6 +130,25 @@ def test_a_completed_visit_exports_as_a_valid_fhir_document(
 
     for e in body["entry"]:
         get_fhir_model_class(e["resource"]["resourceType"]).model_validate(e["resource"])
+
+
+def test_procedures_vaccines_and_referrals_are_exported_and_valid(
+    client: TestClient, done: Visit
+) -> None:
+    body = export(client, done).json()
+    Bundle.model_validate(body)
+    by_type: dict[str, list[Any]] = {}
+    for e in body["entry"]:
+        by_type.setdefault(e["resource"]["resourceType"], []).append(e["resource"])
+    proc = by_type["Procedure"][0]
+    assert proc["status"] == "completed" and proc["performedDateTime"] == "2026-11-01"
+    vac = by_type["Immunization"][0]
+    assert vac["lotNumber"] == "B77" and vac["protocolApplied"][0]["doseNumberPositiveInt"] == 2
+    referral = next(r for r in by_type["ServiceRequest"] if r["category"][0]["text"] == "Referral")
+    assert referral["priority"] == "urgent" and referral["performerType"]["text"] == "Cardiology"
+    comp = body["entry"][0]["resource"]
+    titles = {s["title"] for s in comp["section"]}
+    assert {"Procedures", "Vaccines", "Referrals", "Tests ordered"} <= titles
 
 
 def test_every_reference_in_the_document_resolves_inside_it(

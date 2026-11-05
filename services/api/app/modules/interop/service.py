@@ -18,11 +18,14 @@ from app.modules.clinical.models import (
     Allergy,
     ClinicalNote,
     Condition,
+    Immunisation,
     InvestigationResult,
     Observation,
     PatientMedication,
     Prescription,
     PrescriptionItem,
+    ProcedureRecord,
+    Referral,
     ServiceRequest,
 )
 from app.modules.identity.models import User
@@ -102,6 +105,9 @@ def encounter_document(
     medicines = settled(
         PatientMedication, PatientMedication.patient_id == pid, PatientMedication.status == "ACTIVE"
     )
+    procedures = settled(ProcedureRecord, ProcedureRecord.encounter_id == enc.id)
+    vaccines = settled(Immunisation, Immunisation.encounter_id == enc.id)
+    referrals = settled(Referral, Referral.encounter_id == enc.id)
     requests = [
         r
         for r in session.scalars(
@@ -148,6 +154,14 @@ def encounter_document(
         add("AllergyIntolerance", fhir.allergy(a))
     for m in medicines:
         add("MedicationStatement", fhir.medication_statement(m))
+    for pr in procedures:
+        add("Procedure", fhir.procedure(pr))
+    for im in vaccines:
+        add("Immunization", fhir.immunization(im))
+    for rf in referrals:
+        resource = fhir.referral(rf)
+        resources.append(resource)
+        refs.setdefault("Referral", []).append(fhir.ref("ServiceRequest", rf.id))
     for sr in requests:
         add("ServiceRequest", fhir.service_request(sr))
     for rx in signed:
