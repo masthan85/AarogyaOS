@@ -20,10 +20,23 @@ export function parseRupees(text: string): number | null {
   return Number.isSafeInteger(paise) && paise <= 10_000_000_00 ? paise : null;
 }
 
-export type LineDraft = { description: string; quantity: string; price: string };
-export const emptyLine = (): LineDraft => ({ description: '', quantity: '1', price: '' });
+export type LineDraft = { description: string; quantity: string; price: string; taxPct: string };
+export const emptyLine = (): LineDraft => ({ description: '', quantity: '1', price: '', taxPct: '0' });
 
-export type ParsedLines = { lines: { description: string; quantity: number; unit_price_paise: number }[]; error?: string };
+/** A tax percentage typed as 18 or 2.5, as basis points (1800, 250), or null when unusable. */
+export function parsePercent(text: string): number | null {
+  const t = text.trim().replace(/%$/, '');
+  if (t === '') return 0;
+  if (!/^\d{1,2}(\.\d{1,2})?$/.test(t)) return null;
+  const bp = Math.round(Number(t) * 100);
+  return bp >= 0 && bp <= 2800 ? bp : null;
+}
+
+/** Tax on one line in whole paise, rounded half up (the same rule the server uses). */
+export const lineTax = (quantity: number, unitPaise: number, rateBp: number): number =>
+  Math.floor((quantity * unitPaise * rateBp + 5000) / 10000);
+
+export type ParsedLines = { lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]; error?: string };
 
 /** Turns the typed lines into what the server takes. Blank rows are ignored; a half-filled row is an error. */
 export function parseLines(drafts: LineDraft[]): ParsedLines {
@@ -36,13 +49,29 @@ export function parseLines(drafts: LineDraft[]): ParsedLines {
     if (price === null) return { lines, error: `Line ${i + 1}: enter the amount in rupees, for example 500 or 499.50.` };
     const quantity = Number(d.quantity.trim() || '1');
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) return { lines, error: `Line ${i + 1}: quantity must be a whole number from 1 to 999.` };
-    lines.push({ description, quantity, unit_price_paise: price });
+    const rate = parsePercent(d.taxPct);
+    if (rate === null) return { lines, error: `Line ${i + 1}: tax must be a percentage from 0 to 28.` };
+    lines.push({ description, quantity, unit_price_paise: price, tax_rate_bp: rate });
   }
   return { lines };
 }
 
-export const draftTotal = (lines: { quantity: number; unit_price_paise: number }[]): number =>
-  lines.reduce((sum, l) => sum + l.quantity * l.unit_price_paise, 0);
+type Priced = { quantity: number; unit_price_paise: number; tax_rate_bp?: number };
+
+/** Tax and grand total (tax included) for typed lines. */
+export function draftTotals(lines: Priced[]): { tax: number; total: number } {
+  let tax = 0;
+  let net = 0;
+  for (const l of lines) {
+    net += l.quantity * l.unit_price_paise;
+    tax += lineTax(l.quantity, l.unit_price_paise, l.tax_rate_bp ?? 0);
+  }
+  return { tax, total: net + tax };
+}
+export const draftTotal = (lines: Priced[]): number => draftTotals(lines).total;
+
+/** "18%" or "2.5%" from basis points. */
+export const percentLabel = (bp: number): string => `${bp / 100}%`;
 
 export type InvoiceState = { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' };
 
@@ -53,4 +82,4 @@ export function invoiceState(inv: Pick<Invoice, 'status' | 'paid_paise' | 'balan
   return inv.paid_paise > 0 ? { label: 'Part paid', tone: 'warning' } : { label: 'Unpaid', tone: 'warning' };
 }
 
-export const METHOD_LABELS: Record<string, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card', OTHER: 'Other' };
+export const METHOD_LABELS: Record<string, string> = { CASH: 'Cash', UPI: 'UPI', CARD: 'Card', INSURER: 'Insurer', OTHER: 'Other' };

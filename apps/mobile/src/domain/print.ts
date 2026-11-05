@@ -65,20 +65,31 @@ export function prescriptionHtml(rx: Prescription, h: Letterhead): string | null
 export function invoiceHtml(inv: Invoice, organisation: string): string | null {
   if (inv.status !== 'ISSUED' || !inv.number) return null;
   const when = inv.issued_at ? new Date(inv.issued_at).toLocaleDateString() : '';
+  const taxed = inv.tax_paise > 0;
   const rows = inv.lines
     .map(
       (l, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(l.description)}</td><td style="text-align:right">${l.quantity}</td>
-        <td style="text-align:right">${escapeHtml(formatRupees(l.unit_price_paise))}</td><td style="text-align:right">${escapeHtml(formatRupees(l.total_paise))}</td></tr>`,
+        <td style="text-align:right">${escapeHtml(formatRupees(l.unit_price_paise))}</td>${taxed ? `<td style="text-align:right">${l.tax_rate_bp / 100}%</td><td style="text-align:right">${escapeHtml(formatRupees(l.tax_paise))}</td>` : ''}<td style="text-align:right">${escapeHtml(formatRupees(l.total_paise))}</td></tr>`,
     )
     .join('');
   const paid = inv.payments
     .map((p) => `<div>${escapeHtml(new Date(p.received_at).toLocaleDateString())}: ${escapeHtml(formatRupees(p.amount_paise))} by ${escapeHtml(METHOD_LABELS[p.method] ?? p.method)}${p.reference ? ` (ref. ${escapeHtml(p.reference)})` : ''}</div>`)
     .join('');
-  return page(`<div class="head"><h1>${escapeHtml(organisation)}</h1><div>Invoice ${escapeHtml(inv.number)}${when ? ` · ${escapeHtml(when)}` : ''}</div></div>
+  const credits = inv.credit_notes
+    .map((c) => `<div>Credit note ${escapeHtml(c.number)}: -${escapeHtml(formatRupees(c.amount_paise))} (${escapeHtml(c.reason)})</div>`)
+    .join('');
+  const refunds = inv.refunds
+    .map((r) => `<div>Refunded ${escapeHtml(new Date(r.refunded_at).toLocaleDateString())}: ${escapeHtml(formatRupees(r.amount_paise))} by ${escapeHtml(METHOD_LABELS[r.method] ?? r.method)}</div>`)
+    .join('');
+  return page(`<div class="head"><h1>${escapeHtml(organisation)}</h1><div>${taxed && inv.seller_gstin ? 'Tax invoice' : 'Invoice'} ${escapeHtml(inv.number)}${when ? ` · ${escapeHtml(when)}` : ''}</div>${inv.seller_gstin ? `<div class="muted">GSTIN ${escapeHtml(inv.seller_gstin)}</div>` : ''}</div>
     <div><strong>${escapeHtml(inv.patient_name)}</strong> <span class="muted">MRN ${escapeHtml(inv.patient_mrn)}</span></div>
-    <table style="margin-top:12px"><tr><th>#</th><th>Charge</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table>
+    <table style="margin-top:12px"><tr><th>#</th><th>Charge</th><th>Qty</th><th>Rate</th>${taxed ? '<th>Tax</th><th>Tax amt</th>' : ''}<th>Amount</th></tr>${rows}</table>
+    ${taxed ? `<div class="muted">Tax included in the total: ${escapeHtml(formatRupees(inv.tax_paise))}</div>` : ''}
     <h2>Total ${escapeHtml(formatRupees(inv.total_paise))}</h2>
+    ${credits}
+    ${credits ? `<div><strong>Net ${escapeHtml(formatRupees(inv.net_paise))}</strong></div>` : ''}
     ${paid ? `<div class="muted">Received</div>${paid}` : ''}
+    ${refunds}
     <div><strong>${inv.balance_paise > 0 ? `Balance due ${escapeHtml(formatRupees(inv.balance_paise))}` : 'Paid in full'}</strong></div>
-    <div class="foot">Amounts are as entered by the clinic. Tax, if any, is not calculated by AarogyaOS.</div>`);
+    <div class="foot">Amounts and tax rates are as entered by the clinic. AarogyaOS does not decide what tax applies.</div>`);
 }

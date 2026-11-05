@@ -643,11 +643,19 @@ export const invoiceSchema = z.object({
   patient_name: z.string(),
   patient_mrn: z.string(),
   encounter_id: z.string().nullable(),
-  lines: z.array(z.object({ description: z.string(), quantity: z.number(), unit_price_paise: z.number(), total_paise: z.number() })),
+  lines: z.array(z.object({ description: z.string(), quantity: z.number(), unit_price_paise: z.number(), tax_rate_bp: z.number(), tax_paise: z.number(), total_paise: z.number() })),
+  tax_paise: z.number(),
   total_paise: z.number(),
+  seller_gstin: z.string().nullable(),
+  credited_paise: z.number(),
+  net_paise: z.number(),
   paid_paise: z.number(),
+  refunded_paise: z.number(),
   balance_paise: z.number(),
+  refund_due_paise: z.number(),
   payments: z.array(z.object({ id: z.string(), amount_paise: z.number(), method: z.string(), reference: z.string().nullable(), received_at: z.string() })),
+  credit_notes: z.array(z.object({ number: z.string(), amount_paise: z.number(), reason: z.string(), created_at: z.string() })),
+  refunds: z.array(z.object({ amount_paise: z.number(), method: z.string(), reason: z.string(), reference: z.string().nullable(), refunded_at: z.string() })),
   created_at: z.string(),
   issued_at: z.string().nullable(),
   void_reason: z.string().nullable(),
@@ -699,3 +707,27 @@ export const historySchema = z.object({
 });
 export type PatientHistory = z.infer<typeof historySchema>;
 export type Referral = z.infer<typeof referralSchema>;
+
+export const priceSchema = z.object({ id: z.string(), name: z.string(), price_paise: z.number(), tax_rate_bp: z.number(), active: z.boolean() });
+export const billingSettingsSchema = z.object({ gstin: z.string().nullable(), legal_name: z.string().nullable() });
+export const claimSchema = z.object({
+  id: z.string(),
+  invoice_id: z.string(),
+  insurer: z.string(),
+  policy_number: z.string().nullable(),
+  claim_reference: z.string().nullable(),
+  claimed_paise: z.number(),
+  status: z.string(),
+  approved_paise: z.number().nullable(),
+  note: z.string().nullable(),
+});
+export const daySchema = z.object({
+  business_date: z.string(),
+  by_method: z.array(z.object({ method: z.string(), received_paise: z.number(), refunded_paise: z.number(), net_paise: z.number() })),
+  net_paise: z.number(),
+  expected_cash_paise: z.number(),
+  closing: z.object({ expected_cash_paise: z.number(), counted_cash_paise: z.number(), difference_paise: z.number(), note: z.string().nullable(), closed_at: z.string() }).nullable(),
+});
+export type Price = z.infer<typeof priceSchema>;
+export type Claim = z.infer<typeof claimSchema>;
+export type DaySummary = z.infer<typeof daySchema>;

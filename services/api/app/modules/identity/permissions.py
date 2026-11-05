@@ -78,7 +78,9 @@ PERMISSIONS: dict[str, str] = {
     "summary:read": "Read patient visit summaries",
     "fhir:export": "Export a visit or patient as FHIR (read-only)",
     "billing:read": "View invoices and payments (no clinical information)",
-    "billing:write": "Create, issue and void invoices; record payments",
+    "billing:write": "Create, issue and void invoices; record payments; close the day",
+    "billing:adjust": "Issue credit notes and refunds; track insurance claims",
+    "billing:manage": "Keep the price list and the GSTIN printed on invoices",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -177,6 +179,8 @@ _ADMIN = [
     "knowledge:manage",
     "knowledge:read",
     "billing:read",
+    "billing:adjust",
+    "billing:manage",
 ]
 
 # key -> (display name, is_platform, permissions)
@@ -203,6 +207,8 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
             "appointment:read",
             "billing:read",
             "billing:write",
+            "billing:adjust",
+            "billing:manage",
         ],
     ),
 }

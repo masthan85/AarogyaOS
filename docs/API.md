@@ -155,3 +155,14 @@ All three are ordinary clinical facts: provenance, verification state, and corre
 - `POST /encounters/{id}/immunisations`, `PUT /immunisations/{id}` — nurses and doctors (`immunisation:record`). A nurse's entry stays unverified until a doctor confirms it. The next dose must be due after this one.
 - `POST /encounters/{id}/referrals`, `PUT /referrals/{id}` — doctors (`referral:write`). Status: requested, accepted, completed, declined, cancelled. A closed referral cannot be changed; start a new one.
 - Confirm or reject with the existing `POST /clinical/{procedures|immunisations|referrals}/{id}/verify`.
+
+## Billing additions (migration 0013)
+- Lines take `tax_rate_bp` (1800 = 18%, 0 to 2800). Tax is worked out per line, rounded half up, and the invoice stores `tax_paise`, `total_paise` (tax included) and the seller's GSTIN as it was when issued. Payment methods now include `INSURER`.
+- `POST /invoices/{id}/credit-notes` `{amount_paise, reason}` — numbered CN-000001; cannot exceed what the invoice is still worth. `billing:adjust`.
+- `POST /invoices/{id}/refunds` `{amount_paise, method, reason}` — only up to `refund_due_paise` (paid minus refunded minus what is owed). `billing:adjust`.
+- An invoice with a payment or credit note cannot be voided: credit it in full and refund what was paid.
+- Invoice fields: `credited_paise`, `net_paise`, `refunded_paise`, `balance_paise` (still owed), `refund_due_paise`, `credit_notes`, `refunds`.
+- `GET/PUT /billing/settings` (GSTIN shape-checked, not verified against the GST portal; `billing:manage` to change).
+- `GET/POST /billing/prices`, `PUT /billing/prices/{id}` — price list; names unique ignoring case; hiding a service keeps old invoices intact. `billing:manage`.
+- `GET /billing/day?on=YYYY-MM-DD` — received, refunded and net by method for an India-time day; `POST /billing/day/close` `{business_date, counted_cash_paise, note}` records expected vs counted cash once per day (`billing:write`).
+- `GET/POST /invoices/{id}/claims`, `PUT /claims/{id}` — claim tracking only (submitted, approved, part approved, rejected, settled). Nothing is sent to an insurer. `billing:adjust`.

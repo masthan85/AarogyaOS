@@ -93,6 +93,8 @@ export function BillingScreen() {
               </Card>
             ))}
             <Button title="Invoice another patient" variant="secondary" onPress={() => setPicking(true)} />
+            <Button title="End of day" variant="ghost" onPress={() => router.push('/billing/day')} />
+            {can(me, 'billing:manage') ? <Button title="Price list and GSTIN" variant="ghost" onPress={() => router.push('/billing/prices')} /> : null}
           </>
         ) : (
           <>
@@ -102,6 +104,7 @@ export function BillingScreen() {
               <EmptyState title={tab === 'unpaid' ? 'Nothing unpaid' : 'No invoices yet'} message={tab === 'unpaid' ? 'Every issued invoice is paid.' : 'Invoices appear here once started.'} />
             ) : null}
             {invoices.data?.map((inv) => <InvoiceRow key={inv.id} inv={inv} />)}
+            {!canWrite && can(me, 'billing:manage') ? <Button title="Price list and GSTIN" variant="ghost" onPress={() => router.push('/billing/prices')} /> : null}
           </>
         )}
       </ScrollView>

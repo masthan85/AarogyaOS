@@ -201,7 +201,7 @@ def test_visits_waiting_to_be_billed_and_the_void_rules(
         {"amount_paise": 100, "method": "CASH"},
     )
     refused = post(client, billing, f"/invoices/{again['id']}/void", {"reason": "Changed my mind"})
-    assert refused.status_code == 409 and "Refunds" in refused.text
+    assert refused.status_code == 409 and "credit note" in refused.text
 
 
 def test_a_draft_can_be_discarded_and_other_organisations_cannot_see_invoices(

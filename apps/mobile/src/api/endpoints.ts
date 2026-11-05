@@ -35,7 +35,11 @@ import {
   noteSchema,
   observationSchema,
   allergySchema,
+  billingSettingsSchema,
+  claimSchema,
   conditionSchema,
+  daySchema,
+  priceSchema,
   historySchema,
   immunisationSchema,
   procedureSchema,
@@ -441,14 +445,14 @@ export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PA
 
 // ---- billing ---------------------------------------------------------------------------------
 
-export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'OTHER';
+export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'INSURER' | 'OTHER';
 export const getToBill = () => api.request('/billing/to-bill', z.array(toBillSchema));
 export const getInvoices = (params: { unpaid?: boolean; status?: string }) =>
   api.request(`/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status })}`, z.array(invoiceSchema));
 export const getInvoice = (id: string) => api.request(`/invoices/${id}`, invoiceSchema);
 export const createInvoice = (body: { patient_id: string; encounter_id?: string }) =>
   api.request('/invoices', invoiceSchema, { method: 'POST', body });
-export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number }[]) =>
+export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]) =>
   api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
 export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });
 export const payInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reference?: string }) =>
@@ -471,3 +475,26 @@ export const addReferral = (
 ) => api.request(`/encounters/${encId}/referrals`, referralSchema, { method: 'POST', body });
 export const updateReferral = (id: string, body: { status?: string; outcome_note?: string }) =>
   api.request(`/referrals/${id}`, referralSchema, { method: 'PUT', body });
+
+type LineBody = { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number };
+export const creditInvoice = (id: string, body: { amount_paise: number; reason: string }) =>
+  api.request(`/invoices/${id}/credit-notes`, invoiceSchema, { method: 'POST', body });
+export const refundInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reason: string; reference?: string }) =>
+  api.request(`/invoices/${id}/refunds`, invoiceSchema, { method: 'POST', body });
+export const getClaims = (id: string) => api.request(`/invoices/${id}/claims`, z.array(claimSchema));
+export const addClaim = (id: string, body: { insurer: string; claimed_paise: number; policy_number?: string; claim_reference?: string }) =>
+  api.request(`/invoices/${id}/claims`, claimSchema, { method: 'POST', body });
+export const updateClaim = (id: string, body: { status?: string; approved_paise?: number; note?: string }) =>
+  api.request(`/claims/${id}`, claimSchema, { method: 'PUT', body });
+export const getPrices = (all = false) => api.request(`/billing/prices${all ? '?all=true' : ''}`, z.array(priceSchema));
+export const addPrice = (body: { name: string; price_paise: number; tax_rate_bp: number }) =>
+  api.request('/billing/prices', priceSchema, { method: 'POST', body });
+export const updatePrice = (id: string, body: { price_paise?: number; tax_rate_bp?: number; active?: boolean }) =>
+  api.request(`/billing/prices/${id}`, priceSchema, { method: 'PUT', body });
+export const getBillingSettings = () => api.request('/billing/settings', billingSettingsSchema);
+export const saveBillingSettings = (body: { gstin: string | null; legal_name: string | null }) =>
+  api.request('/billing/settings', billingSettingsSchema, { method: 'PUT', body });
+export const getDay = (on: string) => api.request(`/billing/day?on=${on}`, daySchema);
+export const closeDay = (body: { business_date: string; counted_cash_paise: number; note?: string }) =>
+  api.request('/billing/day/close', daySchema, { method: 'POST', body });
+export type { LineBody };
