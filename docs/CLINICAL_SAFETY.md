@@ -74,5 +74,15 @@ Hazard log (initial)
 | H45 | Patient text sent to a vendor without permission | Needs the organisation's AI switch, the patient's AI-processing consent and the provider switch; checked per call; nothing sent when any is missing (tested) | Vendor retention and residency terms are not yet agreed |
 | H46 | A staff correction puts words in the patient's mouth, or fixes a line wrongly | The original is kept and shown on tap; each correction is attributed and audited; only staff with the permission who can see the recording may correct; the assistant's suggestions still go through human review | Anyone with access can correct any line; there is no second check. Candidates already produced from the old text are not recomputed |
 
+## Procedures, vaccines, referrals, billing and record integrity
+| ID | Hazard | Control | Residual risk / open item |
+|---|---|---|---|
+| H47 | A vaccine, procedure or referral entered by the wrong person is treated as settled | Same provenance as every fact; a nurse's entry stays unverified until a doctor confirms it; procedures and referrals can only be written by the consultation's own doctor; only a doctor can confirm or reject these kinds (tested) | No vaccine schedule, so a missed or duplicate dose is not flagged. The confirmation screen shows only the entry, not the patient's vaccine history |
+| H48 | A referral is recorded but never acted on | Status is tracked (requested, accepted, completed, declined, cancelled) and closed referrals cannot be reopened | Nothing is sent to the receiving clinician and nothing reminds anyone of an open referral |
+| H49 | A patient is charged for the wrong visit or amount | One live invoice per visit; the invoice names the patient and MRN; issued invoices are frozen; corrections go through a numbered credit note; money cannot be refunded beyond what was paid | Staff can still pick the wrong patient for an ad-hoc invoice; there is no second check |
+| H50 | Tax is wrong because staff entered the wrong rate | The app only adds up what is entered and says so; GSTIN is captured as it stood at issue | Rates and invoice wording have not been reviewed by an accountant |
+| H51 | A signed prescription is altered after signing and nobody notices | Database triggers refuse changes; a keyed seal taken at signing exposes edits made by someone who bypassed the triggers; the doctor's screen has a check button | The seal is not a legal digital signature; it is only checked on demand; seals made before this feature do not exist |
+| H52 | A legal hold is forgotten or placed on the wrong patient, so audio is kept or deleted wrongly | Only administrators place or release holds; both need a reason and are audited; a hold cannot be edited or deleted | Holds cover the audio purge only; there is no other deletion workflow yet |
+
 A clinical safety officer (e.g. under DCB0129/0160-style practice, adapted to India)
 and a regulatory review (CDSCO SaMD status) are required before any clinical pilot.

@@ -1,4 +1,4 @@
-# Operations runbook (Phase 7)
+# Operations runbook
 
 Everything here was exercised in a single-machine development environment only. Nothing has run in a
 production-like cluster, behind a load balancer, on managed Postgres, or under a clinical load. Treat the
@@ -54,8 +54,8 @@ What is NOT covered by these scripts and must be decided before go-live:
   recovery: continuous WAL archiving, or a managed Postgres in an Indian region with PITR. Set the targets with the
   clinical lead; they are not defined in this repo.
 - **Keys.** Back up `AAROGYA_FIELD_ENCRYPTION_KEY` and the backup passphrase separately from the backups and from
-  each other. Without the field key, encrypted identifiers (ABHA numbers) in a restored database are unreadable;
-  there is no key rotation yet.
+  each other. Without the field key, encrypted identifiers (ABHA numbers) in a restored database are unreadable.
+  Rotation exists (see "Rotating the field encryption key" below); keep retired keys as long as backups made under them may be restored. The same key also keys the prescription seal.
 - **Audio.** Retained audio lives in the audio store, not the database, and is separately encrypted. The only store
   built is a local-disk one; an S3-compatible encrypted store (with KMS) is not built. Back it up, or leave audio
   retention off (the default).
@@ -69,7 +69,7 @@ What is NOT covered by these scripts and must be decided before go-live:
    is not built.
 2. The audio gateway's duplicate-connection guard and the per-minute AI rate limit are per-process too (the AI limit
    counts database rows, so it is correct across replicas).
-3. No rate limiting on login beyond per-account lockout. Put a WAF / rate limiter in front.
+3. Login and patient-search rate limits are per process (see `16-SECURITY.md`), on top of per-account lockout. Put a WAF or shared rate limiter in front.
 
 ## Load test (what exists, what it showed)
 `services/api/scripts/loadtest.py` runs mixed clinic traffic (search, chart, clinical state, vitals, notes) from N
@@ -84,7 +84,7 @@ audit --omit=dev` reports 43 findings (27 high), all transitive build/test tooli
 `node-forge` via Expo's signing tooling, `braces`/`micromatch`); none is code shipped inside the app bundle. They
 are cleared by upgrading Expo SDK; track that.
 
-## Not done in Phase 7
+## Not done
 Container image build and registry (no Docker in the build environment, so the Dockerfile/compose changes are
 untested), Kubernetes/Terraform manifests, TLS and WAF, secret manager integration, managed-Postgres setup, S3 audio
 store, Redis, OpenTelemetry, log shipping, SLOs, an on-call process, penetration test, DPDP/regulatory review, clinical
