@@ -1,64 +1,20 @@
 # AarogyaOS
 
-An AI-assisted clinical operating system for Indian clinics and hospitals. It follows a patient from
-arrival to follow-up and turns consented, clinician-supervised conversations into structured,
-reviewable clinical information.
+An AI-assisted clinical operating system for Indian clinics and hospitals. It follows a patient from arrival at the front desk through triage, consultation, tests, prescription, pharmacy and billing to follow-up, and it can turn consented, clinician-supervised conversations into structured information that the doctor reviews before anything enters the record.
 
-**AI supports clinicians; it never decides for them.** It does not diagnose, prescribe, order, refer or
-discharge. Every workflow works with AI, speech and the network switched off.
+AI supports clinicians; it never decides for them. It does not diagnose, prescribe, order, refer or discharge, and every workflow also works with AI, speech and the network providers switched off.
 
-> **Status: built and tested, not yet usable with real patients.** The code covers the full workflow, but the
-> speech, LLM and microphone integrations have never run against the live services or on a device, no drug or
-> terminology database is connected, and nothing has been deployed or reviewed clinically or legally.
-> See [What is not done](#what-is-not-done).
+> **Status: built and tested, not ready for real patients.** The whole workflow exists and is covered by 504 backend and 142 mobile automated tests, but the speech, language-model and microphone integrations have not been proven on real devices or real clinical audio, nothing has been deployed, and no clinical, legal or security review has taken place. [docs/12-FEATURE-STATUS.md](docs/12-FEATURE-STATUS.md) has the evidence for every claim and [docs/13-PRODUCT-BACKLOG.md](docs/13-PRODUCT-BACKLOG.md) lists what is left.
 
 ## What it does
 
-**Patients and the front desk**
-- Register patients with duplicate detection and minimum-necessary search (phone, MRN, name); encrypted ABHA identifier field.
-- Appointments, walk-ins, check-in and a live queue per facility and doctor; working hours per practitioner.
-- Facilities, departments, practitioners, staff accounts and roles, per organisation.
-
-**The consultation record**
-- Nurse triage (vitals with unit conversion, plausibility limits and abnormal/critical flags) then a doctor consultation, in one encounter.
-- History, examination, assessment and plan notes; diagnoses with certainty (suspected / provisional / confirmed); allergies and medicine history; follow-ups.
-- Investigations: draft, place and record structured results with reference ranges and critical flags.
-- Prescriptions: draft, safety check (allergy matching, unknown allergy status, limits of the check stated), acknowledge warnings, sign. Signed prescriptions and reported results are frozen.
-- Every fact carries **where it came from** (patient, staff, doctor, device, lab, AI) and **whether a clinician has verified it**. Corrections create a new version; the audit trail is append-only and enforced by the database.
-- Note **templates**: built-in and organisation-defined layouts (headings only, never pre-filled).
-- **Referral letters** and a visit **summary for the patient**, assembled by code from recorded data, edited and approved by the doctor, then frozen.
-
-**Consent and recording**
-- Eight separate consent purposes (recording, transcription, AI processing, audio retention, ...), versioned wording, guardian consent for minors, withdrawal that takes effect immediately.
-- Recording only inside an identified, consented session with an explicit Start and Stop; the indicator reflects real microphone and connection state. Audio is discarded by default; retention needs both organisation policy and patient consent.
-- Live transcription through a provider-independent speech layer (Sarvam adapter built, a synthetic development provider for testing), with language and code-mixing metadata and speaker roles assigned by a person.
-
-**Clinical AI (optional, reviewed by a clinician)**
-- Extracts symptoms, history, medicines, allergies and more from the transcript into a **review queue**, each item quoting the exact words it came from. Nothing enters the record until a clinician accepts, edits or rejects it. Negations and uncertain statements are preserved, not flattened.
-- Decision support for the treating doctor: rule-based checks (missing allergy status, abnormal results, allergy clashes) plus model suggestions that must cite approved reference material. Accepting an investigation suggestion creates only a draft order.
-- Reference knowledge supplied by the organisation, with two-person approval, versions and retirement.
-- **Ask the chart**: ask a question about one patient and get an answer that cites the recorded entries it rests on, or "not found". A plain keyword search over the chart always works, even with AI off.
-- Sarvam services (optional, each off until chosen): speech-to-text, translation of patient summaries into the patient's language, reading approved documents aloud, and a Sarvam chat model option.
-- Evaluation harness, usage metering, per-organisation switches, and a Claude (Anthropic) adapter alongside a development stand-in.
-
-**Interoperability**
-- Read-only FHIR R4 export of a completed visit as a document bundle, with provenance and certainty carried on each resource.
-
-**Platform and operations**
-- Strict tenant isolation (PostgreSQL row-level security, tested), backend-enforced roles and permissions, short-lived tokens with rotation and reuse detection, field-level encryption.
-- Audit log and event outbox with no clinical content; readiness check that waits for migrations; Prometheus metrics without identifiers; security headers and request limits; scheduled maintenance jobs; encrypted backup and a restore drill; optional pgvector search.
-
-**Administration (mobile, role-gated)**
-- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts (built-in General consultation, Follow-up review and Neurosurgery consultation; a doctor's own specialty's layout is offered first on the Notes tab); the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
-- Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
-
-**Mobile app (Expo / React Native)**
-- Billing: a list of finished visits with no invoice, invoices with charges and an optional tax rate on each line, issue (numbered, then frozen, with the clinic's GSTIN as it stood), part and full payments by cash, UPI, card or insurer, credit notes and refunds (a credit note lowers what the invoice is worth; only money paid beyond that can be refunded), a price list, insurance claim tracking, an end-of-day cash count, and a printable or shareable PDF. Billing staff and reception work with names and amounts only; credit notes, refunds and claims need the billing-staff or admin role. The app adds up the rates staff enter and does not decide what tax applies. Payment-gateway integration and sending claims to insurers are not built.
-- Procedures, vaccines and referrals: recorded in the consultation with the same provenance and doctor-confirmation rules as every other clinical fact. Referral status is tracked; no letters or external referral exchange yet.
-- Integrity and holds: a signed prescription is sealed with a keyed hash so any later change to the stored record can be detected (this is not a legal digital signature). Administrators can place a legal hold on a patient, which stops audio deletion until released. The FHIR visit document includes procedures, vaccines and referrals.
-- Worklists: results awaiting a doctor's review (critical first), follow-ups due (overdue, today, this week), and a lab/radiology order list with result entry for technicians. The result view shows investigations the signed-in doctor ordered, plus those of a colleague who has asked them to cover for up to 31 days. Doctors can also edit a draft prescription before signing it, and pharmacists can look up a patient's signed prescriptions and record whether each was dispensed, partly dispensed or not (no brands, batches or stock). A doctor can hand an open consultation to a colleague at the same site. Before finishing a visit the app lists anything the assistant found that nobody has accepted or rejected (a reported symptom or allergy is not silently left behind), the prescription form offers a plain-words reading of Indian shorthand such as 1-0-1, BD, TDS or HS (it never changes what was typed on its own), and the visit can be copied as plain text for another record system. When an AI-assisted recording ends, the app takes a last look at the conversation and opens a "Draft EMR" tab: the visit laid out like a clinic note (reason for visit, history of present illness, past history, medicines, allergies, family and social history, examination, assessment as said by the doctor, and the plan: tests, treatment, follow-up). Each line shows the words it came from and is accepted, edited or rejected by the doctor; nothing enters the record before that, and a heading with nothing under it means nothing was heard. The assistant also picks out what led to a problem (a fall, an accident), and a follow-up the doctor asked for ("come back after 5 days") can be scheduled in one tap when the time is stated plainly; a vague one stays a plain note.
-- Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
-- Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
+- **Front desk:** patient registration with duplicate detection and minimum-necessary search, appointments, walk-ins, check-in and a live queue.
+- **Consultation record:** nurse triage and a doctor consultation in one encounter; vitals, notes, diagnoses with certainty, allergies, medicines, procedures, vaccines, referrals, investigations with results, prescriptions with a safety check and signing, follow-ups. Every fact records where it came from and whether a clinician verified it; corrections add a new version and the database refuses to rewrite history.
+- **Consent and recording:** eight separate consent purposes, recording only inside an identified, consented session with an explicit start and stop, live transcription through a provider-independent speech layer (Sarvam adapter built).
+- **Clinical AI, optional:** extraction into a review queue where each proposed entry quotes the words it came from, rule-based and cited model suggestions, a reference library with two-person approval, and cited answers to questions about one patient's chart.
+- **Documents:** visit summaries and referral letters assembled by code, approved by the doctor, optionally translated and read aloud, shared or printed as PDF.
+- **Pharmacy and billing:** dispensing records; invoices with tax lines, payments, credit notes, refunds, a price list, claim tracking and an end-of-day cash count.
+- **Platform:** strict tenant isolation in PostgreSQL, backend-enforced roles, short-lived tokens with rotation, field encryption, an append-only audit log, a tamper-evident seal on signed prescriptions, legal holds, FHIR R4 export of a completed visit, metrics and scheduled jobs.
 
 ## How it fits together
 
@@ -66,7 +22,7 @@ discharge. Every workflow works with AI, speech and the network switched off.
 flowchart LR
     subgraph Phone["Mobile app (Expo / React Native)"]
         direction TB
-        UI["Screens: queue, consultation,<br/>Draft EMR, worklists, admin"]
+        UI["Screens: queue, consultation,<br/>Draft EMR, worklists, billing, admin"]
         MIC["Microphone capture<br/>(only between Start and Stop)"]
     end
 
@@ -74,9 +30,8 @@ flowchart LR
         direction TB
         AUTH["Auth, roles, audit"]
         REC["Recording gateway<br/>consent check, transcripts"]
-        CLIN["Clinical record<br/>notes, orders, prescriptions"]
+        CLIN["Clinical record, billing,<br/>pharmacy, documents"]
         AI["Assistant<br/>extraction, guardrails, review queue"]
-        DOC["Documents<br/>summaries, letters, translation"]
         FHIR["FHIR R4 export"]
     end
 
@@ -95,12 +50,12 @@ flowchart LR
     CLIN --> FHIR
     REC --> STT
     AI --> LLM
-    DOC --> TR
+    CLIN --> TR
     REC -.->|"transcript lines"| AI
     API --> DB
 ```
 
-The mobile app talks only to the API. Every table carries the organisation it belongs to and the database itself refuses to show one organisation another's rows. The speech, language-model, translation and read-aloud providers sit behind interfaces: the app works with all of them switched off, and a provider that is not configured is simply unavailable. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The mobile app talks only to the API. Every tenant table carries its organisation and the database itself refuses to show one organisation another's rows. Providers sit behind interfaces; a provider that is not configured is simply unavailable. More in [docs/03-SYSTEM-ARCHITECTURE.md](docs/03-SYSTEM-ARCHITECTURE.md).
 
 ## Consultation flow
 
@@ -159,65 +114,62 @@ flowchart LR
     F -- accept or edit --> G["Written to the record<br/>marked as software-assisted,<br/>confirmed by the doctor"]
 ```
 
+## Quick start
+
+Prerequisites: Python 3.12 or newer, PostgreSQL 16, Node 22. Full instructions, including creating the database role, are in [docs/05-INSTALLATION-SETUP.md](docs/05-INSTALLATION-SETUP.md).
+
+```bash
+# API (from services/api). The database role must not be a superuser.
+python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
+cp ../../.env.example .env            # then set AAROGYA_DATABASE_URL
+alembic upgrade head && python -m app.cli seed
+python -m app.cli demo-seed           # optional: demo clinic with invented users
+uvicorn app.main:create_app --factory --reload   # http://localhost:8000/docs
+
+# Mobile (from apps/mobile)
+npm install && EXPO_PUBLIC_API_URL=http://10.0.2.2:8000 npx expo start
+```
+
+With Docker Desktop instead (the compose stack has not been run in the authoring environment): `docker compose --env-file infrastructure/dev.env -f infrastructure/docker-compose.yml up --build`, then see [docs/05-INSTALLATION-SETUP.md](docs/05-INSTALLATION-SETUP.md).
+
+Checks: `ruff check . && ruff format --check . && mypy app && pytest -q` in `services/api` (needs a PostgreSQL superuser URL in `AAROGYA_TEST_ADMIN_URL`), and `npm run typecheck && npm test` in `apps/mobile`. See [docs/10-TESTING-GUIDE.md](docs/10-TESTING-GUIDE.md).
+
 ## What is not done
 
 | Area | State |
 |---|---|
-| Sarvam speech-to-text | Ran live once with a short English clip (16 Oct 2026): connects, accepts the audio and returns final segments. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
-| Microphone streaming | Written and unit-tested; never run on a device: follow [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) |
-| Claude LLM adapter | Written and stub-tested; never run against the API. Needs a data-processing agreement and a residency decision first |
-| Drug interactions, contraindications, dose checks | Not checked at all (allergy matching is by name only). Needs a licensed drug knowledge provider |
-| ICD / SNOMED / LOINC coding | Not built; needs a licensed terminology service |
-| ABDM (ABHA, consent manager, health information exchange) | Not built; the FHIR export is base R4, not ABDM profile-conformant. Needs the ABDM guide version and sandbox credentials |
-| Sarvam translation, read-aloud and chat | Ran live once (16 Oct 2026, owner's key, via `scripts/sarvam_services_check.py`): all three calls succeeded, and the translation kept its numbers. The spoken audio has not yet been listened to and the Hindi has not been read by a clinician. Translations are drafts a doctor must check. See [docs/SARVAM.md](docs/SARVAM.md) for everything Sarvam is used for, and what is deliberately not |
-| Sending letters to other providers | Not built. Documents and prescriptions can be shared or printed as PDF from the phone (untested on a device) |
-| Deployment | Not deployed. Docker, Kubernetes, TLS, WAF, managed Postgres, encrypted audio store and Redis (for multi-container audio) are not done |
-| Accuracy | AI quality and speech accuracy are unmeasured on real clinical data; the bundled evaluation fixtures are tiny and synthetic |
-| Reviews | Clinical safety officer review, CDSCO (SaMD) status, DPDP legal review and a penetration test have not happened |
-
-The full list, with reasons, is in [docs/BACKLOG.md](docs/BACKLOG.md) and [docs/OPERATIONS.md](docs/OPERATIONS.md).
+| Speech | The Sarvam adapter connected live once with a short English clip. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
+| Microphone | Written and unit-tested; never run on a device ([docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md)) |
+| Claude adapter | Written and stub-tested; never run against the API. Needs a data-processing agreement and a residency decision |
+| Drug knowledge | No interaction, contraindication or dose checks; allergy matching is by name only. Needs a licensed source |
+| Coding and ABDM | No ICD, SNOMED or LOINC coding; no ABDM integration (paused; needs the implementation guide and sandbox access). The FHIR export is base R4 |
+| Tax, payments, claims | Staff enter tax rates, the app does not decide what applies; no payment gateway; claims are tracked, not sent |
+| Signatures | A tamper-evident seal exists on signed prescriptions; no legally recognised digital signature |
+| Deployment | Nothing deployed. Docker, TLS, WAF, managed database, object store for audio, shared rate limiter and monitoring are not done |
+| Reviews | No clinical safety, DPDP/legal, CDSCO or penetration review |
 
 ## Repository
 
 | Path | What |
 |---|---|
-| `apps/mobile` | React Native (Expo Router, TypeScript strict) |
-| `services/api` | FastAPI modular monolith, PostgreSQL with row-level security |
-| `infrastructure` | Docker Compose, backup and restore-drill scripts |
-| `docs` | Architecture, security, clinical safety, operations, ADRs |
+| `apps/mobile` | Expo Router app, TypeScript strict |
+| `services/api` | FastAPI modular monolith, Alembic migrations, tests, helper scripts |
+| `infrastructure` | Docker Compose, Postgres role setup, backup and restore-drill scripts |
+| `docs` | Documentation and decision records |
 
 ## Documentation
 
-| Read | For |
+| Document | Contents |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | How it fits together; how to run it |
-| [docs/CLINICAL_SAFETY.md](docs/CLINICAL_SAFETY.md) | Hazards (H1-H42), controls and what remains open |
-| [docs/AI_ARCHITECTURE.md](docs/AI_ARCHITECTURE.md), [docs/SPEECH_ARCHITECTURE.md](docs/SPEECH_ARCHITECTURE.md) | How AI and speech are kept safe and replaceable |
-| [docs/SECURITY.md](docs/SECURITY.md), [docs/DATA_MODEL.md](docs/DATA_MODEL.md), [docs/API.md](docs/API.md) | Security model, data model, endpoints |
+| [docs/01-PRODUCT-VISION.md](docs/01-PRODUCT-VISION.md), [docs/02-APPLICATION-OVERVIEW.md](docs/02-APPLICATION-OVERVIEW.md) | Purpose, users, principles; roles, journeys, capability map |
+| [docs/03-SYSTEM-ARCHITECTURE.md](docs/03-SYSTEM-ARCHITECTURE.md), [docs/04-TECHNICAL-DESIGN.md](docs/04-TECHNICAL-DESIGN.md) | Components, flows, mechanisms and invariants |
+| [docs/05-INSTALLATION-SETUP.md](docs/05-INSTALLATION-SETUP.md), [docs/06-CONFIGURATION.md](docs/06-CONFIGURATION.md) | Setup, every environment variable |
+| [docs/07-API-DOCUMENTATION.md](docs/07-API-DOCUMENTATION.md), [docs/08-DATABASE-DESIGN.md](docs/08-DATABASE-DESIGN.md) | Endpoints and permissions; tables, rules and migrations |
+| [docs/09-DEVELOPMENT-GUIDE.md](docs/09-DEVELOPMENT-GUIDE.md), [docs/10-TESTING-GUIDE.md](docs/10-TESTING-GUIDE.md) | Conventions and how to change things; tests and their gaps |
+| [docs/11-DEPLOYMENT-GUIDE.md](docs/11-DEPLOYMENT-GUIDE.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) | Release procedure and target topology; runbook |
+| [docs/12-FEATURE-STATUS.md](docs/12-FEATURE-STATUS.md), [docs/13-PRODUCT-BACKLOG.md](docs/13-PRODUCT-BACKLOG.md), [docs/14-ROADMAP.md](docs/14-ROADMAP.md) | What exists, what is left, in what order |
+| [docs/15-TROUBLESHOOTING.md](docs/15-TROUBLESHOOTING.md), [docs/16-SECURITY.md](docs/16-SECURITY.md) | Fixes for common problems; security model and gaps |
+| [docs/CLINICAL_SAFETY.md](docs/CLINICAL_SAFETY.md) | Hazard log, controls and what remains open |
+| [docs/AI_ARCHITECTURE.md](docs/AI_ARCHITECTURE.md), [docs/SPEECH_ARCHITECTURE.md](docs/SPEECH_ARCHITECTURE.md), [docs/SARVAM.md](docs/SARVAM.md) | How AI and speech are kept safe and replaceable |
 | [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) | FHIR export and what ABDM still needs |
-| [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) | Running it, backups, scaling limits, device checks |
-| [docs/BACKLOG.md](docs/BACKLOG.md), [docs/adr](docs/adr) | What is left and why decisions were made |
-
-## Design
-
-The mobile app's look, what was reviewed and what has not been: [docs/DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md).
-
-## Try it
-
-With Docker Desktop: follow [Try it with Docker Desktop](docs/DEVELOPMENT.md#try-it-with-docker-desktop-windows-mac-or-linux). It starts the database and API, creates a demo clinic with invented users and a patient, and tells you how to point the mobile app at it.
-
-## Quick start
-
-```bash
-# API
-cd services/api && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
-cp ../../.env.example ../../.env        # fill secrets; the DB role must NOT be a superuser
-alembic upgrade head && python -m app.cli seed
-uvicorn app.main:create_app --factory --reload
-
-# Mobile
-cd apps/mobile && npm install && EXPO_PUBLIC_API_URL=http://10.0.2.2:8000 npx expo start
-```
-
-Checks: `ruff check . && ruff format --check . && mypy app && pytest` (API, needs a Postgres superuser URL for the tests) and
-`npm run typecheck && npm test` (mobile). Details in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+| [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md), [docs/DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md), [docs/adr/](docs/adr/) | Device checks, design review, decision records |

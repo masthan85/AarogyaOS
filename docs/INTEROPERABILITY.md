@@ -1,4 +1,4 @@
-# Interoperability (Phase 6)
+# Interoperability
 
 ## What is built
 A **read-only FHIR R4 export** of the clinical record, as base resources. It is for the organisation's own
@@ -15,7 +15,7 @@ Errors on these routes are FHIR `OperationOutcome`s, not the problem+json used e
 audit row (no clinical content).
 
 Resources produced: Patient, Practitioner, Organization (the facility), Encounter, Observation (vitals and lab
-results), Condition, AllergyIntolerance, MedicationStatement, MedicationRequest, ServiceRequest, Composition.
+results), Condition, AllergyIntolerance, MedicationStatement, MedicationRequest, ServiceRequest (tests ordered, and referrals marked with the category "Referral"), Procedure, Immunization, Composition. Procedures, vaccines and referrals were added after the first version of this export and get their own Composition sections.
 Code: `app/modules/interop/` (`fhir.py` is pure mapping with no database access).
 
 ## Rules the export follows

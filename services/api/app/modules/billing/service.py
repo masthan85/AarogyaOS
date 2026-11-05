@@ -449,12 +449,17 @@ def list_invoices(
     unpaid: bool = False,
 ) -> list[InvoiceOut]:
     stmt = select(Invoice).order_by(Invoice.created_at.desc()).limit(100)
+    if unpaid:
+        # Filter before the limit, so an old unpaid invoice is never pushed off the list.
+        stmt = select(Invoice).where(Invoice.status == "ISSUED").order_by(Invoice.created_at.desc())
     if status:
         stmt = stmt.where(Invoice.status == status)
     if patient_id:
         stmt = stmt.where(Invoice.patient_id == patient_id)
-    rows = [out(session, i) for i in session.scalars(stmt)]
-    return [r for r in rows if r.status == "ISSUED" and r.balance_paise > 0] if unpaid else rows
+    if not unpaid:
+        return [out(session, i) for i in session.scalars(stmt)]
+    rows = (out(session, i) for i in session.scalars(stmt))
+    return [r for r in rows if r.balance_paise > 0][:100]
 
 
 def to_bill(session: Session, *, days: int = 7) -> list[ToBillOut]:

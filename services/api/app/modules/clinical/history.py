@@ -17,7 +17,7 @@ from app.core.context import Principal
 from app.core.deps import TenantDb, require
 from app.core.errors import AppError
 from app.modules.audit.service import emit_event, record_audit
-from app.modules.clinical.encounters import open_encounter
+from app.modules.clinical.encounters import open_encounter, require_owner
 from app.modules.clinical.facts import current_filter, get_fact, provenance_for_new, supersede
 from app.modules.clinical.models import Immunisation, ProcedureRecord, Referral
 from app.modules.clinical.schemas import ClientSource, FactOut
@@ -198,8 +198,12 @@ def _create(
     kind: str,
     event: str,
     values: dict[str, Any],
+    *,
+    owner_only: bool = False,
 ) -> Any:
     enc = open_encounter(session, encounter_id)
+    if owner_only:
+        require_owner(session, principal, enc)  # same rule as diagnoses and notes
     source = values.pop("source", None)
     row = model(
         organisation_id=_org(principal),
@@ -272,7 +276,7 @@ def patient_history(
 def add_procedure(encounter_id: uuid.UUID, body: ProcedureIn, db: TenantDb, principal: Proc) -> Any:
     return _create(
         db, principal, encounter_id, ProcedureRecord, "procedures", "PROCEDURE_RECORDED",
-        body.model_dump(),
+        body.model_dump(), owner_only=True,
     )  # fmt: skip
 
 
@@ -309,7 +313,14 @@ def edit_immunisation(
 @router.post("/encounters/{encounter_id}/referrals", response_model=ReferralOut, status_code=201)
 def add_referral(encounter_id: uuid.UUID, body: ReferralIn, db: TenantDb, principal: Ref) -> Any:
     return _create(
-        db, principal, encounter_id, Referral, "referrals", "REFERRAL_CREATED", body.model_dump()
+        db,
+        principal,
+        encounter_id,
+        Referral,
+        "referrals",
+        "REFERRAL_CREATED",
+        body.model_dump(),
+        owner_only=True,
     )
 
 
