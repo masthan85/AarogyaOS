@@ -36,6 +36,9 @@ KINDS: dict[str, type] = {
     "referrals": Referral,
 }
 
+# Facts a nurse may record but only a doctor may settle.
+DOCTOR_ONLY_KINDS = {"procedures", "immunisations", "referrals"}
+
 _NOT_COPIED = {
     "id",
     "source",
@@ -122,6 +125,8 @@ def verify_fact(
         raise NotFound("Unknown record type")
     if kind == "conditions" and not principal.has("condition:confirm"):
         raise Forbidden("Only a doctor can confirm or reject a diagnosis")
+    if kind in DOCTOR_ONLY_KINDS and not principal.has("condition:confirm"):
+        raise Forbidden("Only a doctor can confirm or reject this")
     row: Any = get_fact(session, model, fact_id)
     if not row.is_current:
         raise Conflict("Only the latest version of an entry can be verified")

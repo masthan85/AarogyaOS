@@ -121,3 +121,33 @@ def test_history_is_private_to_the_organisation(client: TestClient, v: Visit, or
     )  # fmt: skip
     r = get(client, org_b, f"/patients/{v.patient['id']}/history")
     assert r.status_code in (403, 404) or r.json()["referrals"] == []
+
+
+def test_another_doctor_cannot_write_into_this_consultation(
+    client: TestClient, v: Visit, org_a: H
+) -> None:
+    from tests.helpers import make_practitioner
+
+    other, _ = make_practitioner(
+        client, org_a, "alpha-clinic", v.facility, email="other@alpha-clinic.example.com"
+    )
+    for url, body in (
+        ("procedures", {"display": "Dressing", "performed_on": "2026-11-01"}),
+        ("referrals", {"to_specialty": "Cardiology", "reason": "Chest pain on exertion"}),
+    ):
+        assert post(client, other, f"/encounters/{v.enc_id}/{url}", body).status_code == 403
+
+
+def test_a_nurse_cannot_confirm_her_own_vaccine_entry(client: TestClient, v: Visit) -> None:
+    r = post(
+        client, v.nurse, f"/encounters/{v.enc_id}/immunisations",
+        {"vaccine": "Tetanus toxoid", "given_on": "2026-11-01"},
+    ).json()  # fmt: skip
+    own = post(client, v.nurse, f"/clinical/immunisations/{r['id']}/verify", {"action": "confirm"})
+    assert own.status_code == 403
+    assert (
+        get(client, v.nurse, f"/patients/{v.patient['id']}/history").json()["immunisations"][0][
+            "verification_state"
+        ]
+        == "UNVERIFIED"
+    )

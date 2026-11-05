@@ -24,7 +24,7 @@ function LegalHold({ patientId }: { patientId: string }) {
   return (
     <Card title="Legal hold">
       {active ? (
-        <Text style={{ color: t.warning, fontWeight: '700' }}>On hold: {active.reason}. Nothing about this patient will be deleted, including audio whose time is up or whose consent was withdrawn.</Text>
+        <Text style={{ color: t.warning, fontWeight: '700' }}>On hold: {active.reason}. Deletion jobs will skip this patient, including audio whose time is up or whose consent was withdrawn.</Text>
       ) : (
         <Text style={{ color: t.textMuted }}>No hold. Place one when a complaint, claim or legal notice means records must be kept.</Text>
       )}
