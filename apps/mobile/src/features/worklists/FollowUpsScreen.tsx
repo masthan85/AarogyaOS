@@ -5,7 +5,7 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { getFollowUps, setFollowUpStatus } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
-import { Button, Card, EmptyState, ErrorState, LoadingState, SectionTitle } from '@/design-system/components';
+import { Button, Card, EmptyState, ErrorState, Lead, LoadingState, SectionTitle } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { addDays, toDateString } from '@/domain/dates';
 import { can } from '@/domain/permissions';
@@ -33,9 +33,9 @@ export function FollowUpsScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
-      <Text style={{ color: t.textMuted }}>
+      <Lead>
         Patients a doctor asked to see again. Contact them using the details on their record; this screen does not message anyone.
-      </Text>
+      </Lead>
       {groups.length === 0 ? <EmptyState message="No follow-ups are waiting." /> : null}
       {groups.map((g) => (
         <View key={g.key} style={{ gap: space.sm }}>

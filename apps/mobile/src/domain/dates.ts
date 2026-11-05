@@ -24,3 +24,12 @@ export const formatDateTime = (iso: string): string =>
     minute: '2-digit',
     hour12: true,
   });
+
+/** A date-only value such as 2026-11-04, shown as "4 Nov 2026" without any timezone shift. */
+export const formatDate = (isoDate: string): string => {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
+};

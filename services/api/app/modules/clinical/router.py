@@ -425,3 +425,12 @@ def set_followup_status(
     principal: Annotated[Principal, Depends(require("followup:write"))],
 ) -> FollowUpOut:
     return orders.set_followup_status(db, principal, followup_id, body.status)
+
+
+@router.get("/prescriptions/{rx_id}/integrity", response_model=orders.IntegrityOut)
+def prescription_integrity(
+    rx_id: uuid.UUID,
+    db: TenantDb,
+    _: Annotated[Principal, Depends(require("prescription:read"))],
+) -> orders.IntegrityOut:
+    return orders.check_integrity(db, rx_id)

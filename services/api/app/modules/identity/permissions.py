@@ -16,6 +16,8 @@ PERMISSIONS: dict[str, str] = {
     "user:manage": "Create, deactivate and assign roles to staff users",
     "role:read": "View roles",
     "audit:read": "View the audit log",
+    "legalhold:read": "See which patients are under a legal hold",
+    "legalhold:manage": "Place and release legal holds that stop deletion",
     # Phase 2: patient access is deliberately NOT part of the admin roles.
     "patient:search": "Search patients (minimal fields only)",
     "patient:read": "View a patient's demographics",
@@ -41,6 +43,9 @@ PERMISSIONS: dict[str, str] = {
     "medication:record": "Record and correct a patient's medication history",
     "condition:record": "Record problems and provisional diagnoses",
     "condition:confirm": "Confirm a diagnosis",
+    "procedure:record": "Record procedures carried out",
+    "immunisation:record": "Record vaccines given or reported",
+    "referral:write": "Create and update referrals",
     "fact:verify": "Confirm, correct or reject recorded clinical information",
     "prescription:write": "Draft and edit prescriptions",
     "prescription:sign": "Sign (finalise) prescriptions",
@@ -74,6 +79,10 @@ PERMISSIONS: dict[str, str] = {
     "summary:write": "Draft, edit and approve patient visit summaries",
     "summary:read": "Read patient visit summaries",
     "fhir:export": "Export a visit or patient as FHIR (read-only)",
+    "billing:read": "View invoices and payments (no clinical information)",
+    "billing:write": "Create, issue and void invoices; record payments; close the day",
+    "billing:adjust": "Issue credit notes and refunds; track insurance claims",
+    "billing:manage": "Keep the price list and the GSTIN printed on invoices",
 }
 
 _READ_STRUCTURE = ["org:read", "facility:read", "department:read"]
@@ -115,6 +124,7 @@ _NURSE = [
     *_CLINICAL_BASE,
     *_AI,
     "encounter:triage",
+    "immunisation:record",
     *_CONSENT,
     "interaction:triage",
     "transcript:read",
@@ -127,6 +137,9 @@ _DOCTOR = [
     "note:clinical",
     "condition:record",
     "condition:confirm",
+    "procedure:record",
+    "immunisation:record",
+    "referral:write",
     "prescription:write",
     "prescription:sign",
     "order:write",
@@ -141,7 +154,15 @@ _DOCTOR = [
     "speaker:assign",
     "transcript:correct",
 ]
-_RECEPTION = [*_RECEPTION, "followup:read", *_CONSENT, "interaction:reception", "transcript:read"]
+_RECEPTION = [
+    *_RECEPTION,
+    "followup:read",
+    *_CONSENT,
+    "interaction:reception",
+    "transcript:read",
+    "billing:read",
+    "billing:write",
+]
 _LAB = [*_READ_STRUCTURE, "patient:search", "order:read", "result:enter"]
 _ADMIN = [
     *_READ_STRUCTURE,
@@ -154,11 +175,16 @@ _ADMIN = [
     "user:manage",
     "role:read",
     "audit:read",
+    "legalhold:read",
+    "legalhold:manage",
     "consent:manage",
     "consent:policy",
     "usage:read",
     "knowledge:manage",
     "knowledge:read",
+    "billing:read",
+    "billing:adjust",
+    "billing:manage",
 ]
 
 # key -> (display name, is_platform, permissions)
@@ -179,6 +205,14 @@ ROLES: dict[str, tuple[str, bool, list[str]]] = {
     "billing_staff": (
         "Billing Staff",
         False,
-        [*_READ_STRUCTURE, "patient:search", "appointment:read"],
+        [
+            *_READ_STRUCTURE,
+            "patient:search",
+            "appointment:read",
+            "billing:read",
+            "billing:write",
+            "billing:adjust",
+            "billing:manage",
+        ],
     ),
 }

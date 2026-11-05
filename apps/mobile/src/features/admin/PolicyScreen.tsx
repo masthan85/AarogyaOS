@@ -5,7 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { getConsentPolicies, getOrgPolicy, installConsentWording, saveOrgPolicy } from '@/api/endpoints';
 import type { OrgPolicy } from '@/api/schemas';
 import { Button, Card, ChoiceChips, ErrorState, LoadingState, SectionTitle, TextField, ToggleRow } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { POLICY_HELP, policyProblem, togglePolicy } from '@/domain/admin';
 import { useAction } from '@/features/consultation/useAction';
 
@@ -56,7 +56,7 @@ export function PolicyScreen() {
         {draft.audio_retention === 'RETAIN_DAYS' ? (
           <TextField label="Days to keep audio" value={days} onChangeText={setDays} keyboardType="number-pad" />
         ) : null}
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>Audio is only ever kept when this setting and the patient's separate consent both allow it.</Text>
+        <Text style={[type.caption, { color: t.textMuted }]}>Audio is only ever kept when this setting and the patient's separate consent both allow it.</Text>
       </Card>
 
       {problem ? <Text style={{ color: t.danger }}>{problem}</Text> : null}
@@ -65,7 +65,7 @@ export function PolicyScreen() {
       <SectionTitle>Patient consent wording</SectionTitle>
       <Card>
         <Text style={{ color: t.text }}>{installed > 0 ? `${installed} wordings installed.` : 'No consent wording installed: nobody can be recorded until it is.'}</Text>
-        <Text style={{ color: t.warning, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.warning }]}>
           The built-in wording is a template and has NOT been reviewed by a lawyer. Have it reviewed for your jurisdiction before relying on it.
         </Text>
         <Button title={installed > 0 ? 'Install again (adds a new version)' : 'Install English wording'} variant="secondary" loading={install.pending} onPress={() => void install.run()} />

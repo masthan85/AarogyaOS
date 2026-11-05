@@ -4,7 +4,7 @@ import { ScrollView, Text } from 'react-native';
 import { getAiUsage, getAuditLogs, getSpeechUsage } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
 import { Card, EmptyState, LoadingState, SectionTitle, StatusChip } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { describeAction } from '@/domain/admin';
 import { can } from '@/domain/permissions';
 
@@ -45,11 +45,11 @@ export function ActivityScreen() {
       ) : null}
 
       <SectionTitle>Recent activity</SectionTitle>
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>Who did what, never what was said or written. The latest 50 entries.</Text>
+      <Text style={[type.caption, { color: t.textMuted }]}>Who did what, never what was said or written. The latest 50 entries.</Text>
       {audit.data?.map((a) => (
         <Card key={a.id}>
           <Text style={{ color: t.text, fontWeight: '600' }}>{describeAction(a.action)}</Text>
-          <Text style={{ color: t.textMuted, fontSize: 12 }}>{new Date(a.occurred_at).toLocaleString()} · {a.resource_type}</Text>
+          <Text style={[type.caption, { color: t.textMuted }]}>{new Date(a.occurred_at).toLocaleString()} · {a.resource_type}</Text>
           {a.outcome !== 'SUCCESS' ? <StatusChip label={a.outcome.toLowerCase()} tone="danger" /> : null}
           {a.ai_involved ? <StatusChip label="AI involved" tone="ai" /> : null}
         </Card>

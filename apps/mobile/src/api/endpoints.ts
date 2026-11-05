@@ -35,10 +35,20 @@ import {
   noteSchema,
   observationSchema,
   allergySchema,
+  billingSettingsSchema,
+  claimSchema,
   conditionSchema,
+  daySchema,
+  priceSchema,
+  historySchema,
+  immunisationSchema,
+  procedureSchema,
+  referralSchema,
   medicationSchema,
   orderSchema,
   colleagueSchema,
+  invoiceSchema,
+  toBillSchema,
   dispensingSchema,
   coverSchema,
   followUpSchema,
@@ -432,3 +442,66 @@ export const getPatientDispensings = (patientId: string) =>
   api.request(`/patients/${patientId}/dispensings`, z.array(dispensingSchema));
 export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PARTIALLY_DISPENSED' | 'NOT_DISPENSED'; note?: string }) =>
   api.request(`/prescriptions/${rxId}/dispensing`, dispensingSchema, { method: 'POST', body });
+
+// ---- billing ---------------------------------------------------------------------------------
+
+export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'INSURER' | 'OTHER';
+export const getToBill = () => api.request('/billing/to-bill', z.array(toBillSchema));
+export const getInvoices = (params: { unpaid?: boolean; status?: string }) =>
+  api.request(`/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status })}`, z.array(invoiceSchema));
+export const getInvoice = (id: string) => api.request(`/invoices/${id}`, invoiceSchema);
+export const createInvoice = (body: { patient_id: string; encounter_id?: string }) =>
+  api.request('/invoices', invoiceSchema, { method: 'POST', body });
+export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]) =>
+  api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
+export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });
+export const payInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reference?: string }) =>
+  api.request(`/invoices/${id}/payments`, invoiceSchema, { method: 'POST', body });
+export const voidInvoice = (id: string, reason: string) =>
+  api.request(`/invoices/${id}/void`, invoiceSchema.nullable(), { method: 'POST', body: { reason } });
+
+export const getHistory = (patientId: string) => api.request(`/patients/${patientId}/history`, historySchema);
+export const addProcedure = (
+  encId: string,
+  body: { display: string; performed_on: string; body_site?: string; outcome?: string; complications?: string },
+) => api.request(`/encounters/${encId}/procedures`, procedureSchema, { method: 'POST', body });
+export const addImmunisation = (
+  encId: string,
+  body: { vaccine: string; given_on: string; dose_number?: number; batch_number?: string; next_due_on?: string; given_here?: boolean },
+) => api.request(`/encounters/${encId}/immunisations`, immunisationSchema, { method: 'POST', body });
+export const addReferral = (
+  encId: string,
+  body: { to_specialty: string; reason: string; to_name?: string; urgency?: 'ROUTINE' | 'URGENT' | 'EMERGENCY' },
+) => api.request(`/encounters/${encId}/referrals`, referralSchema, { method: 'POST', body });
+export const updateReferral = (id: string, body: { status?: string; outcome_note?: string }) =>
+  api.request(`/referrals/${id}`, referralSchema, { method: 'PUT', body });
+
+type LineBody = { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number };
+export const creditInvoice = (id: string, body: { amount_paise: number; reason: string }) =>
+  api.request(`/invoices/${id}/credit-notes`, invoiceSchema, { method: 'POST', body });
+export const refundInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reason: string; reference?: string }) =>
+  api.request(`/invoices/${id}/refunds`, invoiceSchema, { method: 'POST', body });
+export const getClaims = (id: string) => api.request(`/invoices/${id}/claims`, z.array(claimSchema));
+export const addClaim = (id: string, body: { insurer: string; claimed_paise: number; policy_number?: string; claim_reference?: string }) =>
+  api.request(`/invoices/${id}/claims`, claimSchema, { method: 'POST', body });
+export const updateClaim = (id: string, body: { status?: string; approved_paise?: number; note?: string }) =>
+  api.request(`/claims/${id}`, claimSchema, { method: 'PUT', body });
+export const getPrices = (all = false) => api.request(`/billing/prices${all ? '?all=true' : ''}`, z.array(priceSchema));
+export const addPrice = (body: { name: string; price_paise: number; tax_rate_bp: number }) =>
+  api.request('/billing/prices', priceSchema, { method: 'POST', body });
+export const updatePrice = (id: string, body: { price_paise?: number; tax_rate_bp?: number; active?: boolean }) =>
+  api.request(`/billing/prices/${id}`, priceSchema, { method: 'PUT', body });
+export const getBillingSettings = () => api.request('/billing/settings', billingSettingsSchema);
+export const saveBillingSettings = (body: { gstin: string | null; legal_name: string | null }) =>
+  api.request('/billing/settings', billingSettingsSchema, { method: 'PUT', body });
+export const getDay = (on: string) => api.request(`/billing/day?on=${on}`, daySchema);
+export const closeDay = (body: { business_date: string; counted_cash_paise: number; note?: string }) =>
+  api.request('/billing/day/close', daySchema, { method: 'POST', body });
+export type { LineBody };
+
+export const integritySchema = z.object({ sealed: z.boolean(), intact: z.boolean().nullable(), message: z.string() });
+export const getPrescriptionIntegrity = (id: string) => api.request(`/prescriptions/${id}/integrity`, integritySchema);
+export const holdSchema = z.object({ id: z.string(), patient_id: z.string(), reason: z.string(), placed_at: z.string(), released_at: z.string().nullable(), release_reason: z.string().nullable() });
+export const getHolds = (patientId: string) => api.request(`/legal-holds?patient_id=${patientId}`, z.array(holdSchema));
+export const placeHold = (patientId: string, reason: string) => api.request(`/patients/${patientId}/legal-holds`, holdSchema, { method: 'POST', body: { reason } });
+export const releaseHold = (id: string, reason: string) => api.request(`/legal-holds/${id}/release`, holdSchema, { method: 'POST', body: { reason } });

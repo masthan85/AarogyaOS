@@ -26,6 +26,8 @@ from app.core.observability import (
 from app.core.ratelimit import RateLimiter
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
+from app.modules.billing.router import router as billing_router
+from app.modules.clinical.history import router as history_router
 from app.modules.clinical.router import router as clinical_router
 from app.modules.consent.router import router as consent_router
 from app.modules.cover.router import router as cover_router
@@ -36,6 +38,7 @@ from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
 from app.modules.pharmacy.router import router as pharmacy_router
+from app.modules.retention.router import router as retention_router
 from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.templates.router import router as templates_router
@@ -142,6 +145,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         patients_router,
         scheduling_router,
         clinical_router,
+        history_router,
         consent_router,
         languages_router,
         interactions_router,
@@ -151,6 +155,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         templates_router,
         cover_router,
         pharmacy_router,
+        billing_router,
+        retention_router,
         fhir_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

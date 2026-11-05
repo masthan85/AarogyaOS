@@ -7,7 +7,7 @@ import { getQueue, startConsultation, walkIn } from '@/api/endpoints';
 import type { QueueItem } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { formatTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { useFacility } from '@/features/facility/useFacility';
@@ -46,13 +46,13 @@ export function QueueScreen() {
   const row = (q: QueueItem) => (
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ color: t.primary, fontSize: 28, fontWeight: '800' }}>{q.token_number}</Text>
+        <Text style={[type.display, { color: t.primary }]}>{q.token_number}</Text>
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           {q.priority === 'URGENT' ? <StatusChip label="Urgent" tone="danger" /> : null}
           <StatusChip label={q.status === 'IN_CONSULTATION' ? 'With doctor' : 'Waiting'} tone={q.status === 'IN_CONSULTATION' ? 'success' : 'warning'} />
         </View>
       </View>
-      <Text style={{ color: t.text, fontWeight: '700', fontSize: 17 }}>{q.patient_name}</Text>
+      <Text style={[type.h3, { color: t.text }]}>{q.patient_name}</Text>
       <Text style={{ color: t.textMuted }}>
         {q.patient_mrn} · {q.age_years ?? '?'} yrs · since {formatTime(q.waiting_since)}
         {q.practitioner_name ? ` · ${q.practitioner_name}` : ''}

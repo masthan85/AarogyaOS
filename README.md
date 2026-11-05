@@ -49,13 +49,115 @@ discharge. Every workflow works with AI, speech and the network switched off.
 - Audit log and event outbox with no clinical content; readiness check that waits for migrations; Prometheus metrics without identifiers; security headers and request limits; scheduled maintenance jobs; encrypted backup and a restore drill; optional pgvector search.
 
 **Administration (mobile, role-gated)**
-- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts; the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
+- Organisation switches (recording, AI, suggestions, audio retention) and patient consent wording; staff accounts and roles; doctor profiles and working hours; note layouts (built-in General consultation, Follow-up review and Neurosurgery consultation; a doctor's own specialty's layout is offered first on the Notes tab); the reference library (a second administrator must approve a document); speech and AI usage; the audit log.
 - Sharing and printing of approved documents and signed prescriptions as PDF, generated on the phone.
 
 **Mobile app (Expo / React Native)**
+- Billing: a list of finished visits with no invoice, invoices with charges and an optional tax rate on each line, issue (numbered, then frozen, with the clinic's GSTIN as it stood), part and full payments by cash, UPI, card or insurer, credit notes and refunds (a credit note lowers what the invoice is worth; only money paid beyond that can be refunded), a price list, insurance claim tracking, an end-of-day cash count, and a printable or shareable PDF. Billing staff and reception work with names and amounts only; credit notes, refunds and claims need the billing-staff or admin role. The app adds up the rates staff enter and does not decide what tax applies. Payment-gateway integration and sending claims to insurers are not built.
+- Procedures, vaccines and referrals: recorded in the consultation with the same provenance and doctor-confirmation rules as every other clinical fact. Referral status is tracked; no letters or external referral exchange yet.
+- Integrity and holds: a signed prescription is sealed with a keyed hash so any later change to the stored record can be detected (this is not a legal digital signature). Administrators can place a legal hold on a patient, which stops audio deletion until released. The FHIR visit document includes procedures, vaccines and referrals.
 - Worklists: results awaiting a doctor's review (critical first), follow-ups due (overdue, today, this week), and a lab/radiology order list with result entry for technicians. The result view shows investigations the signed-in doctor ordered, plus those of a colleague who has asked them to cover for up to 31 days. Doctors can also edit a draft prescription before signing it, and pharmacists can look up a patient's signed prescriptions and record whether each was dispensed, partly dispensed or not (no brands, batches or stock). A doctor can hand an open consultation to a colleague at the same site. Before finishing a visit the app lists anything the assistant found that nobody has accepted or rejected (a reported symptom or allergy is not silently left behind), the prescription form offers a plain-words reading of Indian shorthand such as 1-0-1, BD, TDS or HS (it never changes what was typed on its own), and the visit can be copied as plain text for another record system. When an AI-assisted recording ends, the app takes a last look at the conversation and opens a "Draft EMR" tab: the visit laid out like a clinic note (reason for visit, history of present illness, past history, medicines, allergies, family and social history, examination, assessment as said by the doctor, and the plan: tests, treatment, follow-up). Each line shows the words it came from and is accepted, edited or rejected by the doctor; nothing enters the record before that, and a heading with nothing under it means nothing was heard. The assistant also picks out what led to a problem (a fall, an accident), and a follow-up the doctor asked for ("come back after 5 days") can be scheduled in one tap when the time is stated plainly; a vague one stays a plain note.
 - Queue and patient context, triage, consultation with tabs for the patient picture, conversation, assist (AI review), notes, diagnoses, tests, prescriptions, follow-up, documents and finish.
 - Plain-language states for every failure; clinical writes are never queued offline, so "saved" always means saved.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    subgraph Phone["Mobile app (Expo / React Native)"]
+        direction TB
+        UI["Screens: queue, consultation,<br/>Draft EMR, worklists, admin"]
+        MIC["Microphone capture<br/>(only between Start and Stop)"]
+    end
+
+    subgraph API["API (FastAPI modular monolith)"]
+        direction TB
+        AUTH["Auth, roles, audit"]
+        REC["Recording gateway<br/>consent check, transcripts"]
+        CLIN["Clinical record<br/>notes, orders, prescriptions"]
+        AI["Assistant<br/>extraction, guardrails, review queue"]
+        DOC["Documents<br/>summaries, letters, translation"]
+        FHIR["FHIR R4 export"]
+    end
+
+    subgraph Providers["Swappable providers (each off until configured)"]
+        direction TB
+        STT["Speech-to-text<br/>Sarvam / development"]
+        LLM["Language model<br/>Sarvam / Anthropic / self-hosted"]
+        TR["Translation, read-aloud<br/>Sarvam"]
+    end
+
+    DB[("PostgreSQL<br/>row-level security<br/>per organisation")]
+
+    UI -->|"HTTPS, bearer token"| AUTH
+    MIC -->|"audio, WebSocket"| REC
+    AUTH --> CLIN
+    CLIN --> FHIR
+    REC --> STT
+    AI --> LLM
+    DOC --> TR
+    REC -.->|"transcript lines"| AI
+    API --> DB
+```
+
+The mobile app talks only to the API. Every table carries the organisation it belongs to and the database itself refuses to show one organisation another's rows. The speech, language-model, translation and read-aloud providers sit behind interfaces: the app works with all of them switched off, and a provider that is not configured is simply unavailable. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Consultation flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dr as Doctor
+    participant App as Mobile app
+    participant API as API
+    participant STT as Speech provider
+    participant LLM as Language model
+    participant DB as Database
+
+    Dr->>App: Open consultation, check consent
+    App->>API: Consent status for recording and AI
+    API-->>App: Granted / missing
+    Dr->>App: Start recording
+    App->>API: Start session (identified patient, explicit Start)
+    loop while recording
+        App->>API: Audio chunks
+        API->>STT: Stream audio
+        STT-->>API: Transcript lines
+        API->>DB: Store transcript (original text never edited)
+    end
+    Dr->>App: Stop recording
+    App->>API: Final analysis of the conversation (also run every 30 s while recording)
+    API->>LLM: Prompt with transcript lines
+    LLM-->>API: Candidate findings (JSON)
+    API->>API: Guardrails: exact quote, hedging, denial, speaker checks
+    API->>DB: Save kept findings as PENDING candidates (not in the record)
+    App-->>Dr: Draft EMR tab, laid out like a clinic note
+    loop each finding
+        Dr->>App: Accept, edit or reject
+        App->>API: Review decision
+        API->>DB: Accepted: written to the record with provenance and audit
+    end
+    Dr->>App: Add tests, prescription and follow-up, then sign
+    Dr->>App: Finish visit
+    App->>API: Complete encounter
+    API->>DB: Record becomes read-only
+```
+
+Nothing the assistant produces is part of the record until the doctor accepts it, nothing is diagnosed, ordered or prescribed by software, and every step also works by hand if recording, speech or the model is unavailable.
+
+### How a finding is handled
+
+```mermaid
+flowchart LR
+    A["Transcript line"] --> B["Model proposes a finding<br/>with an exact quote"]
+    B --> C{"Quote found in that line?<br/>Not a question?<br/>Allowed kind?"}
+    C -- no --> X["Dropped"]
+    C -- yes --> D["Hedged words: shown as 'possible'<br/>Denials kept as 'denies'<br/>Speaker unknown: flagged"]
+    D --> E["Pending in the Draft EMR"]
+    E --> F{"Doctor decides"}
+    F -- reject --> R["Recorded as rejected"]
+    F -- accept or edit --> G["Written to the record<br/>marked as software-assisted,<br/>confirmed by the doctor"]
+```
 
 ## What is not done
 
@@ -95,6 +197,14 @@ The full list, with reasons, is in [docs/BACKLOG.md](docs/BACKLOG.md) and [docs/
 | [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) | FHIR export and what ABDM still needs |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md) | Running it, backups, scaling limits, device checks |
 | [docs/BACKLOG.md](docs/BACKLOG.md), [docs/adr](docs/adr) | What is left and why decisions were made |
+
+## Design
+
+The mobile app's look, what was reviewed and what has not been: [docs/DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md).
+
+## Try it
+
+With Docker Desktop: follow [Try it with Docker Desktop](docs/DEVELOPMENT.md#try-it-with-docker-desktop-windows-mac-or-linux). It starts the database and API, creates a demo clinic with invented users and a patient, and tells you how to point the mobile app at it.
 
 ## Quick start
 

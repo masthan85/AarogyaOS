@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { addNote, getNoteTemplates } from '@/api/endpoints';
+import { addNote, getNoteTemplates, getPractitioners } from '@/api/endpoints';
 import type { NoteTemplate } from '@/api/schemas';
 import { Button, Card, ChoiceChips, SectionTitle, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
-import { filledSections, notesFromTemplate } from '@/domain/documents';
+import { space, useTheme, type } from '@/design-system/tokens';
+import { filledSections, layoutForSpecialty, notesFromTemplate } from '@/domain/documents';
 
 import { FactRow } from './FactRow';
 import { useAction } from './useAction';
@@ -36,6 +36,17 @@ export function NotesPanel({ encId, data }: { encId: string; data: EncounterData
   const notes = data.detail?.notes ?? [];
   const templates = useQuery({ queryKey: ['note-templates'], queryFn: getNoteTemplates, gcTime: 0 });
   const [template, setTemplate] = useState<NoteTemplate | null>(null);
+  // Offer the layout made for this doctor's specialty once, without taking over: the doctor can pick Free note.
+  const facilityId = data.detail?.encounter.facility_id;
+  const practitioners = useQuery({ queryKey: ['practitioners-site', facilityId], queryFn: () => getPractitioners(facilityId), enabled: !!facilityId, gcTime: 0 });
+  const offered = useRef(false);
+  useEffect(() => {
+    if (offered.current || !templates.data || !practitioners.data) return;
+    offered.current = true;
+    const mine = practitioners.data.find((p) => p.id === data.detail?.encounter.practitioner_id);
+    const suggested = layoutForSpecialty(templates.data, mine?.specialty);
+    if (suggested && (data.detail?.notes.length ?? 0) === 0) setTemplate(suggested);
+  }, [templates.data, practitioners.data, data.detail]);
   return (
     <View style={{ gap: space.md }}>
       <SectionTitle>Notes for this visit</SectionTitle>
@@ -90,7 +101,7 @@ function TemplateForm({ encId, template, onSaved, onPartial }: { encId: string; 
         <TextField key={sec.title} label={sec.title} placeholder={sec.hint || undefined} multiline
           value={values[sec.title] ?? ''} onChangeText={(v) => setValues((prev) => ({ ...prev, [sec.title]: v }))} />
       ))}
-      <Text style={{ color: t.textMuted, fontSize: 12 }}>Empty sections are skipped. Each filled section is saved as its own note.</Text>
+      <Text style={[type.caption, { color: t.textMuted }]}>Empty sections are skipped. Each filled section is saved as its own note.</Text>
       <Button title={`Save ${filledSections(template, values)} section(s)`} disabled={filledSections(template, values) === 0}
         loading={save.pending} onPress={() => void save.run()} />
     </View>

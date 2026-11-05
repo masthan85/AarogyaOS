@@ -75,3 +75,14 @@ Separate mapping layer; resources never stored as the source of truth.
 `transcript_corrections` (tenant-scoped, forced RLS, migration 0009): append-only (a trigger refuses update and delete). One row per correction: segment, text (null = undo), who. The newest row for a segment applies; the original `transcript_segments.raw_text` is untouched. Audit rows record who corrected which line, never the text.
 
 `dispensings` (tenant-scoped, forced RLS, append-only, migration 0010): a pharmacist's record per prescription: status, optional note (300 characters, free text, so keep clinical detail out), who. The newest row is the current state.
+
+`invoices`, `invoice_lines`, `payments`, `invoice_counters` (tenant-scoped, forced RLS, migration 0011). Money is whole paise. A draft can be edited or deleted; once issued, database triggers refuse any change to the invoice or its lines except to void it, refuse deleting it, and make payments append-only (a payment can only be added to an issued invoice). Numbers run on per organisation without gaps for issued invoices. Staff enter any tax rate per line (see 0013 below); the app adds up what is entered and does not decide what tax applies. Not built: a patient-facing receipt portal.
+
+## Procedures, immunisations, referrals (0012)
+`procedure_records`, `immunisations` and `referrals` use the clinical fact columns (provenance, verification, `supersedes_id`, `is_current`), forced RLS and the `guard_clinical_fact` trigger, so rows are append-only and cannot be deleted. Codes (`code`, `code_system`) stay empty until a terminology service is connected.
+
+## Billing additions (0013)
+`invoice_lines.tax_rate_bp`, `invoices.tax_paise` and `seller_gstin` (frozen with the invoice), `invoice_counters.last_credit_note`; tables `billing_settings`, `service_prices`, `credit_notes`, `refunds`, `cash_closings` and `insurance_claims`, all with forced RLS. Credit notes, refunds and cash closings are append-only by trigger, and the first two can only be added to an issued invoice. Claims are ordinary editable rows with an audit entry per change.
+
+## Seals and legal holds (0014)
+`prescriptions.seal` (set once at signing; the existing guard already blocks later changes) and `legal_holds` (forced RLS; a trigger allows one release and nothing else, and refuses deletes).

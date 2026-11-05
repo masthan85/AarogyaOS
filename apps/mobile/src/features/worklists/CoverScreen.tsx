@@ -5,7 +5,7 @@ import { Alert, ScrollView, Text } from 'react-native';
 import { ApiError } from '@/api/client';
 import { arrangeCover, endCover, getColleagues, getCover } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
-import { Button, Card, ChoiceChips, EmptyState, LoadingState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
+import { Button, Card, ChoiceChips, EmptyState, Lead, LoadingState, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { addDays, toDateString } from '@/domain/dates';
 import { coverProblem } from '@/domain/worklists';
@@ -35,10 +35,10 @@ export function CoverScreen() {
   if (colleagues.isPending || cover.isPending) return <LoadingState />;
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
-      <Text style={{ color: t.textMuted }}>
+      <Lead>
         Ask a colleague to review your investigation results while you are away. They will see your results in their review list for
         those dates only, and each review is recorded under their name. Your patients and orders stay yours.
-      </Text>
+      </Lead>
       <SectionTitle>Arrangements</SectionTitle>
       {cover.data?.length === 0 ? <EmptyState message="No cover arranged." /> : null}
       {cover.data?.map((c) => {

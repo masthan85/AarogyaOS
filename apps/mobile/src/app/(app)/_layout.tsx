@@ -11,7 +11,7 @@ export default function AppLayout() {
         headerTintColor: t.text,
         contentStyle: { backgroundColor: t.background },
       }}>
-      <Stack.Screen name="index" options={{ title: 'AarogyaOS' }} />
+      <Stack.Screen name="index" options={{ title: 'AarogyaOS', headerStyle: { backgroundColor: t.hero }, headerTintColor: t.heroText, headerShadowVisible: false }} />
       <Stack.Screen name="facilities" options={{ title: 'Facilities' }} />
       <Stack.Screen name="patients/index" options={{ title: 'Patients' }} />
       <Stack.Screen name="patients/new" options={{ title: 'New patient' }} />
@@ -19,6 +19,10 @@ export default function AppLayout() {
       <Stack.Screen name="appointments/index" options={{ title: 'Appointments' }} />
       <Stack.Screen name="appointments/book" options={{ title: 'Book appointment' }} />
       <Stack.Screen name="results" options={{ title: 'Results to review' }} />
+      <Stack.Screen name="billing/index" options={{ title: 'Billing' }} />
+      <Stack.Screen name="billing/[id]" options={{ title: 'Invoice' }} />
+      <Stack.Screen name="billing/prices" options={{ title: 'Price list' }} />
+      <Stack.Screen name="billing/day" options={{ title: 'End of day' }} />
       <Stack.Screen name="pharmacy" options={{ title: 'Pharmacy' }} />
       <Stack.Screen name="cover" options={{ title: 'Cover while away' }} />
       <Stack.Screen name="follow-ups" options={{ title: 'Follow-ups' }} />

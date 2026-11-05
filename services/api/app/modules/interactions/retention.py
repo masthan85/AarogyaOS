@@ -9,12 +9,14 @@ from app.core.context import RequestMeta
 from app.core.db import set_tenant
 from app.modules.audit.service import record_audit
 from app.modules.interactions.models import AudioAsset
+from app.modules.retention.models import LegalHold
 from app.speech.audio_store import AudioStore
 
 
 def purge_due_audio(session: Session, store: AudioStore, now: datetime | None = None) -> int:
     """Delete audio whose retention ended or whose purge was requested. Returns files removed.
 
+    Patients under a legal hold are skipped until the hold is released.
     Meant to run on a schedule (`python -m app.cli purge-audio`). Transcripts are NOT touched:
     they are part of the medical record and follow the record's own retention rules.
     """
@@ -24,6 +26,10 @@ def purge_due_audio(session: Session, store: AudioStore, now: datetime | None = 
         select(AudioAsset)
         .where(
             AudioAsset.deleted_at.is_(None),
+            # A legal hold wins over retention expiry and over a consent withdrawal.
+            AudioAsset.patient_id.not_in(
+                select(LegalHold.patient_id).where(LegalHold.released_at.is_(None))
+            ),
             or_(AudioAsset.purge_requested_at.is_not(None), AudioAsset.retain_until <= now),
         )
         .with_for_update()

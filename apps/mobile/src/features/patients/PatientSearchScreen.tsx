@@ -8,7 +8,7 @@ import { type PatientSearch, searchPatients } from '@/api/endpoints';
 import type { PatientHit } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, ChoiceChips, EmptyState, ErrorState, LoadingState, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { can } from '@/domain/permissions';
 
 type Mode = 'name' | 'mobile' | 'mrn';
@@ -23,7 +23,7 @@ export function PatientHitRow({ p, onPress }: { p: PatientHit; onPress: () => vo
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
       <Card>
-        <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{p.full_name}</Text>
+        <Text style={[type.h3, { color: t.text }]}>{p.full_name}</Text>
         <Text style={{ color: t.textMuted }}>
           {p.mrn} · {p.age_years ?? '?'} yrs · {p.administrative_gender}
           {p.mobile_masked ? ` · ${p.mobile_masked}` : ''}

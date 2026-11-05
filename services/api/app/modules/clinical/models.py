@@ -175,6 +175,7 @@ class Prescription(Base, TimestampMixin):
     source: Mapped[str] = mapped_column(String(20), default="DOCTOR_ENTERED")
     signed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     signed_by: Mapped[uuid.UUID | None] = mapped_column()
+    seal: Mapped[str | None] = mapped_column(String(64))  # keyed hash taken when signed
     # Warnings the doctor saw and acknowledged at signing, and which checks could not run.
     safety_snapshot: Mapped[dict[str, object] | None] = mapped_column(JSONB)
     void_reason: Mapped[str | None] = mapped_column(String(300))
@@ -273,3 +274,51 @@ class FollowUp(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(10), default="PENDING")
     created_by: Mapped[uuid.UUID | None] = mapped_column()
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProcedureRecord(Base, FactMixin):
+    """A procedure carried out on the patient (a dressing, a biopsy, an operation)."""
+
+    __tablename__ = "procedure_records"
+    __table_args__ = (Index("ix_procedure_records_patient", "patient_id", "is_current"),)
+
+    display: Mapped[str] = mapped_column(String(300))
+    code: Mapped[str | None] = mapped_column(String(40))
+    code_system: Mapped[str | None] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(12), default="COMPLETED")
+    performed_on: Mapped[date] = mapped_column(Date)
+    body_site: Mapped[str | None] = mapped_column(String(120))
+    outcome: Mapped[str | None] = mapped_column(String(500))
+    complications: Mapped[str | None] = mapped_column(String(500))
+
+
+class Immunisation(Base, FactMixin):
+    """A vaccine dose given, or reported as given elsewhere."""
+
+    __tablename__ = "immunisations"
+    __table_args__ = (Index("ix_immunisations_patient", "patient_id", "is_current"),)
+
+    vaccine: Mapped[str] = mapped_column(String(200))
+    code: Mapped[str | None] = mapped_column(String(40))
+    code_system: Mapped[str | None] = mapped_column(String(40))
+    dose_number: Mapped[int | None] = mapped_column()
+    given_on: Mapped[date] = mapped_column(Date)
+    given_here: Mapped[bool] = mapped_column(Boolean, default=True)
+    batch_number: Mapped[str | None] = mapped_column(String(60))
+    site: Mapped[str | None] = mapped_column(String(60))
+    next_due_on: Mapped[date | None] = mapped_column(Date)
+    note: Mapped[str | None] = mapped_column(String(300))
+
+
+class Referral(Base, FactMixin):
+    """A referral to another clinician or service, and where it stands."""
+
+    __tablename__ = "referrals"
+    __table_args__ = (Index("ix_referrals_patient", "patient_id", "is_current"),)
+
+    to_specialty: Mapped[str] = mapped_column(String(120))
+    to_name: Mapped[str | None] = mapped_column(String(200))
+    reason: Mapped[str] = mapped_column(String(500))
+    urgency: Mapped[str] = mapped_column(String(10), default="ROUTINE")
+    status: Mapped[str] = mapped_column(String(12), default="REQUESTED")
+    outcome_note: Mapped[str | None] = mapped_column(String(500))

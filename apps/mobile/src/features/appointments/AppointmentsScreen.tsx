@@ -9,7 +9,7 @@ import type { Appointment } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
 import type { ChipTone } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { addDays, formatDay, formatTime, toDateString } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { useFacility } from '@/features/facility/useFacility';
@@ -44,7 +44,7 @@ export function AppointmentsScreen() {
     return (
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ color: t.text, fontSize: 17, fontWeight: '700' }}>{formatTime(a.start_at)}</Text>
+          <Text style={[type.h3, { color: t.text }]}>{formatTime(a.start_at)}</Text>
           <StatusChip label={a.status.replace('_', ' ')} tone={TONE[a.status] ?? 'neutral'} />
         </View>
         <Text style={{ color: t.text }}>{a.patient_name} · {a.patient_mrn}</Text>
@@ -71,7 +71,7 @@ export function AppointmentsScreen() {
         {picker}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Button title="‹" variant="secondary" onPress={() => setOffset((o) => o - 1)} />
-          <Text style={{ color: t.text, fontWeight: '700', fontSize: 17 }}>{isToday ? 'Today' : formatDay(day)}</Text>
+          <Text style={[type.h3, { color: t.text }]}>{isToday ? 'Today' : formatDay(day)}</Text>
           <Button title="›" variant="secondary" onPress={() => setOffset((o) => o + 1)} />
         </View>
         {can(me, 'patient:search') && manage ? (

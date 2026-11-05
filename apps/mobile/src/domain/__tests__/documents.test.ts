@@ -1,6 +1,6 @@
 import type { ClinicalDocument, NoteTemplate } from '@/api/schemas';
 
-import { canReadAloud, currentDocuments, documentTitle, filledSections, notesFromTemplate, translationNote } from '../documents';
+import { canReadAloud, currentDocuments, documentTitle, filledSections, layoutForSpecialty, notesFromTemplate, translationNote } from '../documents';
 
 const template: NoteTemplate = {
   id: 't', name: 'Review', specialty: null, active: true, builtin: false,
@@ -57,5 +57,16 @@ describe('documents', () => {
     expect(translationNote(doc({ translation_status: 'NOT_AVAILABLE' }))).toMatch(/English/);
     expect(translationNote(doc({ translation_status: 'MACHINE_DRAFT' }))).toMatch(/check/);
     expect(translationNote(doc({}))).toBeNull();
+  });
+});
+
+describe('layoutForSpecialty', () => {
+  const neuro: NoteTemplate = { ...template, id: 'n', name: 'Neurosurgery consultation', specialty: 'Neurosurgery' };
+  it('suggests the layout made for the treating doctor\'s specialty and nothing else', () => {
+    expect(layoutForSpecialty([template, neuro], 'neurosurgery')).toBe(neuro);
+    expect(layoutForSpecialty([template, neuro], ' Neurosurgery ')).toBe(neuro);
+    expect(layoutForSpecialty([template, neuro], 'General Medicine')).toBeNull();
+    expect(layoutForSpecialty([template, neuro], null)).toBeNull();
+    expect(layoutForSpecialty([template], 'Neurosurgery')).toBeNull();
   });
 });

@@ -47,6 +47,10 @@ def main(argv: list[str]) -> int:
             print("No identifier needs an older key any more.")
             print("Retained audio is not re-encrypted; keep older keys listed while it exists.")
             return 0
+        if command == "demo-seed":
+            from app.demo_seed import run as seed_demo
+
+            return seed_demo(settings)
         if command == "seed":
             sync_reference_data(session)
             print("Reference data synced")
@@ -78,7 +82,10 @@ def main(argv: list[str]) -> int:
             session.commit()
             print("Platform administrator created")
             return 0
-    print("Usage: python -m app.cli [seed|create-platform-admin|purge-audio|run-job NAME]")
+    print(
+        "Usage: python -m app.cli "
+        "[seed|demo-seed|create-platform-admin|purge-audio|rotate-field-key|run-job NAME]"
+    )
     return 2
 
 

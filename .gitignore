@@ -25,3 +25,6 @@ npm-debug.log*
 # os / editor
 .DS_Store
 .idea/
+
+# local copies of the docker settings (may hold your API keys)
+infrastructure/*.local.env

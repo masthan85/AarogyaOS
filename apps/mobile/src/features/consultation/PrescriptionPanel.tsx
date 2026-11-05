@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { createPrescription, signPrescription, updatePrescription, voidPrescription, type RxItemInput } from '@/api/endpoints';
+import { createPrescription, getPrescriptionIntegrity, signPrescription, updatePrescription, voidPrescription, type RxItemInput } from '@/api/endpoints';
 import { type Prescription, type SafetyWarning, safetyWarningSchema } from '@/api/schemas';
 import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { itemsFromPrescription, parseNumber } from '@/domain/clinical';
 import { parseFrequency } from '@/domain/dosing';
 import { prescriptionHtml, type Letterhead } from '@/domain/print';
@@ -16,6 +16,21 @@ import type { EncounterData } from './useEncounterData';
 
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'TOPICAL', 'INHALED', 'SUBLINGUAL', 'OTHER'] as const;
 const BLANK = { medicine_name: '', strength: '', dose: '', route: 'ORAL', frequency: '', days: '', instructions: '' };
+
+/** Asks the server whether a signed prescription still matches what the doctor signed. */
+function SealCheck({ rxId }: { rxId: string }) {
+  const t = useTheme();
+  const [result, setResult] = useState<{ intact: boolean | null; message: string } | null>(null);
+  const check = useAction(() => getPrescriptionIntegrity(rxId), (r) => setResult(r));
+  return (
+    <View style={{ gap: space.xs }}>
+      <Button title="Check it is unaltered" variant="ghost" size="sm" loading={check.pending} onPress={() => void check.run()} />
+      {result ? (
+        <Text style={[type.small, { color: result.intact === false ? t.danger : result.intact ? t.success : t.textMuted, fontWeight: '600' }]}>{result.message}</Text>
+      ) : null}
+    </View>
+  );
+}
 
 export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; data: EncounterData; letterhead: Letterhead | null }) {
   const t = useTheme();
@@ -94,6 +109,7 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
                 onPress={() => { const h = prescriptionHtml(rx, letterhead); if (h) void print.run(h); }} />
             </View>
           ) : null}
+          {rx.status !== 'DRAFT' ? <SealCheck rxId={rx.id} /> : null}
           {rx.status === 'DRAFT' ? (
             <Button title="Edit draft" variant="secondary" onPress={() => { setItems(itemsFromPrescription(rx)); setEditing(rx.id); setPending(null); }} />
           ) : null}
@@ -136,7 +152,7 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
         <Button title="Add medicine to prescription" variant="secondary" disabled={!valid} onPress={addItem} />
         {editing ? <Button title="Stop editing" variant="secondary" onPress={() => { setEditing(null); setItems([]); }} /> : null}
         <Button title={editing ? `Save changes (${items.length})` : `Save draft (${items.length})`} disabled={items.length === 0} loading={save.pending} onPress={() => void save.run()} />
-        <Text style={{ color: t.textMuted, fontSize: 12 }}>
+        <Text style={[type.caption, { color: t.textMuted }]}>
           Only you can sign. Safety checks cover allergy name matches and duplicates only — interactions, contraindications and doses are not checked.
         </Text>
       </Card>

@@ -4,8 +4,8 @@ import { Alert, ScrollView, Text } from 'react-native';
 
 import { getResultsAwaitingReview, reviewResult } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
-import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
-import { space, useTheme } from '@/design-system/tokens';
+import { Button, Card, EmptyState, ErrorState, Lead, LoadingState, StatusChip } from '@/design-system/components';
+import { space, useTheme, type } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { describeValue, isCritical, reviewOrder } from '@/domain/worklists';
 
@@ -24,19 +24,19 @@ export function ResultsReviewScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
-      <Text style={{ color: t.textMuted }}>
+      <Lead>
         Results for investigations you ordered that you have not yet reviewed. Critical values come first. Marking a result reviewed is
         your confirmation that you have looked at it; it does not tell the patient anything.
-      </Text>
+      </Lead>
       <Button title="Cover while away" variant="secondary" onPress={() => router.push('/cover')} />
       {rows.length === 0 ? <EmptyState message="Nothing waiting for your review." /> : null}
       {rows.map((r) => (
         <Card key={r.id} title={r.test_name}>
-          <Text style={{ color: isCritical(r) ? t.danger : t.text, fontWeight: '700', fontSize: 18 }}>{describeValue(r)}</Text>
+          <Text style={[type.h2, { color: isCritical(r) ? t.danger : t.text }]}>{describeValue(r)}</Text>
           <StatusChip label={r.interpretation.replace('_', ' ').toLowerCase()} tone={isCritical(r) ? 'danger' : r.interpretation === 'NORMAL' ? 'success' : 'warning'} />
           {r.comment ? <Text style={{ color: t.textMuted }}>{r.comment}</Text> : null}
           {r.covering_for ? <StatusChip label={`Covering for ${r.covering_for}`} tone="ai" /> : null}
-          <Text style={{ color: t.textMuted, fontSize: 12 }}>Reported {formatDateTime(r.reported_at)}</Text>
+          <Text style={[type.caption, { color: t.textMuted }]}>Reported {formatDateTime(r.reported_at)}</Text>
           <Button title="Open patient" variant="secondary" onPress={() => router.push(`/patients/${r.patient_id}`)} />
           <Button title="Mark as reviewed" loading={review.isPending && review.variables === r.id} onPress={() => review.mutate(r.id)} />
         </Card>

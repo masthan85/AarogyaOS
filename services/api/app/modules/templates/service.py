@@ -54,9 +54,16 @@ class TemplateOut(BaseModel):
     builtin: bool
 
 
-def _builtin(key: str, name: str, sections: list[Section]) -> TemplateOut:
+def _builtin(
+    key: str, name: str, sections: list[Section], specialty: str | None = None
+) -> TemplateOut:
     return TemplateOut(
-        id=f"builtin:{key}", name=name, specialty=None, sections=sections, active=True, builtin=True
+        id=f"builtin:{key}",
+        name=name,
+        specialty=specialty,
+        sections=sections,
+        active=True,
+        builtin=True,
     )
 
 
@@ -70,6 +77,41 @@ BUILTIN: list[TemplateOut] = [
             Section(note_type="ASSESSMENT", title="Assessment", hint="Your clinical impression"),
             Section(note_type="PLAN", title="Plan", hint="What happens next"),
         ],
+    ),
+    _builtin(
+        "neurosurgery",
+        "Neurosurgery consultation",
+        [
+            Section(
+                note_type="HPI",
+                title="History of the problem",
+                hint="Onset, course, what led to it, what makes it better or worse",
+            ),
+            Section(note_type="PAST_HISTORY", title="Past medical and surgical history"),
+            Section(
+                note_type="EXAMINATION",
+                title="Consciousness and cranial nerves",
+                hint="Only what you examined",
+            ),
+            Section(
+                note_type="EXAMINATION",
+                title="Motor and sensory",
+                hint="Power, tone, sensation by side and level, as examined",
+            ),
+            Section(
+                note_type="EXAMINATION",
+                title="Reflexes, gait and spine",
+                hint="As examined",
+            ),
+            Section(
+                note_type="EXAMINATION",
+                title="Imaging and results reviewed",
+                hint="Name the study and what you saw",
+            ),
+            Section(note_type="ASSESSMENT", title="Assessment", hint="Your clinical impression"),
+            Section(note_type="PLAN", title="Plan", hint="Tests, treatment, follow-up"),
+        ],
+        specialty="Neurosurgery",
     ),
     _builtin(
         "follow-up",

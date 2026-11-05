@@ -14,8 +14,11 @@ from app.modules.clinical.models import (
     Allergy,
     ClinicalNote,
     Condition,
+    Immunisation,
     Observation,
     PatientMedication,
+    ProcedureRecord,
+    Referral,
 )
 
 # Sources a client may claim. DEVICE_RECORDED, LAB_RESULT and AI_EXTRACTED are set by the
@@ -28,6 +31,9 @@ KINDS: dict[str, type] = {
     "conditions": Condition,
     "allergies": Allergy,
     "medications": PatientMedication,
+    "procedures": ProcedureRecord,
+    "immunisations": Immunisation,
+    "referrals": Referral,
 }
 
 _NOT_COPIED = {

@@ -32,7 +32,7 @@ export class ApiClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(private readonly opts: Options) {
-    this.fetchImpl = opts.fetchImpl ?? fetch;
+    this.fetchImpl = opts.fetchImpl ?? ((input, init) => fetch(input, init)); // not a bare reference: browsers refuse a detached fetch
   }
 
   async request<S extends z.ZodType>(

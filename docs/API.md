@@ -132,3 +132,42 @@ While an arrangement is active, `GET /results/awaiting-review` for the covering 
 | `GET /patients/{id}/dispensings` | `prescription:read` | Newest first |
 
 Append-only (database trigger). Records the decision and who made it; there is no stock, brand or batch tracking and no interaction check.
+
+## Billing (migration 0011)
+
+| Method and path | Permission | Notes |
+|---|---|---|
+| `GET /billing/to-bill` | `billing:write` | Visits finished in the last 7 days with no invoice (a void one does not count): patient name, MRN, doctor, time. Nothing clinical |
+| `GET /invoices` | `billing:read` | `?status=DRAFT\|ISSUED\|VOID`, `?patient_id=`, `?unpaid=true` (issued with a balance) |
+| `POST /invoices` | `billing:write` | `{patient_id, encounter_id?}`; one live invoice per visit |
+| `GET /invoices/{id}` | `billing:read` | Lines, payments, `total_paise`, `paid_paise`, `balance_paise` |
+| `PUT /invoices/{id}/lines` | `billing:write` | Replaces the charges of a draft (up to 30; whole paise; quantity 1 to 999) |
+| `POST /invoices/{id}/issue` | `billing:write` | Needs a charge and a total above zero; assigns `INV-000001` style numbers per organisation and freezes the invoice |
+| `POST /invoices/{id}/payments` | `billing:write` | `{amount_paise, method: CASH\|UPI\|CARD\|OTHER, reference?}`; never more than the balance |
+| `POST /invoices/{id}/void` | `billing:write` | Discards a draft (returns `null`), or voids an issued invoice that has no payments. Refunds are not built |
+
+Roles: billing staff and reception read and write; administrators read; doctors, nurses, lab and pharmacy have no billing access. Billing staff see names, MRNs and amounts, never the clinical record.
+
+## Procedures, immunisations and referrals (migration 0012)
+All three are ordinary clinical facts: provenance, verification state, and corrections that add a new version.
+- `GET /patients/{id}/history` — current procedures, vaccines and referrals (`patient:clinical`).
+- `POST /encounters/{id}/procedures`, `PUT /procedures/{id}` — doctors (`procedure:record`). Date performed cannot be in the future.
+- `POST /encounters/{id}/immunisations`, `PUT /immunisations/{id}` — nurses and doctors (`immunisation:record`). A nurse's entry stays unverified until a doctor confirms it. The next dose must be due after this one.
+- `POST /encounters/{id}/referrals`, `PUT /referrals/{id}` — doctors (`referral:write`). Status: requested, accepted, completed, declined, cancelled. A closed referral cannot be changed; start a new one.
+- Confirm or reject with the existing `POST /clinical/{procedures|immunisations|referrals}/{id}/verify`.
+
+## Billing additions (migration 0013)
+- Lines take `tax_rate_bp` (1800 = 18%, 0 to 2800). Tax is worked out per line, rounded half up, and the invoice stores `tax_paise`, `total_paise` (tax included) and the seller's GSTIN as it was when issued. Payment methods now include `INSURER`.
+- `POST /invoices/{id}/credit-notes` `{amount_paise, reason}` — numbered CN-000001; cannot exceed what the invoice is still worth. `billing:adjust`.
+- `POST /invoices/{id}/refunds` `{amount_paise, method, reason}` — only up to `refund_due_paise` (paid minus refunded minus what is owed). `billing:adjust`.
+- An invoice with a payment or credit note cannot be voided: credit it in full and refund what was paid.
+- Invoice fields: `credited_paise`, `net_paise`, `refunded_paise`, `balance_paise` (still owed), `refund_due_paise`, `credit_notes`, `refunds`.
+- `GET/PUT /billing/settings` (GSTIN shape-checked, not verified against the GST portal; `billing:manage` to change).
+- `GET/POST /billing/prices`, `PUT /billing/prices/{id}` — price list; names unique ignoring case; hiding a service keeps old invoices intact. `billing:manage`.
+- `GET /billing/day?on=YYYY-MM-DD` — received, refunded and net by method for an India-time day; `POST /billing/day/close` `{business_date, counted_cash_paise, note}` records expected vs counted cash once per day (`billing:write`).
+- `GET/POST /invoices/{id}/claims`, `PUT /claims/{id}` — claim tracking only (submitted, approved, part approved, rejected, settled). Nothing is sent to an insurer. `billing:adjust`.
+
+## Seals and legal holds (migration 0014)
+- `GET /prescriptions/{id}/integrity` — `{sealed, intact, message}`. When a doctor signs, the server stores a keyed hash (HMAC-SHA256, keyed from the field encryption key) over who signed, when, and every line. The check recomputes it, so a change made directly in the database shows as "does not match". This is tamper evidence, **not** a legal digital signature: there is no certificate or eSign. Prescriptions signed before this release have no seal and report "cannot be checked". Rotating the key keeps old seals valid only while the previous key stays listed in `AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS`. `prescription:read`.
+- `POST /patients/{id}/legal-holds` `{reason}`, `POST /legal-holds/{id}/release` `{reason}`, `GET /legal-holds?patient_id=&all=` — administrators only (`legalhold:manage` / `legalhold:read`). While a hold is active the audio purge job skips that patient, even for expired retention or a withdrawn consent; releasing it lets the normal rules apply again. A hold can be released once and never edited or deleted. Both actions are audited with the reason.
+- FHIR document export now includes `Procedure`, `Immunization` and referral `ServiceRequest` resources (base R4, validated in tests) with their own Composition sections.

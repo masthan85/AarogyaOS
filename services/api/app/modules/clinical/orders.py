@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, date, datetime
 
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +9,7 @@ from app.core.context import Principal
 from app.core.errors import AppError, Conflict, Forbidden, NotFound
 from app.modules.audit.service import emit_event, record_audit
 from app.modules.clinical import reference_ranges as rr
+from app.modules.clinical import seal
 from app.modules.clinical.encounters import get_encounter, open_encounter, require_owner
 from app.modules.clinical.models import (
     FollowUp,
@@ -195,6 +197,7 @@ def sign_prescription(
     rx.status = "SIGNED"
     rx.signed_at = datetime.now(UTC)
     rx.signed_by = principal.user_id
+    rx.seal = seal.compute(rx, items)
     rx.safety_snapshot = {
         "warnings": [w.model_dump() for w in result.warnings],
         "acknowledged": sorted(set(acknowledged)),
@@ -575,3 +578,25 @@ def set_followup_status(
     )
     session.commit()
     return FollowUpOut.model_validate(fu)
+
+
+class IntegrityOut(BaseModel):
+    sealed: bool
+    intact: bool | None  # None when the prescription was signed before seals existed or is a draft
+    message: str
+
+
+def check_integrity(session: Session, rx_id: uuid.UUID) -> IntegrityOut:
+    rx = _get_rx(session, rx_id)
+    if rx.status == "DRAFT":
+        return IntegrityOut(sealed=False, intact=None, message="Drafts are not sealed.")
+    if not rx.seal:
+        return IntegrityOut(
+            sealed=False, intact=None, message="Signed before seals were added: cannot be checked."
+        )
+    ok = seal.matches(rx, _items(session, rx.id))
+    return IntegrityOut(
+        sealed=True,
+        intact=ok,
+        message="Matches what the doctor signed." if ok else "DOES NOT MATCH what was signed.",
+    )
