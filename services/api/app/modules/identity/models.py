@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, func, text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, func, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, TimestampMixin, new_uuid
@@ -53,9 +54,11 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(300))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     preferred_language: Mapped[str] = mapped_column(String(35), default="en-IN")
-    # MFA-ready: TOTP enrolment arrives later; the columns exist so tokens/flows can adapt.
+    # TOTP. The secret is stored encrypted; it is set at enrolment and only counts once confirmed.
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_secret: Mapped[str | None] = mapped_column(String(200))
+    mfa_last_step: Mapped[int | None] = mapped_column(BigInteger)  # newest accepted time step
+    mfa_recovery: Mapped[list[str]] = mapped_column(JSONB, default=list)  # sha256 of unused codes
     failed_login_count: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

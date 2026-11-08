@@ -19,7 +19,7 @@ from app.core.errors import AppError
 from app.modules.audit.service import emit_event, record_audit
 from app.modules.clinical.encounters import open_encounter, require_owner
 from app.modules.clinical.facts import current_filter, get_fact, provenance_for_new, supersede
-from app.modules.clinical.models import Immunisation, ProcedureRecord, Referral
+from app.modules.clinical.models import Encounter, Immunisation, ProcedureRecord, Referral
 from app.modules.clinical.schemas import ClientSource, FactOut
 
 router = APIRouter(tags=["clinical-history"])
@@ -229,6 +229,10 @@ def _correct(
     changes: dict[str, Any],
 ) -> Any:
     old: Any = get_fact(session, model, fact_id)
+    if kind in ("procedures", "referrals") and old.encounter_id is not None:
+        enc = session.get(Encounter, old.encounter_id)
+        if enc is not None:
+            require_owner(session, principal, enc)  # only the consultation's own doctor edits
     if not changes:
         raise AppError("Nothing to change")
     if kind == "referrals" and old.status in _CLOSED and old.status != changes.get("status"):

@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from app.core.context import Principal
 from app.core.deps import MetaDep, PrincipalDep, SettingsDep, SystemDb, TenantDb, require
 from app.core.ratelimit import limiter_of
-from app.modules.identity import service
+from app.modules.identity import mfa, service
+from app.modules.identity.models import User
 from app.modules.identity.schemas import (
     LoginRequest,
     MeResponse,
@@ -38,6 +39,7 @@ def login(
         organisation_slug=body.organisation_slug,
         email=body.email,
         password=body.password,
+        mfa_code=body.mfa_code,
     )
 
 
@@ -62,6 +64,54 @@ def me(principal: PrincipalDep) -> MeResponse:
         roles=sorted(principal.roles),
         permissions=sorted(principal.permissions),
     )
+
+
+def _me_row(db: TenantDb, principal: Principal) -> User:
+    user = db.get(User, principal.user_id)
+    assert user is not None
+    return user
+
+
+@auth_router.get("/mfa", response_model=mfa.MfaStatus)
+def mfa_status(db: TenantDb, principal: PrincipalDep) -> mfa.MfaStatus:
+    return mfa.status(_me_row(db, principal))
+
+
+@auth_router.post("/mfa/enroll", response_model=mfa.EnrolOut)
+def mfa_enrol(
+    db: TenantDb, principal: PrincipalDep, settings: SettingsDep, meta: MetaDep
+) -> mfa.EnrolOut:
+    return mfa.enrol(db, settings, meta, _me_row(db, principal))
+
+
+@auth_router.post("/mfa/confirm", response_model=mfa.ConfirmOut)
+def mfa_confirm(
+    body: mfa.CodeIn, db: TenantDb, principal: PrincipalDep, settings: SettingsDep, meta: MetaDep
+) -> mfa.ConfirmOut:
+    return mfa.confirm(db, settings, meta, _me_row(db, principal), body.code)
+
+
+@auth_router.post("/mfa/disable", status_code=204)
+def mfa_disable(
+    body: mfa.DisableIn,
+    db: TenantDb,
+    principal: PrincipalDep,
+    settings: SettingsDep,
+    meta: MetaDep,
+) -> Response:
+    mfa.disable(db, settings, meta, _me_row(db, principal), body.password, body.code)
+    return Response(status_code=204)
+
+
+@users_router.post("/users/{user_id}/mfa/reset", status_code=204)
+def mfa_reset(
+    user_id: uuid.UUID,
+    db: TenantDb,
+    meta: MetaDep,
+    principal: Annotated[Principal, Depends(require("user:manage"))],
+) -> Response:
+    mfa.admin_reset(db, meta, principal.user_id, db.get(User, user_id))
+    return Response(status_code=204)
 
 
 @users_router.get("/roles", response_model=list[RoleOut])

@@ -187,3 +187,18 @@ def test_metrics_report_when_each_job_last_succeeded(
         'aarogya_job_last_success_timestamp_seconds{job="purge-audio"}'
         in client.get("/metrics").text
     )
+
+
+def test_access_log_records_route_templates_not_record_ids(
+    client: TestClient, org_a: dict[str, str], caplog: pytest.LogCaptureFixture
+) -> None:
+    import logging
+    import uuid
+
+    pid = uuid.uuid4()
+    with caplog.at_level(logging.INFO, logger="aarogya.access"):
+        client.get(f"/api/v1/patients/{pid}", headers=org_a)
+    lines = [r for r in caplog.records if r.name == "aarogya.access"]
+    assert lines, "no access log line captured"
+    assert str(pid) not in repr([r.__dict__ for r in lines])
+    assert any(getattr(r, "route", "").endswith("/patients/{patient_id}") for r in lines)

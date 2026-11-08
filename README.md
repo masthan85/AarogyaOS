@@ -4,7 +4,7 @@ An AI-assisted clinical operating system for Indian clinics and hospitals. It fo
 
 AI supports clinicians; it never decides for them. It does not diagnose, prescribe, order, refer or discharge, and every workflow also works with AI, speech and the network providers switched off.
 
-> **Status: built and tested, not ready for real patients.** The whole workflow exists and is covered by 504 backend and 142 mobile automated tests, but the speech, language-model and microphone integrations have not been proven on real devices or real clinical audio, nothing has been deployed, and no clinical, legal or security review has taken place. [docs/12-FEATURE-STATUS.md](docs/12-FEATURE-STATUS.md) has the evidence for every claim and [docs/13-PRODUCT-BACKLOG.md](docs/13-PRODUCT-BACKLOG.md) lists what is left.
+> **Status: built and tested, not ready for real patients.** The whole workflow exists and is covered by 516 backend and 276 mobile automated tests, but the speech, language-model and microphone integrations have not been proven on real devices or real clinical audio, nothing has been deployed, and no clinical, legal or security review has taken place. [docs/12-FEATURE-STATUS.md](docs/12-FEATURE-STATUS.md) has the evidence for every claim and [docs/13-PRODUCT-BACKLOG.md](docs/13-PRODUCT-BACKLOG.md) lists what is left.
 
 ## What it does
 
@@ -14,7 +14,7 @@ AI supports clinicians; it never decides for them. It does not diagnose, prescri
 - **Clinical AI, optional:** extraction into a review queue where each proposed entry quotes the words it came from, rule-based and cited model suggestions, a reference library with two-person approval, and cited answers to questions about one patient's chart.
 - **Documents:** visit summaries and referral letters assembled by code, approved by the doctor, optionally translated and read aloud, shared or printed as PDF.
 - **Pharmacy and billing:** dispensing records; invoices with tax lines, payments, credit notes, refunds, a price list, claim tracking and an end-of-day cash count.
-- **Platform:** strict tenant isolation in PostgreSQL, backend-enforced roles, short-lived tokens with rotation, field encryption, an append-only audit log, a tamper-evident seal on signed prescriptions, legal holds, FHIR R4 export of a completed visit, metrics and scheduled jobs.
+- **Platform:** strict tenant isolation in PostgreSQL, backend-enforced roles, short-lived tokens with rotation, optional two-step sign-in, field encryption, an append-only audit log, a tamper-evident seal on signed prescriptions, legal holds, FHIR R4 export of a completed visit, metrics and scheduled jobs.
 
 ## How it fits together
 

@@ -145,8 +145,8 @@ Today the repository supports a development Docker Compose stack (Postgres with 
 | Roles, not care teams | Any clinician in the organisation can open any patient in it (all access audited); no facility or care-team scoping, no break-glass flow |
 | No idempotency keys or cursor pagination | Listed as conventions in the baseline, never implemented; lists are capped (for example 100 invoices) |
 | Optimistic concurrency | Implemented for patient updates only (`expected_version`) |
-| MFA | Columns exist; no enrolment or verification flow |
-| Request metadata in logs | Access logs contain raw paths with record ids; treat logs as sensitive |
+| MFA | Optional per-user TOTP with recovery codes; not required for any role, no QR enrolment |
+| Request metadata in logs | Access logs record route templates, not raw paths, so record ids stay out; keep logs in-region anyway |
 | Reference ranges | Placeholders that need clinical sign-off, including paediatric ranges |
 
 ## Risks carried from the baseline

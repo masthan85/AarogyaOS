@@ -14,8 +14,7 @@ numbers as a baseline for comparing changes, and the procedures as tested buildi
   Without a token it is open in development only. Keep it on the internal network anyway.
 - Series: `aarogya_http_requests_total{method,route,status}`, `aarogya_http_request_duration_seconds` (histogram),
   `aarogya_job_last_success_timestamp_seconds{job}`. Labels are **route templates** (`/patients/{patient_id}`):
-  no identifiers, names, query strings or bodies reach a monitoring system. (The access log does record the raw
-  path, which contains record ids; treat logs as sensitive and keep them in-region.)
+  no identifiers, names, query strings or bodies reach a monitoring system. (The access log records the same route templates under `route`, not raw paths; keep logs in-region regardless.)
 - Counters are per process; sum across workers/replicas.
 - Suggested alerts (starting points, tune with real traffic): 5xx rate > 1% for 5 min; p95 latency above your
   agreed target; `/ready` failing; any job's last success older than twice its schedule; 401/403 spikes.

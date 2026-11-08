@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from sarvamai import SarvamAI
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
-key = os.environ.get("SARVAM_API_KEY", "")
+key = os.environ.get("AAROGYA_SARVAM_API_KEY") or os.environ.get("SARVAM_API_KEY", "")
 if not key:
     sys.exit("SARVAM_API_KEY is not set. Put your key in .env at the repository root.")
 

@@ -20,7 +20,7 @@ type Status = 'booting' | 'locked' | 'offline' | 'signedOut' | 'signedIn';
 type AuthState = {
   status: Status;
   me: Me | null;
-  signIn: (input: { organisationSlug?: string; email: string; password: string }) => Promise<void>;
+  signIn: (input: { organisationSlug?: string; email: string; password: string; mfaCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   retryBoot: () => void;
 };
@@ -71,11 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [attempt]);
 
-  const signIn: AuthState['signIn'] = useCallback(async ({ organisationSlug, email, password }) => {
+  const signIn: AuthState['signIn'] = useCallback(async ({ organisationSlug, email, password, mfaCode }) => {
     const pair = await login({
       organisation_slug: organisationSlug || undefined,
       email,
       password,
+      mfa_code: mfaCode || undefined,
     });
     await secureTokenStore.save({ accessToken: pair.access_token, refreshToken: pair.refresh_token });
     setMe(await getMe());

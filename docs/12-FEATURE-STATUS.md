@@ -8,18 +8,20 @@ This is the evidence-based inventory of what exists. Status words are used stric
 - **Partial**: some of the intended behaviour exists; the gap is stated.
 - **Not built**: no code.
 
-"Tested" means backend tests in `services/api/tests` unless a mobile test is named. All 504 backend tests and 142 mobile tests passed on the last run (see `10-TESTING-GUIDE.md`). Mobile screens are compile-checked and linted by the type checker; unless stated, nobody has seen them on a physical device.
+"Tested" means backend tests in `services/api/tests` unless a mobile test is named. All backend and mobile tests passed on the last run (see `10-TESTING-GUIDE.md`). Mobile screens are compile-checked and linted by the type checker; unless stated, nobody has seen them on a physical device.
 
 ## Platform
 
 | Feature | Status | Evidence and limits |
 |---|---|---|
-| Login, refresh-token rotation with reuse detection, lockout, Argon2id | Working (tested) | `test_auth.py`. No MFA flow (columns only) |
+| Login, refresh-token rotation with reuse detection, lockout, Argon2id | Working (tested) | `test_auth.py` |
+| Two-step sign-in (authenticator app, recovery codes, replay guard, admin reset) | Working (tested) | `test_mfa.py`, including the RFC 6238 reference vector. Optional per user; not enforced by role; no QR code; mobile screens compile-checked and unit-tested for logic only |
 | Role-based permissions on every endpoint | Working (tested) | `test_permissions.py`, role matrices in most feature tests |
 | Tenant isolation with forced row-level security | Working (tested) | `test_tenant_isolation.py`, per-feature cross-tenant tests. Depends on a non-superuser database role |
 | Field encryption of identifiers, key rotation | Working (tested) | `test_crypto_and_normalise.py`, `test_key_rotation.py`. Tested on a development database only |
 | Audit log and event outbox without clinical text | Working (tested) | `test_audit_and_misc.py` and assertions in feature tests |
 | Health, readiness, metrics, security headers, size cap | Working (tested) | `test_operations.py` |
+| Contract check between the app's schemas and the API's response fields | Working (tested) | `contract.test.ts` and `test_contract.py` (field names only) |
 | Scheduled jobs with locking and ledger | Working (tested) | `test_operations.py`. No scheduler is shipped |
 | Rate limiting (login, search) | Partial | `test_ratelimit.py`. Per worker process only |
 | Encrypted backup and restore drill | Working (checked by hand) | Run against a development database; a tampered backup was rejected. Not automated |

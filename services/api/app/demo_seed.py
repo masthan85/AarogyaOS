@@ -6,6 +6,7 @@ patient. Every account uses the same published demo password, so this is for dev
 refuses to run in production. Nothing here is real: names, numbers and the patient are made up.
 """
 
+import logging
 import sys
 from typing import Any
 
@@ -77,6 +78,16 @@ def _ok(r: Any, what: str) -> Any:
 
 
 def run(settings: Settings) -> int:
+    logging.disable(
+        logging.INFO
+    )  # the seed drives the API in-process; keep its request log out of view
+    try:
+        return _run(settings)
+    finally:
+        logging.disable(logging.NOTSET)
+
+
+def _run(settings: Settings) -> int:
     if settings.environment == "production":
         print("Refusing to create demo accounts in production.")
         return 1

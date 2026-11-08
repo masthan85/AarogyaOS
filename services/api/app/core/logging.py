@@ -22,7 +22,7 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
             "correlation_id": correlation_id_var.get(),
         }
-        for key in ("method", "path", "status", "duration_ms"):
+        for key in ("method", "route", "status", "duration_ms"):
             if hasattr(record, key):
                 data[key] = getattr(record, key)
         if record.exc_info:
@@ -39,7 +39,11 @@ def configure_logging(level: str) -> None:
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    """Adds a correlation id and logs one line per request (path only, never query/body)."""
+    """Adds a correlation id and logs one line per request.
+
+    The route template is logged (`/patients/{patient_id}`), never the raw path, so record ids do
+    not end up in access logs. No query string or body either.
+    """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         cid = request.headers.get("x-request-id") or uuid.uuid4().hex
@@ -55,7 +59,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             "request",
             extra={
                 "method": request.method,
-                "path": request.url.path,
+                "route": getattr(request.scope.get("route"), "path", None) or "unmatched",
                 "status": response.status_code,
                 "duration_ms": round((time.perf_counter() - start) * 1000, 1),
             },

@@ -1,6 +1,6 @@
 # Database design
 
-The database is PostgreSQL 16. The schema is defined by SQLAlchemy models (one `models.py` per module under `services/api/app/modules`) and created by 14 Alembic migrations in `services/api/alembic/versions`. There are 67 tables. This document describes the conventions, groups the tables, lists the rules the database itself enforces, and records what each migration added. Table lists below were generated from the model metadata, not copied from older notes.
+The database is PostgreSQL 16. The schema is defined by SQLAlchemy models (one `models.py` per module under `services/api/app/modules`) and created by 15 Alembic migrations in `services/api/alembic/versions`. There are 67 tables. 15 Alembic migrations (0001 to 0015) create them. This document describes the conventions, groups the tables, lists the rules the database itself enforces, and records what each migration added. Table lists below were generated from the model metadata, not copied from older notes.
 
 ## Conventions
 
@@ -85,7 +85,7 @@ A PostgreSQL superuser can disable a trigger; the seal on signed prescriptions (
 
 ## Sensitive columns
 
-`patient_identifiers` stores ABHA numbers and similar identifiers as AES-256-GCM ciphertext with a key identifier prefix, with the patient and identifier type bound in as authenticated data, plus an HMAC blind index for equality lookup and a masked hint. Unmasking needs a specific permission and is audited. `refresh_tokens` stores hashes only. Audio is not in the database: `audio_assets` holds metadata and the storage key, which becomes null when the audio is deleted.
+`patient_identifiers` stores ABHA numbers and similar identifiers as AES-256-GCM ciphertext with a key identifier prefix, with the patient and identifier type bound in as authenticated data, plus an HMAC blind index for equality lookup and a masked hint. Unmasking needs a specific permission and is audited. `refresh_tokens` stores hashes only. `users.mfa_secret` holds the authenticator secret encrypted with the field key (the user id is bound in as authenticated data), and `users.mfa_recovery` holds SHA-256 hashes of unused recovery codes. Audio is not in the database: `audio_assets` holds metadata and the storage key, which becomes null when the audio is deleted.
 
 ## Migrations
 
@@ -105,6 +105,7 @@ A PostgreSQL superuser can disable a trigger; the seal on signed prescriptions (
 | 0012 | Procedures, immunisations, referrals as clinical facts |
 | 0013 | Tax columns, billing settings, price list, credit notes, refunds, cash closings, insurance claims |
 | 0014 | Prescription seal column; legal holds |
+| 0015 | Two-step sign-in: `users.mfa_last_step` (replay guard) and `users.mfa_recovery` (hashes of unused recovery codes) |
 
 Migrations are run once per release by a separate step, never on container start (ADR-0011), and `/ready` stays unhealthy until the database revision matches the code. Downgrades have not been exercised against populated databases; treat backups as the real rollback.
 

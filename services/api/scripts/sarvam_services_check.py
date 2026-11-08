@@ -24,7 +24,7 @@ from app.ai.sarvam import (  # noqa: E402
 )
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
-KEY = os.environ.get("SARVAM_API_KEY", "")
+KEY = os.environ.get("AAROGYA_SARVAM_API_KEY") or os.environ.get("SARVAM_API_KEY", "")
 SAMPLE = "Take one tablet twice a day for 5 days. Come back in 7 days."
 
 
