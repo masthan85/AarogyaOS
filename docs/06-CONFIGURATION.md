@@ -12,8 +12,9 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | `AAROGYA_DATABASE_URL` | `postgresql+psycopg://aarogya_app:aarogya_app@localhost:5432/aarogya` | SQLAlchemy URL. Must connect as a non-superuser role |
 | `AAROGYA_JWT_SECRET` | development constant | Signs access tokens. At least 32 random characters in production |
 | `AAROGYA_JWT_ALGORITHM` | `HS256` | Token signing algorithm |
-| `AAROGYA_FIELD_ENCRYPTION_KEY` | development constant | Base64 of 32 random bytes. Encrypts patient identifiers, keys their lookup index, and keys the prescription seal. Back it up |
+| `AAROGYA_FIELD_ENCRYPTION_KEY` | development constant | Base64 of 32 random bytes. Encrypts patient identifiers, keys their lookup index, and, unless `AAROGYA_SEAL_KEYS` is set, keys the prescription seal. Back it up |
 | `AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS` | empty | Comma-separated older keys, kept while data is re-encrypted after rotation and while old prescription seals must stay verifiable |
+| `AAROGYA_SEAL_KEYS` | empty | Optional dedicated keys for the prescription seal: base64 of 32 random bytes each, comma separated. The first signs new seals; all are accepted when checking, together with keys derived from the field encryption key, so existing seals keep verifying. Set it before rotating the field key if you want seals to survive the rotation |
 | `AAROGYA_ACCESS_TOKEN_MINUTES` | 15 | Access token lifetime, 1 to 60 |
 | `AAROGYA_REFRESH_TOKEN_DAYS` | 14 | Refresh token lifetime, 1 to 90 |
 | `AAROGYA_MAX_FAILED_LOGINS` | 5 | Failed attempts before an account locks (minimum 3) |

@@ -16,9 +16,16 @@ from app.core.config import get_settings
 
 
 def _keys() -> list[bytes]:
+    """Signing key first: dedicated seal keys (if set), then keys derived from the field key."""
     s = get_settings()
     raw = [s.field_encryption_key, *[k for k in s.field_encryption_previous_keys.split(",") if k]]
-    return [hashlib.sha256(f"aarogya-seal-v1:{k}".encode()).digest() for k in raw]
+    derived = [hashlib.sha256(f"aarogya-seal-v1:{k}".encode()).digest() for k in raw]
+    dedicated = [
+        hashlib.sha256(f"aarogya-seal-key:{k.strip()}".encode()).digest()
+        for k in s.seal_keys.split(",")
+        if k.strip()
+    ]
+    return [*dedicated, *derived]
 
 
 _ITEM_FIELDS = (

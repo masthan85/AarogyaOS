@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     field_encryption_key: str = _DEV_FIELD_KEY
     # Older keys, comma separated, kept only while data is re-encrypted after a rotation.
     field_encryption_previous_keys: str = ""
+    # Keys for the prescription seal: base64 of 32 random bytes each, comma separated; the first
+    # signs new seals and all are accepted when checking. Empty: derived from the field
+    # encryption key (the original behaviour), so rotating that key also affects seals.
+    seal_keys: str = ""
     access_token_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_days: int = Field(default=14, ge=1, le=90)
     max_failed_logins: int = Field(default=5, ge=3)

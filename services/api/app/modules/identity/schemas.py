@@ -8,6 +8,7 @@ class LoginRequest(BaseModel):
     organisation_slug: str | None = Field(default=None, max_length=60)
     email: EmailStr
     password: str = Field(max_length=200)
+    mfa_code: str | None = Field(default=None, max_length=20)
 
 
 class RefreshRequest(BaseModel):

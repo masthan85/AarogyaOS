@@ -3,6 +3,7 @@ import { ScrollView, Switch, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card } from '@/design-system/components';
+import { MfaCard } from '@/features/auth/MfaCard';
 import { space, useTheme } from '@/design-system/tokens';
 import {
   biometricsAvailable,
@@ -45,6 +46,7 @@ export function SettingsScreen() {
           <Switch value={enabled} disabled={!available} onValueChange={toggle} accessibilityLabel="Biometric unlock" />
         </View>
       </Card>
+      <MfaCard />
       <Button title="Sign out" variant="danger" onPress={signOut} />
     </ScrollView>
   );

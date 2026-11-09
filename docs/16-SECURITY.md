@@ -16,7 +16,7 @@ flowchart LR
 
 ## Authentication
 
-Passwords use Argon2id. Access tokens are short-lived JWTs (15 minutes by default) carrying user id, organisation id and session id. Refresh tokens are opaque, stored hashed, rotated on every use, and grouped in families; presenting a token that has already been rotated revokes the family. Accounts lock for 15 minutes after five failed attempts. Login is rate limited per client address. `mfa_enabled` and `mfa_secret` columns exist, but no multi-factor flow is built, and there is no federation with an identity provider (the token interface is kept neutral so one can be added). On the phone, tokens live in the platform secure store, and a biometric unlock can be required to open a stored session. Signing out clears the secure store and every cached query.
+Passwords use Argon2id. Access tokens are short-lived JWTs (15 minutes by default) carrying user id, organisation id and session id. Refresh tokens are opaque, stored hashed, rotated on every use, and grouped in families; presenting a token that has already been rotated revokes the family. Accounts lock for 15 minutes after five failed attempts. Login is rate limited per client address. Two-step sign-in with an authenticator app (TOTP) and recovery codes is available per user but not mandatory; there is no policy yet to require it for chosen roles, and there is no federation with an identity provider (the token interface is kept neutral so one can be added). On the phone, tokens live in the platform secure store, and a biometric unlock can be required to open a stored session. Signing out clears the secure store and every cached query.
 
 ## Authorisation
 
@@ -32,7 +32,7 @@ Transport security is expected to be provided in front of the API (TLS, WAF); in
 
 ## Integrity of the record
 
-Clinical facts, signed prescriptions, results, approved summaries, issued invoices, payments, credit notes, refunds, consents, transcripts and the audit log are protected by database triggers (listed in `08-DATABASE-DESIGN.md`), so a defect or a compromised application account cannot rewrite them. A signed prescription additionally carries a keyed-hash seal that exposes direct database edits made by someone who disabled the triggers. The seal is tamper evidence, not a digital signature with legal standing. Administrators can place a legal hold on a patient to stop the audio purge job.
+Clinical facts, signed prescriptions, results, approved summaries, issued invoices, payments, credit notes, refunds, consents, transcripts and the audit log are protected by database triggers (listed in `08-DATABASE-DESIGN.md`), so a defect or a compromised application account cannot rewrite them. A signed prescription additionally carries a keyed-hash seal that exposes direct database edits made by someone who disabled the triggers. The seal can have its own keys (`AAROGYA_SEAL_KEYS`), so rotating the field encryption key does not have to affect it. The seal is tamper evidence, not a digital signature with legal standing. Administrators can place a legal hold on a patient to stop the audio purge job.
 
 ## Consent, recording and audio
 
@@ -46,7 +46,7 @@ Model output is untrusted input. It is parsed strictly, validated against a sche
 
 ## Mobile application
 
-Tokens are in the secure store; response data is validated; lists that hold patient data are not cached after use (zero cache time) and the whole cache is cleared on sign-out, with a general 60-second cache time for other queries. The app holds no vendor keys; everything named `EXPO_PUBLIC_*` is public. Clinical writes are never queued offline. Not built: blocking screenshots on sensitive screens, an encrypted offline store (none is needed because nothing is stored offline), and any protection of the clipboard. The "copy visit as text" action deliberately puts clinical text on the clipboard so it can be pasted into another record system, which means other apps may read it (backlog B-17 and B-18).
+Tokens are in the secure store; response data is validated; lists that hold patient data are not cached after use (zero cache time) and the whole cache is cleared on sign-out, with a general 60-second cache time for other queries. The app holds no vendor keys; everything named `EXPO_PUBLIC_*` is public. Clinical writes are never queued offline. Not built: blocking screenshots on sensitive screens (B-17), and an encrypted offline store (none is needed because nothing is stored offline). The "copy visit as text" action deliberately puts clinical text on the clipboard so it can be pasted into another record system, which means other apps may read it; the app warns about this and clears the clipboard after a minute if it still holds exactly that text (the timer does not survive closing the app).
 
 ## Runtime hardening
 
@@ -69,15 +69,13 @@ Money is integers in paise. Issued invoices, payments, credit notes, refunds and
 | Gap | Impact | Backlog |
 |---|---|---|
 | No penetration test, threat model review or independent code review | Unknown vulnerabilities | A-07 |
-| No MFA flow | Weaker authentication for clinical users | A-20 |
+| Two-step sign-in exists but is optional and has no QR enrolment or role-based requirement | Weaker authentication where it is not turned on | A-20 (follow-up) |
 | No facility or care-team scoping, no break-glass | Any clinician in an organisation can open any of its patients (audited) | A-12 |
 | Per-process rate limits; patient search can enumerate by three-letter prefixes, twenty results at a time, limited only by the rate limit and the audit | Enumeration by an authorised user | A-10 |
 | No TLS, WAF or secret manager in the repository; nothing deployed | Production protections are all still to be built | A-06 |
 | Audio store is local disk; audio is not re-encrypted on key rotation | Retention is unsafe to enable in production | A-11, B-10 |
-| Access logs contain record ids in paths | Logs are sensitive | B-09 |
-| No screenshot blocking; clipboard holds clinical text after "copy visit" | Local leakage on the device | B-17, B-18 |
-| Seals are keyed from the field encryption key | Rotating without the old key breaks verification | B-13 |
-| Edits to procedures and referrals do not re-check encounter ownership | A colleague could alter an entry | B-14 |
+| No screenshot blocking; clipboard holds clinical text for up to a minute after "copy visit" | Local leakage on the device | B-17 |
+| Seals fall back to a key derived from the field encryption key unless `AAROGYA_SEAL_KEYS` is set | Rotating without the old key breaks verification of older seals | B-13 (set the dedicated key) |
 | No vulnerability disclosure process or security contact | Researchers have nowhere to report | B-19 |
 | `npm audit` reports findings in build tooling (none in the shipped bundle, per the last review) | Supply-chain hygiene | A-17 |
 | Database superusers can bypass triggers and row-level security | Restrict and monitor them; never use them for the application | A-06 |

@@ -313,7 +313,7 @@ export function InvoiceScreen() {
   const state = invoiceState(inv);
   const canWrite = can(me, 'billing:write');
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720, alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
       <View style={{ gap: space.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
           <Text style={[type.title, { color: t.text }]}>{inv.number ?? 'Draft invoice'}</Text>

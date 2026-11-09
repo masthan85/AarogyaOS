@@ -36,7 +36,8 @@ The package is `app`; code style is enforced by ruff (line length 100, rules E, 
 2. Add the route in the module's `router.py` with `Depends(require("area:action"))`. If the permission is new, add it to the catalogue in `modules/identity/permissions.py` with a description, then grant it to the right roles in the same file.
 3. If the router is new, include it in `app/main.py`.
 4. Test it: the happy path, the role matrix (who is refused), and cross-tenant access.
-5. Add it to `07-API-DOCUMENTATION.md` (the endpoint index is regenerated from the routers; the prose sections are written by hand).
+5. If you changed or added a response model, regenerate the field list the app is checked against: `cd services/api && PYTHONPATH=. python scripts/export_contract.py`, and commit `apps/mobile/src/api/contract.json`. A backend test fails if it is stale, and a mobile test fails if a schema in `src/api/schemas.ts` requires a field the API does not return.
+6. Add it to `07-API-DOCUMENTATION.md` (the endpoint index is regenerated from the routers; the prose sections are written by hand).
 
 ### Add a table or column
 

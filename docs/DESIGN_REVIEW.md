@@ -42,3 +42,20 @@ Looked at in light and dark: sign-in, home (doctor and administrator), patients,
 - No icons: the project has no icon library. Meaning is carried by words, position and colour together. Adding icons is a dependency decision for later.
 - Not checked on a phone, with large system fonts, with a screen reader, or in Telugu, Hindi or other long scripts. Text sizes use fixed points and some rows may need to wrap differently.
 - The new look is a proposal: show it to a doctor and a receptionist before settling on it.
+
+## Third pass: whole-app review, performance and fixes
+
+Method: the real screens were rendered in a headless browser against a demo clinic for six roles (doctor, nurse-facing consultation tabs, billing, administrator, reception, pharmacist and lab), at phone width in light and dark and at 1000 px wide, with every console error and failed API call recorded. As before this is a browser rendering of the React Native screens, not a phone. No console errors and no failed API calls appeared in any role.
+
+Found and fixed:
+- **Boot could hang on "Starting AarogyaOS…"** if the secure store or biometric prompt threw while the app started. The boot now falls back to the retry screen. It does not skip the biometric lock.
+- **Transcript view re-rendered every line every second** while recording (a once-a-second timer and a transcript poll that always replaced state). Lines are now memoised with stable callbacks and the poll keeps old state when nothing changed, which matters in a long consultation.
+- **The staff screen** offered a loud "Deactivate account" button on every row, including your own. The button is now quieter and hidden for your own account.
+- **Home tiles:** doctors and billing staff saw a Facilities tile they cannot use. It now needs facility management rights.
+- **Procedure date** was an empty field with a made-up example; it is prefilled with today's date like the vaccine form.
+- **Prescription route chips** read "iv", "im", "sc" in lower case. They now read IV, IM, SC.
+- **Wide screens:** the billing forms stretched edge to edge. They are now capped at a readable width.
+
+Performance of the API (local, demo data, median of five): most screens' requests take 10 to 20 ms and 6 to 13 database queries, of which about five are the per-request sign-in and permission lookup. Login takes about 80 ms because of password hashing, which is intended. Two real problems were fixed: the invoice list ran about 600 queries for 100 invoices and now runs 11 (26 ms); the staff list ran a query per person and now runs one for all roles.
+
+Not done or not checked: nothing was run on a phone, so touch feel, fonts, keyboard behaviour and safe areas are unchecked; the web bundle is 2.4 MB (the Android bundle size was not measured); lists use plain scroll views, which is fine for clinic-sized data but would need virtualised lists for very long ones; the per-request permission lookup (about five queries) could be cached if load ever requires it.

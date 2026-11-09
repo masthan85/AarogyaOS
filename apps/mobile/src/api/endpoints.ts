@@ -81,7 +81,7 @@ export const api = new ApiClient({
   onSessionExpired: () => sessionExpiredListener(),
 });
 
-export const login = (body: { organisation_slug?: string; email: string; password: string }) =>
+export const login = (body: { organisation_slug?: string; email: string; password: string; mfa_code?: string }) =>
   api.request('/auth/login', tokenPairSchema, { method: 'POST', body, auth: false });
 
 export const logout = (refreshToken: string) =>
@@ -505,3 +505,12 @@ export const holdSchema = z.object({ id: z.string(), patient_id: z.string(), rea
 export const getHolds = (patientId: string) => api.request(`/legal-holds?patient_id=${patientId}`, z.array(holdSchema));
 export const placeHold = (patientId: string, reason: string) => api.request(`/patients/${patientId}/legal-holds`, holdSchema, { method: 'POST', body: { reason } });
 export const releaseHold = (id: string, reason: string) => api.request(`/legal-holds/${id}/release`, holdSchema, { method: 'POST', body: { reason } });
+
+export const mfaStatusSchema = z.object({ enabled: z.boolean(), recovery_codes_remaining: z.number() });
+export const getMfaStatus = () => api.request('/auth/mfa', mfaStatusSchema);
+export const startMfaEnrolment = () =>
+  api.request('/auth/mfa/enroll', z.object({ secret: z.string(), otpauth_uri: z.string() }), { method: 'POST', body: {} });
+export const confirmMfa = (code: string) =>
+  api.request('/auth/mfa/confirm', z.object({ recovery_codes: z.array(z.string()) }), { method: 'POST', body: { code } });
+export const disableMfa = (body: { password: string; code: string }) =>
+  api.request('/auth/mfa/disable', z.undefined(), { method: 'POST', body });

@@ -47,7 +47,7 @@ def provider(name: str) -> LLMProvider:
         from app.ai.sarvam import SarvamLLMProvider
 
         return SarvamLLMProvider(
-            os.environ["SARVAM_API_KEY"],
+            os.environ.get("AAROGYA_SARVAM_API_KEY") or os.environ["SARVAM_API_KEY"],
             model=os.environ.get("AAROGYA_SARVAM_LLM_MODEL", "sarvam-105b"),
         )
     if name == "self_hosted":

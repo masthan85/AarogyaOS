@@ -20,7 +20,7 @@ type Status = 'booting' | 'locked' | 'offline' | 'signedOut' | 'signedIn';
 type AuthState = {
   status: Status;
   me: Me | null;
-  signIn: (input: { organisationSlug?: string; email: string; password: string }) => Promise<void>;
+  signIn: (input: { organisationSlug?: string; email: string; password: string; mfaCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   retryBoot: () => void;
 };
@@ -46,13 +46,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const tokens = await secureTokenStore.load();
-      if (cancelled) return;
-      if (!tokens) return setStatus('signedOut');
-      if (await isBiometricUnlockEnabled()) {
-        const ok = await promptBiometricUnlock();
+      try {
+        const tokens = await secureTokenStore.load();
         if (cancelled) return;
-        if (!ok) return setStatus('locked');
+        if (!tokens) return setStatus('signedOut');
+        if (await isBiometricUnlockEnabled()) {
+          const ok = await promptBiometricUnlock();
+          if (cancelled) return;
+          if (!ok) return setStatus('locked');
+        }
+      } catch {
+        // The device store or the biometric prompt failed. Never leave the app on the splash screen:
+        // show the retry state instead. The lock is not bypassed, since we do not continue.
+        if (!cancelled) setStatus('offline');
+        return;
       }
       try {
         const profile = await getMe();
@@ -71,11 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [attempt]);
 
-  const signIn: AuthState['signIn'] = useCallback(async ({ organisationSlug, email, password }) => {
+  const signIn: AuthState['signIn'] = useCallback(async ({ organisationSlug, email, password, mfaCode }) => {
     const pair = await login({
       organisation_slug: organisationSlug || undefined,
       email,
       password,
+      mfa_code: mfaCode || undefined,
     });
     await secureTokenStore.save({ accessToken: pair.access_token, refreshToken: pair.refresh_token });
     setMe(await getMe());

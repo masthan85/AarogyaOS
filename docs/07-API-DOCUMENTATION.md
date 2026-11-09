@@ -4,7 +4,7 @@ The API is a REST service over JSON with one WebSocket. Base path `/api/v1`. The
 
 ## Conventions
 
-Authentication is a bearer access token from `POST /auth/login` (body: `organisation_slug`, `email`, `password`), renewed with `POST /auth/refresh` (the refresh token rotates on every use). `GET /auth/me` returns the user, roles and permissions, which the mobile app uses to decide which screens to show. Every endpoint except the auth, language-catalogue and health routes needs a valid token, and nearly all declare a permission that the server checks.
+Authentication is a bearer access token from `POST /auth/login` (body: `organisation_slug`, `email`, `password`, and `mfa_code` once two-step sign-in is on), renewed with `POST /auth/refresh` (the refresh token rotates on every use). `GET /auth/me` returns the user, roles and permissions, which the mobile app uses to decide which screens to show. Every endpoint except the auth, language-catalogue and health routes needs a valid token, and nearly all declare a permission that the server checks.
 
 Errors follow a problem-details shape: `{type, title, status, detail, correlation_id}`. Every response carries `X-Request-ID`; send one to correlate client and server logs. FHIR endpoints return OperationOutcome errors instead. Identifiers are UUIDs. Money is always an integer number of paise. Lists are capped rather than paginated; there are no idempotency keys, and optimistic concurrency (`expected_version`, 409 when stale) exists only for patient updates.
 
@@ -307,12 +307,17 @@ Generated from the router files; the permission column shows the permission decl
 | POST | `/auth/refresh` | - |
 | POST | `/auth/logout` | - |
 | GET | `/auth/me` | - |
+| GET | `/auth/mfa` | - |
+| POST | `/auth/mfa/enroll` | - |
+| POST | `/auth/mfa/confirm` | - |
+| POST | `/auth/mfa/disable` | - |
 | GET | `/roles` | role:read |
 | GET | `/users` | user:read |
 | POST | `/users` | user:manage |
 | GET | `/users/{user_id}` | user:read |
 | PUT | `/users/{user_id}/roles` | user:manage |
 | POST | `/users/{user_id}/deactivate` | user:manage |
+| POST | `/users/{user_id}/mfa/reset` | user:manage |
 
 ### Recording sessions and transcripts
 
@@ -427,3 +432,12 @@ Generated from the router files; the permission column shows the permission decl
 | PATCH | `/facilities/{facility_id}` | facility:manage |
 | GET | `/departments` | department:read |
 | POST | `/departments` | department:manage |
+
+## Two-step sign-in (migration 0015)
+Authenticator-app TOTP (RFC 6238: SHA-1, six digits, 30 seconds, one step either side allowed) with eight single-use recovery codes.
+- `GET /auth/mfa` returns `{enabled, recovery_codes_remaining}`.
+- `POST /auth/mfa/enroll` returns a new `secret` and an `otpauth_uri`. The secret is stored encrypted but does not count until confirmed. Calling it again before confirming replaces the secret.
+- `POST /auth/mfa/confirm` `{code}` switches it on and returns the recovery codes once; only their hashes are kept.
+- `POST /auth/mfa/disable` `{password, code}` needs the password and a current code or a recovery code.
+- `POST /auth/login` for a user with it on answers 401 with error title `mfa_required` until `mfa_code` is supplied; a wrong code gives `invalid_mfa_code` and counts towards the account lockout. A code is accepted once (the newest accepted time step is stored, so a replay fails).
+- `POST /users/{id}/mfa/reset` (`user:manage`) clears a colleague's second factor after a lost phone and lost recovery codes. It is audited as `MFA_RESET_BY_ADMIN`.

@@ -26,6 +26,8 @@ Entries marked "reproduced" were hit while validating this documentation; the re
 
 **A new table's tests see leftover rows.** Add the table to `TENANT_TABLES` in `tests/conftest.py`.
 
+**The mobile contract test fails (`API contract`), or the backend `test_contract` test fails.** A response field changed. If the app's zod schema requires a field the API no longer returns, fix the schema or the API. If you changed an API response on purpose, regenerate the field list with `cd services/api && PYTHONPATH=. python scripts/export_contract.py` and commit `apps/mobile/src/api/contract.json`.
+
 **Mobile tests fail after changing an API shape.** Update the zod schema in `apps/mobile/src/api/schemas.ts` and the fixtures that build typed objects, such as the invoice in `print.test.ts`.
 
 ## Using the app
@@ -42,7 +44,9 @@ Entries marked "reproduced" were hit while validating this documentation; the re
 
 **429 responses.** The login or patient-search limit was reached (60 a minute by default). Behind a proxy that hides client addresses all users share one login bucket; configure the proxy to pass the real address.
 
-**An account is locked.** Five failed logins lock an account for 15 minutes (`AAROGYA_MAX_FAILED_LOGINS`, `AAROGYA_LOCKOUT_MINUTES`).
+**An account is locked.** Five failed logins lock an account for 15 minutes (`AAROGYA_MAX_FAILED_LOGINS`, `AAROGYA_LOCKOUT_MINUTES`). Wrong two-step codes count as failed logins.
+
+**Sign-in asks for a code and the phone is lost.** Use one of the eight recovery codes (each works once). If those are gone too, an administrator with `user:manage` can clear the second factor with `POST /users/{id}/mfa/reset`; the person then signs in with the password alone and can set it up again. A code that was just used is refused for the rest of its 30 seconds, so wait for the next one. Codes depend on the phone's clock being right.
 
 **A signed prescription's check says "cannot be checked" or "does not match".** "Cannot be checked" means it was signed before seals existed (migration 0014). "Does not match" means the stored prescription differs from what was signed, or the field encryption key changed without the old one in `AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS`. Restore the old key to the list before treating it as tampering.
 

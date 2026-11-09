@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { ApiError } from '@/api/client';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, TextField } from '@/design-system/components';
+import { needsSecondFactor, tidyCode, wrongSecondFactor } from '@/domain/mfa';
 import { radius, space, type, useTheme } from '@/design-system/tokens';
 
 const formSchema = z.object({
@@ -21,6 +22,8 @@ export function LoginScreen() {
   const t = useTheme();
   const { signIn } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [askForCode, setAskForCode] = useState(false);
+  const [code, setCode] = useState('');
   const {
     control,
     handleSubmit,
@@ -33,9 +36,13 @@ export function LoginScreen() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await signIn(values);
+      await signIn({ ...values, mfaCode: askForCode ? tidyCode(code) : undefined });
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) setFormError('Email, password or organisation is incorrect.');
+      if (needsSecondFactor(err)) {
+        setAskForCode(true);
+        setFormError('Enter the 6-digit code from your authenticator app, or one of your recovery codes.');
+      } else if (wrongSecondFactor(err)) setFormError('That code is not right. Check the time on your phone, or use a recovery code.');
+      else if (err instanceof ApiError && err.status === 401) setFormError('Email, password or organisation is incorrect.');
       else if (err instanceof ApiError) setFormError(err.message);
       else setFormError('Cannot reach the server. Check your connection and try again.');
     }
@@ -105,6 +112,10 @@ export function LoginScreen() {
                 />
               )}
             />
+            {askForCode ? (
+              <TextField label="Verification code" keyboardType="default" autoCapitalize="none" autoCorrect={false}
+                autoComplete="one-time-code" textContentType="oneTimeCode" value={code} onChangeText={setCode} />
+            ) : null}
             {formError ? (
               <Text accessibilityRole="alert" style={[type.small, { color: t.danger }]}>
                 {formError}

@@ -38,13 +38,13 @@ export function HistoryPanel({ encId, patientId }: { encId: string; patientId: s
   const refresh = () => void history.refetch();
 
   const [procName, setProcName] = useState('');
-  const [procDate, setProcDate] = useState('');
+  const [procDate, setProcDate] = useState(isoToday());
   const [procSite, setProcSite] = useState('');
   const [procOutcome, setProcOutcome] = useState('');
   const procError = dateProblem(procDate, true);
   const saveProc = useAction(
     () => addProcedure(encId, { display: procName.trim(), performed_on: parseDate(procDate) ?? '', body_site: procSite.trim() || undefined, outcome: procOutcome.trim() || undefined }),
-    () => { setProcName(''); setProcDate(''); setProcSite(''); setProcOutcome(''); refresh(); },
+    () => { setProcName(''); setProcDate(isoToday()); setProcSite(''); setProcOutcome(''); refresh(); },
   );
 
   const [vaccine, setVaccine] = useState('');
@@ -95,7 +95,7 @@ export function HistoryPanel({ encId, patientId }: { encId: string; patientId: s
       {isDoctor ? (
         <Card title="Add a procedure">
           <TextField label="Procedure" value={procName} onChangeText={setProcName} />
-          <TextField label="Date performed" value={procDate} onChangeText={setProcDate} placeholder="04/11/2026" error={procDate ? procError : undefined} />
+          <TextField label="Date performed" value={procDate} onChangeText={setProcDate} error={procDate ? procError : undefined} />
           <TextField label="Body site (optional)" value={procSite} onChangeText={setProcSite} />
           <TextField label="Outcome (optional)" value={procOutcome} onChangeText={setProcOutcome} />
           <Button title="Save procedure" disabled={procName.trim().length < 2 || !!procError} loading={saveProc.pending} onPress={() => void saveProc.run()} />

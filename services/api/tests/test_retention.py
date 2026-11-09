@@ -100,3 +100,31 @@ def test_holds_are_private_to_the_organisation(client: TestClient, v: Visit, org
         {"reason": "Court notice 12/2026"},
     )
     assert get(client, org_b, "/legal-holds").json() == []
+
+
+def test_a_dedicated_seal_key_survives_field_key_rotation(
+    client: TestClient, v: Visit, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.core.config import get_settings
+    from app.modules.clinical import seal
+
+    rx = signed_rx(client, v)  # sealed with the key derived from the field key
+    settings = get_settings()
+    monkeypatch.setattr(settings, "seal_keys", "c2VhbC1rZXktb25lLTMyLWJ5dGVzLXh4eHh4eHh4eHg=")
+    assert seal._keys()[0] != seal._keys()[-1]
+    # Old seal still verifies because derived keys remain accepted...
+    assert get(client, v.doctor, f"/prescriptions/{rx['id']}/integrity").json()["intact"] is True
+    # ...and a new prescription is signed with the dedicated key and verifies too.
+    second = signed_rx(client, v)
+    assert (
+        get(client, v.doctor, f"/prescriptions/{second['id']}/integrity").json()["intact"] is True
+    )
+    # Rotate the field key without listing the old one: the dedicated-key seal still holds,
+    # the legacy one no longer does.
+    monkeypatch.setattr(
+        settings, "field_encryption_key", "b3RoZXIta2V5LXRoYXQtaXMtMzItYnl0ZXMteHh4eHg="
+    )
+    assert (
+        get(client, v.doctor, f"/prescriptions/{second['id']}/integrity").json()["intact"] is True
+    )
+    assert get(client, v.doctor, f"/prescriptions/{rx['id']}/integrity").json()["intact"] is False

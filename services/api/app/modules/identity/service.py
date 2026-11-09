@@ -17,6 +17,7 @@ from app.core.security import (
     verify_password,
 )
 from app.modules.audit.service import record_audit
+from app.modules.identity import mfa
 from app.modules.identity.models import RefreshToken, Role, RolePermission, User, UserRole
 from app.modules.identity.schemas import TokenPair, UserOut
 from app.modules.tenancy.models import Organisation
@@ -57,6 +58,7 @@ def login(
     organisation_slug: str | None,
     email: str,
     password: str,
+    mfa_code: str | None = None,
 ) -> TokenPair:
     org_id: uuid.UUID | None = None
     if organisation_slug:
@@ -113,6 +115,28 @@ def login(
         )
         session.commit()
         raise Unauthorized(_BAD_CREDENTIALS)
+
+    if user.mfa_enabled:
+        if not mfa_code:
+            raise Unauthorized("Enter the code from your authenticator app", code="mfa_required")
+        if not mfa.accept_login_code(session, settings, meta, user, mfa_code):
+            user.failed_login_count += 1
+            if user.failed_login_count >= settings.max_failed_logins:
+                user.locked_until = now + timedelta(minutes=settings.lockout_minutes)
+                user.failed_login_count = 0
+            record_audit(
+                session,
+                meta,
+                org_id=org_id,
+                actor_user_id=user.id,
+                action="LOGIN_FAILED",
+                resource_type="user",
+                resource_id=user.id,
+                outcome="DENIED",
+                reason="mfa",
+            )
+            session.commit()
+            raise Unauthorized("That code is not right", code="invalid_mfa_code")
 
     user.failed_login_count = 0
     user.locked_until = None
@@ -265,14 +289,29 @@ def create_user(
 
 
 def list_users(session: Session, principal: Principal, limit: int, offset: int) -> list[UserOut]:
-    users = session.scalars(
-        select(User)
-        .where(User.organisation_id == principal.org_id)
-        .order_by(User.full_name)
-        .limit(limit)
-        .offset(offset)
+    users = list(
+        session.scalars(
+            select(User)
+            .where(User.organisation_id == principal.org_id)
+            .order_by(User.full_name)
+            .limit(limit)
+            .offset(offset)
+        )
     )
-    return [_out(session, u) for u in users]
+    # One query for everyone's roles instead of one per user.
+    keys: dict[uuid.UUID, list[str]] = {u.id: [] for u in users}
+    for user_id, key in session.execute(
+        select(UserRole.user_id, Role.key)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(UserRole.user_id.in_(keys))
+    ):
+        keys[user_id].append(key)
+    result = []
+    for u in users:
+        row = UserOut.model_validate(u)
+        row.roles = sorted(keys[u.id])
+        result.append(row)
+    return result
 
 
 def _get_user(session: Session, principal: Principal, user_id: uuid.UUID) -> User:

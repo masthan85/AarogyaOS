@@ -74,7 +74,7 @@ AarogyaOS/
     app/speech/           speech provider interface, Sarvam and development providers, live hub
     app/ai/               language model providers, prompts, guardrails, extraction
     alembic/versions/     14 migrations (0001 to 0014)
-    tests/                38 test modules, 504 tests
+    tests/                40 test modules, 516 tests
     scripts/              live checks, smoke test and load test
   infrastructure/         Docker Compose, Postgres role init, backup and restore-drill scripts
   docs/                   this documentation, decision records and design screenshots

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
@@ -14,6 +13,7 @@ import { space, useTheme } from '@/design-system/tokens';
 
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
+import { copyThenClear } from '@/services/clipboard';
 
 export function FinishPanel({ encId, data, onOpenAssist }: { encId: string; data: EncounterData; onOpenAssist?: () => void }) {
   const t = useTheme();
@@ -63,7 +63,7 @@ export function FinishPanel({ encId, data, onOpenAssist }: { encId: string; data
             is sent anywhere, and what you paste is outside this app's protection.
           </Text>
           <Button title="Copy visit as text" variant="secondary" onPress={() => {
-            void Clipboard.setStringAsync(visitText(d, patientLine)).then(() => Alert.alert('Copied', 'Paste it into the other system. Clear your clipboard afterwards if the phone is shared.'));
+            void copyThenClear(visitText(d, patientLine)).then(() => Alert.alert('Copied', 'Paste it into the other system now. Other apps can read the clipboard, so it is cleared in a minute (not if you close the app first).'));
           }} />
         </Card>
       ) : null}

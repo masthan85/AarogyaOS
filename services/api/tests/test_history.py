@@ -151,3 +151,28 @@ def test_a_nurse_cannot_confirm_her_own_vaccine_entry(client: TestClient, v: Vis
         ]
         == "UNVERIFIED"
     )
+
+
+def test_only_the_consultation_doctor_edits_a_procedure_or_referral(
+    client: TestClient, v: Visit, org_a: H
+) -> None:
+    from tests.helpers import make_practitioner
+
+    proc = post(
+        client, v.doctor, f"/encounters/{v.enc_id}/procedures",
+        {"display": "Dressing", "performed_on": "2026-11-01"},
+    ).json()  # fmt: skip
+    ref = post(
+        client, v.doctor, f"/encounters/{v.enc_id}/referrals",
+        {"to_specialty": "Cardiology", "reason": "Chest pain on exertion"},
+    ).json()  # fmt: skip
+    other, _ = make_practitioner(
+        client, org_a, "alpha-clinic", v.facility, email="second@alpha-clinic.example.com"
+    )
+    assert (
+        put(client, other, f"/procedures/{proc['id']}", {"outcome": "Changed"}).status_code == 403
+    )
+    assert put(client, other, f"/referrals/{ref['id']}", {"status": "CANCELLED"}).status_code == 403
+    assert (
+        put(client, v.doctor, f"/procedures/{proc['id']}", {"outcome": "Healed"}).status_code == 200
+    )
