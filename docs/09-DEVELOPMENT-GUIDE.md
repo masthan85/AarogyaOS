@@ -59,7 +59,7 @@ Speech providers implement the interface in `app/speech/provider.py` and registe
 
 Routes are files under `src/app` (Expo Router). Screens live in `src/features/<area>`. Put anything that can be tested without React into `src/domain` and give it a test in `src/domain/__tests__`. API access goes through `src/api`: add a zod schema in `schemas.ts` and a function in `endpoints.ts`; responses that do not match the schema fail visibly. The `@/` alias maps to `src`. Use the design-system tokens and components rather than ad hoc styles, and state failures in plain language. Lists that contain patient data use a zero cache time so they do not linger in memory.
 
-Expo changes quickly. `apps/mobile/AGENTS.md` asks contributors, human or automated, to check the Expo documentation for the installed SDK (currently 57) before using an Expo API, instead of relying on memory.
+Expo changes quickly. `apps/mobile/AGENTS.md` asks contributors, human or automated, to check the Expo documentation for the installed SDK (currently 58) before using an Expo API, instead of relying on memory.
 
 ## Checks before you push
 

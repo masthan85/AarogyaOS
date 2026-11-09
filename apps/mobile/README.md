@@ -21,6 +21,6 @@ CI=1 npx expo export --platform android --output-dir /tmp/export
 
 ## Layout
 
-`src/app` routes (Expo Router), `src/features` screens by area, `src/domain` pure logic with tests, `src/api` typed client with zod schemas, `src/design-system` tokens and components, `src/services` device services (secure token store, biometrics, printing, audio capture). Expo SDK 57 is installed; `AGENTS.md` asks contributors to check the SDK documentation before using an Expo API.
+`src/app` routes (Expo Router), `src/features` screens by area, `src/domain` pure logic with tests, `src/api` typed client with zod schemas, `src/design-system` tokens and components, `src/services` device services (secure token store, biometrics, printing, audio capture). Expo SDK 58 is installed; `AGENTS.md` asks contributors to check the SDK documentation before using an Expo API.
 
 Setup details are in `docs/05-INSTALLATION-SETUP.md`, conventions in `docs/09-DEVELOPMENT-GUIDE.md` and configuration in `docs/06-CONFIGURATION.md`.
