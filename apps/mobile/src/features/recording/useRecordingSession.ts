@@ -247,8 +247,9 @@ export function useRecordingSession(opts: Options) {
           lastSeq.current = t.last_seq;
           setSegments((cur) => mergeSegments(cur, t.segments));
         }
-        setSpeakers(t.speakers);
-        setPartial(t.partial);
+        // Keep the old object when nothing changed, so a quiet second does not re-render the screen.
+        setSpeakers((cur) => (JSON.stringify(cur) === JSON.stringify(t.speakers) ? cur : t.speakers));
+        setPartial((cur) => (JSON.stringify(cur) === JSON.stringify(t.partial) ? cur : t.partial));
         if (t.status === 'ENDED' && phaseRef.current !== 'ended') {
           const final = await getInteraction(id);
           if (cancelled) return;

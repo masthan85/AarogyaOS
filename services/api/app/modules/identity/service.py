@@ -289,14 +289,29 @@ def create_user(
 
 
 def list_users(session: Session, principal: Principal, limit: int, offset: int) -> list[UserOut]:
-    users = session.scalars(
-        select(User)
-        .where(User.organisation_id == principal.org_id)
-        .order_by(User.full_name)
-        .limit(limit)
-        .offset(offset)
+    users = list(
+        session.scalars(
+            select(User)
+            .where(User.organisation_id == principal.org_id)
+            .order_by(User.full_name)
+            .limit(limit)
+            .offset(offset)
+        )
     )
-    return [_out(session, u) for u in users]
+    # One query for everyone's roles instead of one per user.
+    keys: dict[uuid.UUID, list[str]] = {u.id: [] for u in users}
+    for user_id, key in session.execute(
+        select(UserRole.user_id, Role.key)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(UserRole.user_id.in_(keys))
+    ):
+        keys[user_id].append(key)
+    result = []
+    for u in users:
+        row = UserOut.model_validate(u)
+        row.roles = sorted(keys[u.id])
+        result.append(row)
+    return result
 
 
 def _get_user(session: Session, principal: Principal, user_id: uuid.UUID) -> User:

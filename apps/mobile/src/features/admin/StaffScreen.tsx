@@ -7,6 +7,7 @@ import type { PractitionerFull, StaffUser } from '@/api/schemas';
 import { Button, Card, ChoiceChips, EmptyState, LoadingState, MultiChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
 import { describeHours, emailProblem, hoursFor, isDoctorUser, passwordProblem, timeProblem, WEEKDAYS } from '@/domain/admin';
+import { useAuth } from '@/auth/AuthProvider';
 import { roleLabel } from '@/domain/permissions';
 import { useAction } from '@/features/consultation/useAction';
 
@@ -54,6 +55,7 @@ export function StaffScreen() {
 
 function UserCard({ user, profile, onChanged }: { user: StaffUser; profile?: PractitionerFull; onChanged: () => void }) {
   const t = useTheme();
+  const { me } = useAuth();
   const deactivate = useAction(() => deactivateUser(user.id), onChanged);
   return (
     <Card>
@@ -64,8 +66,8 @@ function UserCard({ user, profile, onChanged }: { user: StaffUser; profile?: Pra
       </View>
       <Text style={{ color: t.textMuted }}>{user.email}</Text>
       {isDoctorUser(user) ? <DoctorProfile user={user} profile={profile} onChanged={onChanged} /> : null}
-      {user.is_active ? (
-        <Button title="Deactivate account" variant="secondary" loading={deactivate.pending}
+      {user.is_active && user.id !== me?.id ? (
+        <Button title="Deactivate account" variant="ghost" size="sm" loading={deactivate.pending}
           onPress={() => Alert.alert('Deactivate this account?', `${user.full_name} will be signed out and unable to sign in.`, [
             { text: 'Keep', style: 'cancel' }, { text: 'Deactivate', style: 'destructive', onPress: () => void deactivate.run() }])} />
       ) : null}

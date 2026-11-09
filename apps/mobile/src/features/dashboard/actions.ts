@@ -29,7 +29,7 @@ export const DASHBOARD_ACTIONS: DashboardAction[] = [
   { key: 'follow-ups', title: 'Follow-ups', description: 'Due to be seen again', group: 'clinical', permission: 'followup:read', href: '/follow-ups' },
   { key: 'lab', title: 'Orders and results', description: 'Enter lab and radiology results', group: 'clinical', permission: 'result:enter', href: '/lab' },
   { key: 'pharmacy', title: 'Pharmacy', description: 'Signed prescriptions', group: 'clinical', permission: 'prescription:read', href: '/pharmacy' },
-  { key: 'facilities', title: 'Facilities', description: 'Sites and departments', group: 'manage', permission: 'facility:read', href: '/facilities' },
+  { key: 'facilities', title: 'Facilities', description: 'Sites and departments', group: 'manage', permission: 'facility:manage', href: '/facilities' },
   { key: 'admin', title: 'Administration', description: 'Settings, staff, library, audit', group: 'manage', permission: 'user:read', href: '/admin' },
 ];
 

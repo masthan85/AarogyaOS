@@ -46,13 +46,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const tokens = await secureTokenStore.load();
-      if (cancelled) return;
-      if (!tokens) return setStatus('signedOut');
-      if (await isBiometricUnlockEnabled()) {
-        const ok = await promptBiometricUnlock();
+      try {
+        const tokens = await secureTokenStore.load();
         if (cancelled) return;
-        if (!ok) return setStatus('locked');
+        if (!tokens) return setStatus('signedOut');
+        if (await isBiometricUnlockEnabled()) {
+          const ok = await promptBiometricUnlock();
+          if (cancelled) return;
+          if (!ok) return setStatus('locked');
+        }
+      } catch {
+        // The device store or the biometric prompt failed. Never leave the app on the splash screen:
+        // show the retry state instead. The lock is not bypassed, since we do not continue.
+        if (!cancelled) setStatus('offline');
+        return;
       }
       try {
         const profile = await getMe();

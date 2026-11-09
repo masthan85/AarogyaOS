@@ -201,30 +201,56 @@ def _paid(session: Session, invoice_id: uuid.UUID) -> int:
 
 
 def out(session: Session, inv: Invoice) -> InvoiceOut:
-    patient = session.get(Patient, inv.patient_id)
-    assert patient is not None
-    lines = _lines(session, inv.id)
-    payments = list(
-        session.scalars(
-            select(Payment).where(Payment.invoice_id == inv.id).order_by(Payment.received_at)
+    return out_many(session, [inv])[0]
+
+
+def out_many(session: Session, invoices: list[Invoice]) -> list[InvoiceOut]:
+    """Builds invoices for a whole list with one query per kind of row, not five per invoice."""
+    if not invoices:
+        return []
+    ids = [i.id for i in invoices]
+    patients = {
+        p.id: p
+        for p in session.scalars(
+            select(Patient).where(Patient.id.in_({i.patient_id for i in invoices}))
         )
-    )
+    }
+
+    def grouped(model: Any, order: Any) -> dict[uuid.UUID, list[Any]]:
+        out_: dict[uuid.UUID, list[Any]] = {i: [] for i in ids}
+        for row in session.scalars(select(model).where(model.invoice_id.in_(ids)).order_by(order)):
+            out_[row.invoice_id].append(row)
+        return out_
+
+    lines = grouped(InvoiceLine, InvoiceLine.position)
+    payments = grouped(Payment, Payment.received_at)
+    notes = grouped(CreditNote, CreditNote.created_at)
+    refunds = grouped(Refund, Refund.refunded_at)
+    return [
+        _assemble(
+            inv,
+            patients[inv.patient_id],
+            lines[inv.id],
+            payments[inv.id],
+            notes[inv.id],
+            refunds[inv.id],
+        )
+        for inv in invoices
+    ]
+
+
+def _assemble(
+    inv: Invoice,
+    patient: Patient,
+    lines: list[Any],
+    payments: list[Any],
+    notes: list[Any],
+    refunds: list[Any],
+) -> InvoiceOut:
     tax, draft_total = totals(lines)
     total = draft_total if inv.status == "DRAFT" else inv.total_paise
     tax = tax if inv.status == "DRAFT" else inv.tax_paise
     paid = sum(p.amount_paise for p in payments)
-    notes = list(
-        session.scalars(
-            select(CreditNote)
-            .where(CreditNote.invoice_id == inv.id)
-            .order_by(CreditNote.created_at)
-        )
-    )
-    refunds = list(
-        session.scalars(
-            select(Refund).where(Refund.invoice_id == inv.id).order_by(Refund.refunded_at)
-        )
-    )
     credited = sum(n.amount_paise for n in notes)
     refunded = sum(r.amount_paise for r in refunds)
     net = total - credited
@@ -456,10 +482,8 @@ def list_invoices(
         stmt = stmt.where(Invoice.status == status)
     if patient_id:
         stmt = stmt.where(Invoice.patient_id == patient_id)
-    if not unpaid:
-        return [out(session, i) for i in session.scalars(stmt)]
-    rows = (out(session, i) for i in session.scalars(stmt))
-    return [r for r in rows if r.balance_paise > 0][:100]
+    rows = out_many(session, list(session.scalars(stmt)))
+    return [r for r in rows if r.balance_paise > 0][:100] if unpaid else rows
 
 
 def to_bill(session: Session, *, days: int = 7) -> list[ToBillOut]:

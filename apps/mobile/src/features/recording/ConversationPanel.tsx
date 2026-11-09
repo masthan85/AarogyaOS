@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
 
 import { getPatientConsents } from '@/api/endpoints';
@@ -62,7 +62,7 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
       {rec.segments.length === 0 && !rec.partial ? (
         <Text style={{ color: t.textMuted }}>{idle ? 'No recording yet.' : 'Listening… nothing transcribed yet.'}</Text>
       ) : null}
-      {rec.segments.map((s) => <Bubble key={s.id} s={s} rec={rec} />)}
+      {rec.segments.map((s) => <Bubble key={s.id} s={s} onAssign={rec.assignRole} onCorrect={rec.correctLine} />)}
       {rec.partial ? (
         <View style={{ padding: space.sm, borderRadius: radius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border }}>
           <Text style={[type.caption, { color: t.textMuted }]}>Listening · not saved</Text>
@@ -79,7 +79,17 @@ export function ConversationPanel({ rec, patientId, closed, ai, onAiChange }: {
   );
 }
 
-function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
+type BubbleProps = {
+  s: Segment;
+  onAssign: RecordingSession['assignRole'];
+  onCorrect: RecordingSession['correctLine'];
+};
+
+/**
+ * One transcript line. Memoised, and given only stable callbacks, so the once-a-second recording timer
+ * and transcript polling do not re-render every line of a long consultation.
+ */
+const Bubble = memo(function Bubble({ s, onAssign, onCorrect }: BubbleProps) {
   const t = useTheme();
   const [editing, setEditing] = useState(false);
   const [fixing, setFixing] = useState(false);
@@ -114,8 +124,8 @@ function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
         <View style={{ gap: space.sm }}>
           <TextField label="What was actually said" value={draft} onChangeText={setDraft} multiline />
           <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
-            <Button title="Save correction" disabled={!draft.trim()} onPress={() => void rec.correctLine(s.id, draft.trim()).then((ok) => ok && setFixing(false))} />
-            {corrected ? <Button title="Undo correction" variant="secondary" onPress={() => void rec.correctLine(s.id, null).then((ok) => ok && setFixing(false))} /> : null}
+            <Button title="Save correction" disabled={!draft.trim()} onPress={() => void onCorrect(s.id, draft.trim()).then((ok) => ok && setFixing(false))} />
+            {corrected ? <Button title="Undo correction" variant="secondary" onPress={() => void onCorrect(s.id, null).then((ok) => ok && setFixing(false))} /> : null}
             <Button title="Cancel" variant="secondary" onPress={() => setFixing(false)} />
           </View>
         </View>
@@ -127,8 +137,8 @@ function Bubble({ s, rec }: { s: Segment; rec: RecordingSession }) {
       {editing && s.speaker_id ? (
         <ChoiceChips label="Who is speaking?" value={role as (typeof ROLE_OPTIONS)[number]}
           options={ROLE_OPTIONS.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
-          onChange={(r) => { void rec.assignRole(s.speaker_id as string, r); setEditing(false); }} />
+          onChange={(r) => { void onAssign(s.speaker_id as string, r); setEditing(false); }} />
       ) : null}
     </View>
   );
-}
+});

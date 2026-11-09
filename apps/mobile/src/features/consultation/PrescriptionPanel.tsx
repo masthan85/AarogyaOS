@@ -15,6 +15,9 @@ import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
 
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'TOPICAL', 'INHALED', 'SUBLINGUAL', 'OTHER'] as const;
+const ROUTE_LABELS: Record<(typeof ROUTES)[number], string> = {
+  ORAL: 'Oral', IV: 'IV', IM: 'IM', SC: 'SC', TOPICAL: 'Topical', INHALED: 'Inhaled', SUBLINGUAL: 'Sublingual', OTHER: 'Other',
+};
 const BLANK = { medicine_name: '', strength: '', dose: '', route: 'ORAL', frequency: '', days: '', instructions: '' };
 
 /** Asks the server whether a signed prescription still matches what the doctor signed. */
@@ -134,7 +137,7 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
           <View style={{ flex: 1 }}><TextField label="Strength" placeholder="500 mg" value={f.strength} onChangeText={(v) => setF({ ...f, strength: v })} /></View>
           <View style={{ flex: 1 }}><TextField label="Dose" placeholder="1 tablet" value={f.dose} onChangeText={(v) => setF({ ...f, dose: v })} /></View>
         </View>
-        <ChoiceChips label="Route" value={f.route} onChange={(v) => setF({ ...f, route: v })} options={ROUTES.map((r) => ({ value: r, label: r.toLowerCase() }))} />
+        <ChoiceChips label="Route" value={f.route} onChange={(v) => setF({ ...f, route: v })} options={ROUTES.map((r) => ({ value: r, label: ROUTE_LABELS[r] }))} />
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <View style={{ flex: 2 }}><TextField label="How often" placeholder="twice daily" value={f.frequency} onChangeText={(v) => setF({ ...f, frequency: v })} /></View>
           <View style={{ flex: 1 }}><TextField label="Days" keyboardType="number-pad" value={f.days} onChangeText={(v) => setF({ ...f, days: v })} /></View>

@@ -76,7 +76,7 @@ export function BillingScreen() {
   return (
     <View style={{ flex: 1 }}>
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
-      <ScrollView contentContainerStyle={{ padding: space.md, gap: space.sm }}>
+      <ScrollView contentContainerStyle={{ padding: space.md, gap: space.sm, width: '100%', maxWidth: 720, alignSelf: 'center' }}>
         {tab === 'tobill' ? (
           <>
             <Lead>Visits finished in the last 7 days with no invoice yet.</Lead>
