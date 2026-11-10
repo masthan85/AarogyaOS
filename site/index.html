@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AarogyaOS: the doctor's note, drafted from the conversation</title>
+  <meta name="description" content="A clinic system for Indian clinics and hospitals. With the patient's consent it drafts a consultation note from the conversation. The doctor accepts, edits or rejects every line.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0A4F53">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230A4F53'/%3E%3Cpath d='M9 23 16 8l7 15M11.5 18h9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>document.documentElement.classList.add("js")</script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the content</a>
+
+  <header class="topbar" id="top">
+    <div class="wrap topbar__inner">
+      <a class="brand" href="#top" aria-label="AarogyaOS, back to the top">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span>AarogyaOS</span>
+      </a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav id="site-nav" class="nav" aria-label="Main">
+        <a href="#visit">How a visit works</a>
+        <a href="#safety">Safety</a>
+        <a href="#status">Status</a>
+        <a class="btn btn--small" href="#contact">Request a walkthrough</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <h1 id="hero-title">The doctor's note, drafted from the conversation. Decided by the doctor.</h1>
+          <p class="lead">AarogyaOS is a clinic system for Indian clinics and hospitals. With the patient's consent it listens to a consultation and proposes a note. Every line shows the words it came from, and nothing is saved to the record until a doctor accepts it.</p>
+          <div class="actions">
+            <a class="btn btn--light" href="#contact">Request a walkthrough</a>
+            <a class="btn btn--ghost-light" href="#visit">See how a visit works</a>
+          </div>
+          <p class="hero__note">Early and carefully tested, not yet used with real patients. <a href="#status">Where we are</a></p>
+        </div>
+        <figure class="phone phone--hero">
+          <picture>
+            <source srcset="assets/img/draft-top-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="assets/img/draft-top-light.webp" width="780" height="1500" alt="The Draft medical record screen on a phone: a purple panel says nothing is part of the record until the doctor accepts it, with a count of lines still waiting, and the first heading, Reason for visit, offers Accept, Edit and Reject.">
+          </picture>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="visit" aria-labelledby="visit-title">
+      <div class="wrap">
+        <h2 id="visit-title">One visit, from consent to invoice</h2>
+        <p class="section__lead">Everything below is a real screen from the app, shown with an invented demo patient.</p>
+        <ol class="steps">
+          <li class="step">
+            <span class="step__num" aria-hidden="true">1</span>
+            <figure class="phone phone--small">
+              <picture>
+                <source srcset="assets/img/consent-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="assets/img/consent-light.webp" width="780" height="1500" loading="lazy" alt="The consent screen: who is giving consent, how it was given, and a separate Patient agrees button for each purpose, such as medical care.">
+              </picture>
+            </figure>
+            <h3>Consent comes first</h3>
+            <p>Each purpose is its own decision, read to the patient in their language. Nothing is recorded without it, and withdrawing takes effect straight away.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">2</span>
+            <figure class="phone phone--small">
+              <picture>
+                <source srcset="assets/img/conversation-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="assets/img/conversation-light.webp" width="780" height="1500" loading="lazy" alt="The Conversation tab: transcript lines labelled doctor or patient, each with a language tag and a link to correct the line.">
+              </picture>
+            </figure>
+            <h3>The doctor talks to the patient</h3>
+            <p>Recording starts only when the doctor presses Start, for an identified patient. The transcript keeps what was heard, and staff can correct a line without losing the original.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">3</span>
+            <figure class="phone phone--small">
+              <picture>
+                <source srcset="assets/img/draft-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="assets/img/draft-light.webp" width="780" height="1500" loading="lazy" alt="Draft medical record lines such as Numbness of the foot, each with the patient's own words in quotation marks and Accept, Edit and Reject buttons.">
+              </picture>
+            </figure>
+            <h3>The note is drafted, not decided</h3>
+            <p>The assistant proposes entries laid out like a clinic note. The doctor accepts, edits or rejects each one.</p>
+          </li>
+          <li class="step">
+            <span class="step__num" aria-hidden="true">4</span>
+            <figure class="phone phone--small">
+              <picture>
+                <source srcset="assets/img/invoice-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="assets/img/invoice-light.webp" width="780" height="1500" loading="lazy" alt="An invoice, INV-000001, with two charges, a total of 651 rupees, 300 rupees received by UPI and 351 rupees still due.">
+              </picture>
+            </figure>
+            <h3>Then the invoice</h3>
+            <p>Billing staff see a finished visit by name and amount only, never the clinical notes. Invoices are numbered, frozen once issued, and can take part payments.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="review" aria-labelledby="review-title">
+      <div class="wrap split">
+        <div class="split__copy">
+          <h2 id="review-title">The review step is where the doctor stays in charge</h2>
+          <p>Software output sits next to the record, never inside it. Each proposed line carries the exact words it came from, so the doctor can check it in a glance.</p>
+          <dl class="legend">
+            <div>
+              <dt><span class="chip chip--ai">Suggested</span></dt>
+              <dd>Purple always means software proposed this and no person has decided yet.</dd>
+            </div>
+            <div>
+              <dt><span class="chip chip--warn">Patient denies</span></dt>
+              <dd>Negations stay negations. "I have no fever" is kept as no fever, with a prompt to check the quote.</dd>
+            </div>
+            <div>
+              <dt><span class="chip chip--ok">Confirmed</span></dt>
+              <dd>Green means a clinician accepted it. Only then does it become part of the record, marked as software-assisted and confirmed by the doctor.</dd>
+            </div>
+          </dl>
+          <p>Questions asked by the doctor are not turned into findings, and uncertain wording such as "maybe a fever" stays uncertain.</p>
+        </div>
+        <figure class="phone">
+          <picture>
+            <source srcset="assets/img/draft-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="assets/img/draft-light.webp" width="780" height="1500" loading="lazy" alt="Draft lines including No fever, tagged Patient denies with a prompt to check the quote, and Numbness of the foot, each quoting the patient and offering Accept, Edit and Reject.">
+          </picture>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="manual" aria-labelledby="manual-title">
+      <div class="wrap narrow">
+        <h2 id="manual-title">Built so the software can be switched off</h2>
+        <p class="section__lead">AarogyaOS never diagnoses, prescribes, orders, refers or discharges. It also never depends on AI to keep a clinic running.</p>
+        <ul class="plain">
+          <li><strong>Every screen works by hand.</strong> With AI, speech and the network providers off, a visit is still recorded, prescribed and billed.</li>
+          <li><strong>Orders and prescriptions stay with the doctor.</strong> If the assistant suggests a test, accepting it creates a draft that the doctor must still place.</li>
+          <li><strong>Letters and summaries are assembled from recorded facts,</strong> then edited and approved by the doctor. A language model is not asked to write them.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="safety" aria-labelledby="safety-title">
+      <div class="wrap">
+        <h2 id="safety-title">Safety and privacy by design</h2>
+        <ul class="facts">
+          <li>
+            <h3>Consent that means something</h3>
+            <p>Eight separate purposes, none implying another: care, recording, transcription, AI processing, keeping audio, and more. Guardians can consent for minors, and withdrawal is effective at once.</p>
+          </li>
+          <li>
+            <h3>Each clinic's data stays its own</h3>
+            <p>The database itself refuses to show one organisation another's records, in addition to the checks in the application.</p>
+          </li>
+          <li>
+            <h3>A record that does not get rewritten</h3>
+            <p>Corrections add a new version. Signed prescriptions, issued invoices and the audit trail are protected from change, and the audit trail records who did what without storing clinical text.</p>
+          </li>
+          <li>
+            <h3>Tamper evidence on prescriptions</h3>
+            <p>A signed prescription is sealed, so an edit made behind the app's back is detectable. This is tamper evidence, not a legally recognised digital signature.</p>
+          </li>
+        </ul>
+        <p class="aside">Access is role based and enforced on the server. Two-step sign-in with an authenticator app is available. The project's security document lists the controls in detail, including what is still missing.</p>
+      </div>
+    </section>
+
+    <section class="section" id="clinic" aria-labelledby="clinic-title">
+      <div class="wrap split split--table">
+        <div class="split__copy">
+          <h2 id="clinic-title">The whole clinic, with each person seeing only what they need</h2>
+          <p>One patient identity runs from the front desk to follow-up, so there is no re-keying between systems.</p>
+        </div>
+        <table class="roles">
+          <caption class="sr-only">What each role works with</caption>
+          <thead><tr><th scope="col">Role</th><th scope="col">Works with</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Doctor</th><td>Consultation, note, tests, prescription, sign-off</td></tr>
+            <tr><th scope="row">Nurse</th><td>Triage, vitals, allergies, vaccines</td></tr>
+            <tr><th scope="row">Reception</th><td>Registration, queue, check-in, consent</td></tr>
+            <tr><th scope="row">Billing</th><td>Invoices, payments, refunds, price list. No clinical notes</td></tr>
+            <tr><th scope="row">Pharmacy</th><td>Signed prescriptions and dispensing</td></tr>
+            <tr><th scope="row">Lab and imaging</th><td>Their own department's orders and results</td></tr>
+            <tr><th scope="row">Administrator</th><td>Staff, settings, audit log. No patient records</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="languages" aria-labelledby="lang-title">
+      <div class="wrap narrow">
+        <h2 id="lang-title">Made for conversations that switch languages</h2>
+        <p>Clinic conversations often move between a regional language and English medical terms. The transcript records the language of each utterance, and any mix, as data. Patients are registered with their preferred language, and a visit summary can be translated for the patient, then checked by the doctor before it is approved.</p>
+        <p><strong>What we can and cannot say yet.</strong> Speech runs through a replaceable provider layer, and the Sarvam adapter is built. It has been tried once with a short English clip. We have not yet measured accuracy on Indian languages, code-mixed speech or drug names, and we will not claim any until we have.</p>
+      </div>
+    </section>
+
+    <section class="section" id="status" aria-labelledby="status-title">
+      <div class="wrap">
+        <h2 id="status-title">Where we are, honestly</h2>
+        <p class="section__lead">AarogyaOS is built and tested, and not yet ready for real patients. This is the current state.</p>
+        <table class="status">
+          <caption class="sr-only">Project status by area</caption>
+          <thead><tr><th scope="col">Area</th><th scope="col">State</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Whole workflow, front desk to billing</th><td><span class="chip chip--ok">Built and tested</span> Automated tests cover the API and the app's logic.</td></tr>
+            <tr><th scope="row">Phones and the microphone</th><td><span class="chip chip--warn">Not yet proven</span> The app has been rendered in a browser, but the real microphone has never run on a device.</td></tr>
+            <tr><th scope="row">Speech and language models</th><td><span class="chip chip--warn">Early</span> Providers are connected and tried once. Accuracy on real clinical audio is unmeasured.</td></tr>
+            <tr><th scope="row">Drug interaction and dose checks</th><td><span class="chip chip--warn">Not built</span> Allergy matching is by name only. A licensed drug database is needed.</td></tr>
+            <tr><th scope="row">ABDM and medical coding</th><td><span class="chip chip--warn">Not built</span> The FHIR export is plain R4, not ABDM profiles.</td></tr>
+            <tr><th scope="row">Hosting</th><td><span class="chip chip--warn">Not deployed</span> A Docker setup exists for trying it out.</td></tr>
+            <tr><th scope="row">Clinical, legal and security review</th><td><span class="chip chip--warn">Not done</span> Consent wording, safety log and security still need independent review.</td></tr>
+          </tbody>
+        </table>
+        <p class="aside">The full list, with priorities, is in the project's feature status and product backlog documents.</p>
+      </div>
+    </section>
+
+    <section class="cta" id="contact" aria-labelledby="contact-title">
+      <div class="wrap cta__inner">
+        <div>
+          <h2 id="contact-title">See it with your own clinic in mind</h2>
+          <p>Ask for a walkthrough on a demo clinic with invented patients. We will show the whole visit and tell you plainly what is not finished.</p>
+        </div>
+        <!-- PLACEHOLDER: replace hello@your-domain.example with the real contact address before publishing. -->
+        <a class="btn btn--light" data-placeholder href="mailto:hello@your-domain.example?subject=AarogyaOS%20walkthrough">Request a walkthrough</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <p class="footer__brand"><span class="brand__mark" aria-hidden="true">A</span> AarogyaOS</p>
+      <p>Early and carefully tested; not yet used with real patients. Screens shown use invented demo data.</p>
+      <p>Contact: <a data-placeholder href="mailto:hello@your-domain.example">hello@your-domain.example</a> <span class="footer__flag">(placeholder, replace before publishing)</span></p>
+    </div>
+  </footer>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

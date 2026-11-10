@@ -49,10 +49,12 @@ Radius: 8 (inputs, chips), 12 (cards), 16 (phone frame and large panels), 999 (p
 
 ## Components
 
+- On the hero and call-to-action bands the primary button inverts: `--hero-text` fill with `--hero` text, and the secondary has a `--hero-muted` border, because teal on teal has no contrast.
 - Primary button: `--primary` fill, `--primary-text`, 48 px high, radius 12, weight 700. Hover darkens 8 percent, focus shows a 3 px outline in `--primary` offset by 3 px, disabled is 45 percent opacity.
 - Secondary button: transparent with a 1.5 px `--primary` border and `--primary` text. Quiet button: text only, underlined on hover.
 - Links: `--primary`, underlined; visited keeps the same colour.
-- Cards: `--surface`, 1 px `--border`, radius 12, padding 24. Never more than two card styles on a page.
+- Cards: `--surface`, 1 px `--border`, radius 12, padding 24, used sparingly (the product screens and tables). Lists of principles are ruled lists (a 2 px top rule, a heading and a paragraph), not rows of identical cards.
+- Step markers: numbered circles are used only for the visit walkthrough, because that content really is a sequence. They sit above the phone, never on it.
 - Chips: pill shape, soft background with matching strong text and a word (for example "Suggested", "Confirmed"), never colour alone.
 - Navigation: a plain top bar with the wordmark, three anchor links and one primary button; it collapses to a menu button under 640 px.
 - Footer: `--hero` band, plain links, the honest status line.
