@@ -32,6 +32,8 @@ Entries marked "reproduced" were hit while validating this documentation; the re
 
 ## Using the app
 
+**Expo Go says "Project is incompatible with this version of Expo Go".** The SDK of the project and of Expo Go differ. iPhones can only run the latest Expo Go, so the project follows the latest SDK (58 at the time of writing). When a newer SDK appears, upgrade the project (`npm install expo@<new>`, set the other packages to the versions in `node_modules/expo/bundledNativeModules.json`, then type-check, test and export) before updating Expo Go. On Android you can install an older Expo Go from expo.dev/go.
+
 **The app cannot reach the API.** Check `EXPO_PUBLIC_API_URL`. An Android emulator reaches the host at `10.0.2.2`; a physical phone needs the computer's network address and port 8000 open in its firewall. The variable is baked in when the bundle starts, so restart Expo after changing it.
 
 **The microphone plays a scripted conversation instead of my voice.** That is intended in development builds. Set `EXPO_PUBLIC_USE_MICROPHONE=1` in a development or release build; Expo Go cannot do it. This path has not run on a device, so follow `DEVICE_TEST_PLAN.md`.

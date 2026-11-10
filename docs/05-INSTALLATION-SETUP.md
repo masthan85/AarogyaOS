@@ -95,6 +95,8 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8000 npx expo start
 
 `10.0.2.2` is how an Android emulator reaches the host machine. For a physical phone use the computer's address on the local network, for example `http://192.168.1.20:8000`, and allow port 8000 through the computer's firewall. Anything named `EXPO_PUBLIC_*` is compiled into the app, so never put a secret there.
 
+The app uses Expo SDK 58, so it needs the current Expo Go from the App Store or Play Store. Apple allows only the latest Expo Go on iPhones, which is why the project follows the latest SDK. If Expo Go says the project is incompatible, the SDK in `apps/mobile/package.json` and your Expo Go version have drifted apart.
+
 In development builds the microphone is simulated: it plays a scripted sample conversation, not your voice. Set `EXPO_PUBLIC_USE_MICROPHONE=1` in a development or release build (not Expo Go) to use the real microphone; that path is unit-tested but has never run on a device, so follow `DEVICE_TEST_PLAN.md` first. `EXPO_PUBLIC_SIMULATED_AUDIO=1` forces the simulation in other builds.
 
 To check the app compiles and tests pass without a device:
@@ -105,7 +107,7 @@ npm test
 CI=1 npx expo export --platform android --output-dir /tmp/export   # produces an Android bundle
 ```
 
-When adding Expo packages, use `npx expo install <package>` where the compatibility service is reachable; otherwise pin `expo-*` packages to `~57.0.0`.
+When adding Expo packages, use `npx expo install <package>` where the compatibility service is reachable; otherwise take the version from `node_modules/expo/bundledNativeModules.json` (Expo's own table for the installed SDK).
 
 ## Walking through a visit
 
