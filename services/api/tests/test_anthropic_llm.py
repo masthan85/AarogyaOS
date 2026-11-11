@@ -212,5 +212,8 @@ async def test_the_real_sdk_puts_the_expected_request_on_the_wire() -> None:
         server.shutdown()
     assert out.text == '{"candidates": []}' and (out.input_tokens, out.output_tokens) == (7, 3)
     assert seen["path"] == "/v1/messages"
-    assert seen["headers"]["x-api-key"] == KEY and "anthropic-version" in seen["headers"]
+    # Older SDKs send the key as x-api-key, newer ones as a bearer token; either is accepted.
+    headers = seen["headers"]
+    assert headers.get("x-api-key") == KEY or headers.get("authorization") == f"Bearer {KEY}"
+    assert "anthropic-version" in headers
     assert set(seen["body"]) == {"model", "max_tokens", "system", "messages"}
