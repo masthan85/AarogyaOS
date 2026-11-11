@@ -155,6 +155,7 @@ Checks: `ruff check . && ruff format --check . && mypy app && pytest -q` in `ser
 | `apps/mobile` | Expo Router app, TypeScript strict |
 | `services/api` | FastAPI modular monolith, Alembic migrations, tests, helper scripts |
 | `infrastructure` | Docker Compose, Postgres role setup, backup and restore-drill scripts |
+| `site` | One-page marketing site (plain HTML and CSS), see `site/README.md` |
 | `docs` | Documentation and decision records |
 
 ## Documentation
