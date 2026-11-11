@@ -1,11 +1,11 @@
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /srv
-COPY pyproject.toml ./
+COPY pyproject.toml requirements.lock ./
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
-RUN pip install --no-cache-dir . && useradd --system --uid 10001 aarogya
+RUN pip install --no-cache-dir -c requirements.lock . && useradd --system --uid 10001 aarogya
 USER aarogya
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \

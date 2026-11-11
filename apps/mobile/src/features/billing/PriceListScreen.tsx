@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { addPrice, getBillingSettings, getPrices, saveBillingSettings, updatePrice } from '@/api/endpoints';

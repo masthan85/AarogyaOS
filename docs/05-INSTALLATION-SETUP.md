@@ -23,8 +23,10 @@ All commands run from `services/api`.
    ```bash
    python -m venv .venv
    . .venv/bin/activate
-   pip install -e ".[dev]"
+   pip install -c requirements.lock -e ".[dev]"
    ```
+
+   `requirements.lock` pins every dependency to the versions CI and the Docker image use. After changing dependencies in `pyproject.toml`, regenerate it with `uv pip compile pyproject.toml --extra dev --universal --python-version 3.12 -o requirements.lock` and commit the result.
 
 2. Create the database and a role for the application. The role must not be a superuser, because PostgreSQL superusers bypass row-level security and that would silently switch off tenant isolation. As a PostgreSQL superuser:
 
