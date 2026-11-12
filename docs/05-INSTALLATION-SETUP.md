@@ -101,6 +101,22 @@ The app uses Expo SDK 58, so it needs the current Expo Go from the App Store or 
 
 In development builds the microphone is simulated: it plays a scripted sample conversation, not your voice. Set `EXPO_PUBLIC_USE_MICROPHONE=1` in a development or release build (not Expo Go) to use the real microphone; that path is unit-tested but has never run on a device, so follow `DEVICE_TEST_PLAN.md` first. `EXPO_PUBLIC_SIMULATED_AUDIO=1` forces the simulation in other builds.
 
+### Trying the app in a browser
+
+The web build is for development and demonstrations, not a supported product target. To use it, allow the browser's origin in `services/api/.env` and restart the API:
+
+```
+AAROGYA_CORS_ORIGINS=["http://localhost:8081"]
+```
+
+Then, from `apps/mobile`:
+
+```bash
+EXPO_PUBLIC_API_URL=http://localhost:8000 npx expo start --web --clear
+```
+
+Open `http://localhost:8081`. In a browser the sign-in tokens are held in memory only (`token-store.web.ts`), so reloading the page signs you out, and biometric unlock is not offered. Recording uses the simulated conversation, as in any development build.
+
 To check the app compiles and tests pass without a device:
 
 ```bash
