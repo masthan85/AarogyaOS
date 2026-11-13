@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { ScrollView, Text } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { getAiUsage, getAuditLogs, getSpeechUsage } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
 import { Card, EmptyState, LoadingState, SectionTitle, StatusChip } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
 import { describeAction } from '@/domain/admin';
+import { formatDateTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
+import { sentence } from '@/domain/text';
 
 const rupees = (paise: number | null) => (paise === null ? 'cost not configured' : `₹${(paise / 100).toFixed(2)}`);
 
@@ -45,15 +47,24 @@ export function ActivityScreen() {
       ) : null}
 
       <SectionTitle>Recent activity</SectionTitle>
-      <Text style={[type.caption, { color: t.textMuted }]}>Who did what, never what was said or written. The latest 50 entries.</Text>
-      {audit.data?.map((a) => (
-        <Card key={a.id}>
-          <Text style={{ color: t.text, fontWeight: '600' }}>{describeAction(a.action)}</Text>
-          <Text style={[type.caption, { color: t.textMuted }]}>{new Date(a.occurred_at).toLocaleString()} · {a.resource_type}</Text>
-          {a.outcome !== 'SUCCESS' ? <StatusChip label={a.outcome.toLowerCase()} tone="danger" /> : null}
-          {a.ai_involved ? <StatusChip label="AI involved" tone="ai" /> : null}
+      <Text style={[type.small, { color: t.textMuted }]}>Who did what, never what was said or written. The latest 50 entries.</Text>
+      {audit.data?.length ? (
+        <Card>
+          {audit.data.map((a, i) => (
+            <View
+              key={a.id}
+              style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm, paddingVertical: space.sm, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: t.border }}>
+              <View style={{ flex: 1, minWidth: 180, gap: 2 }}>
+                <Text style={{ color: t.text, fontWeight: '600' }}>{sentence(describeAction(a.action))}</Text>
+                <Text style={[type.caption, { color: t.textMuted, fontWeight: '500' }]}>{sentence(a.resource_type)}</Text>
+              </View>
+              {a.outcome !== 'SUCCESS' ? <StatusChip label={sentence(a.outcome)} tone="danger" /> : null}
+              {a.ai_involved ? <StatusChip label="AI involved" tone="ai" /> : null}
+              <Text style={[type.small, { color: t.textMuted }]}>{formatDateTime(a.occurred_at)}</Text>
+            </View>
+          ))}
         </Card>
-      ))}
+      ) : null}
     </ScrollView>
   );
 }

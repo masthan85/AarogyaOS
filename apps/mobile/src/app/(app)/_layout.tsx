@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useWindowDimensions, View } from 'react-native';
 
-import { layout, useTheme } from '@/design-system/tokens';
+import { displayFont, layout, useTheme } from '@/design-system/tokens';
 import { Sidebar } from '@/features/shell/Sidebar';
 
 export default function AppLayout() {
@@ -15,7 +15,7 @@ export default function AppLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: wide ? t.background : t.surface },
         headerTintColor: t.text,
-        headerTitleStyle: { fontWeight: '700' },
+        headerTitleStyle: { fontWeight: '700', fontFamily: displayFont, fontSize: wide ? 24 : 20 },
         headerShadowVisible: !wide,
         contentStyle: { backgroundColor: t.background },
       }}>

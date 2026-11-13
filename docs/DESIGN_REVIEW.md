@@ -73,4 +73,28 @@ Prompted by seeing the app in a desktop browser, where the phone layout stretche
 
 Screens: [home, wide](design/home-wide.png), [sign-in, wide](design/sign-in-wide.png), [home, phone](design/home-phone.png).
 
-Not done: the inner screens (patients, appointments, billing and the rest) were not redesigned. They gain the sidebar, the capped width and the serif titles, but their forms still use full-width buttons that look heavy at 960 px. The sidebar repeats the home tiles on wide screens, which is deliberate for now. As with the earlier passes, show it to a doctor and a receptionist before settling on it.
+Not done at this point: the inner screens, which the fifth pass below covers. The sidebar repeats the home tiles on wide screens, which is deliberate for now. As with the earlier passes, show it to a doctor and a receptionist before settling on it.
+
+## Fifth pass: every inner screen
+
+Method: all 26 routes and the 11 consultation tabs were rendered at 1280 px as doctor, nurse, receptionist, lab technician and administrator, against a demo clinic with four patients at different stages of a visit, and again at 390 px for the doctor, receptionist and consultation. No console errors. As before, this is a browser rendering, not a device.
+
+The same few faults appeared on nearly every screen, so most of the work is in the shared components:
+
+- **Buttons** fill the row on phones and are as wide as their label on wide screens (`Button`, with `block` to opt out, used on sign-in).
+- **Text fields and short segmented choices** stop at 560 px on wide screens instead of running the width of the column.
+- **Empty states** carry an icon and more room, so "nothing here" reads as a state, not a stray grey bar.
+- **Page titles** in the navigation header use the display serif.
+- **Status words** are sentence case everywhere ("In consultation", "Active"). Before, some chips shouted in capitals and others did not; capitals are now left for clinical warnings. `domain/text.ts` holds the helper, with a test.
+
+Screen-specific changes:
+
+- **Queue**: the token sits in a circle beside the name and status, and on wide screens the action is on the same line, so four patients fit where one and a half did.
+- **Appointments**: time, patient and status on one line; day stepping uses icon buttons and a "Back to today" link.
+- **Usage and audit**: the activity log is one ruled list with clinic-style dates, in place of a card per entry with raw action names and US dates.
+- **Patient profile**: "Speaks English" in place of the language code. **Facilities**: readable kind and status.
+- **Billing screens**: aligned with the page title instead of floating in the centre.
+
+Screens: [queue](design/queue-wide.png), [appointments](design/appointments-wide.png), [consultation](design/consultation-wide.png), [audit](design/audit-wide.png).
+
+Not done: the invoice screen with a real invoice, the lab result entry form with a real order, and the Draft EMR with real findings were not exercised, because the demo data had none; they use the same components. Dates are still typed as text (YYYY-MM-DD), which wants a proper date picker. The staff list still puts "Deactivate account" on its own line. Dark mode was checked on the home screen only in this pass.

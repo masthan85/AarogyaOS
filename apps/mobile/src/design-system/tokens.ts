@@ -1,4 +1,4 @@
-import { Platform, useColorScheme, type ViewStyle } from 'react-native';
+import { Platform, useColorScheme, useWindowDimensions, type ViewStyle } from 'react-native';
 
 /**
  * Colour roles, not colours. Every text/background pairing used by the components was checked against
@@ -75,7 +75,9 @@ export const displayFont = Platform.select({
 }) as string;
 
 /** Widths that decide the layout: where the sidebar appears and how wide content may grow. */
-export const layout = { wide: 1024, content: 960, sidebar: 256, form: 400 } as const;
+export const layout = { wide: 1024, content: 960, sidebar: 256, form: 400, field: 560 } as const;
+/** True where the sidebar layout applies. Controls sized for a thumb become sized for a pointer. */
+export const useWide = (): boolean => useWindowDimensions().width >= layout.wide;
 
 /** One type scale for the whole app, so sizes are decisions rather than accidents. */
 export const type = {

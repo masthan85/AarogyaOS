@@ -56,7 +56,7 @@ export function PriceListScreen() {
     onError: fail('Could not update the service'),
   });
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720, alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720 }} keyboardShouldPersistTaps="handled">
       <Lead>Services you charge for often. They appear as quick buttons on a new invoice. Changing a price never changes an invoice already issued.</Lead>
       <SectionTitle>Services</SectionTitle>
       {prices.isPending ? <LoadingState /> : null}

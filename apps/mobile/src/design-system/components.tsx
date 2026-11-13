@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 
-import { elevation, MIN_TOUCH, MIN_TOUCH_SMALL, radius, space, type, useIsDark, useTheme } from './tokens';
+import { Icon, type IconName } from './icons';
+import { elevation, layout, MIN_TOUCH, MIN_TOUCH_SMALL, radius, space, type, useIsDark, useTheme, useWide } from './tokens';
 
 export function Button({
   title,
@@ -20,11 +21,14 @@ export function Button({
   disabled,
   variant = 'primary',
   size = 'md',
+  block,
 }: {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  /** Fill the row even on a wide screen. Phones always fill; a desktop button is as wide as its label. */
+  block?: boolean;
   /** primary: the one main action. secondary: a quiet tinted button. ghost: text only. danger: destructive. */
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'md' | 'sm';
@@ -34,16 +38,18 @@ export function Button({
   const fg = { primary: t.primaryText, secondary: t.primary, ghost: t.primary, danger: t.dangerText }[variant];
   const off = disabled || loading;
   const small = size === 'sm';
+  const compact = useWide() && !block;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       onPress={onPress}
       disabled={off}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
         styles.button,
         small && styles.buttonSmall,
-        { backgroundColor: bg, opacity: off ? 0.55 : pressed ? 0.85 : 1 },
+        compact && { alignSelf: 'flex-start', minWidth: variant === 'ghost' ? 0 : 136, paddingHorizontal: variant === 'ghost' ? space.sm : space.lg },
+        { backgroundColor: bg, opacity: off ? 0.55 : pressed ? 0.85 : hovered ? 0.92 : 1 },
       ]}>
       {loading ? (
         <ActivityIndicator color={fg} />
@@ -60,8 +66,9 @@ export function TextField({
   ...props
 }: TextInputProps & { label: string; error?: string }) {
   const t = useTheme();
+  const wide = useWide();
   return (
-    <View style={{ gap: space.xs }}>
+    <View style={{ gap: space.xs, width: '100%', maxWidth: wide ? layout.field : undefined }}>
       <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
@@ -128,12 +135,13 @@ export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   );
 }
 
-export function EmptyState({ message, title }: { message: string; title?: string }) {
+export function EmptyState({ message, title, icon = 'inbox' }: { message: string; title?: string; icon?: IconName }) {
   const t = useTheme();
   return (
-    <View style={[styles.center, { backgroundColor: t.neutralSoft, borderRadius: radius.lg, marginVertical: space.xs }]}>
+    <View style={[styles.center, { backgroundColor: t.neutralSoft, borderRadius: radius.lg, marginVertical: space.xs, paddingVertical: space.xl }]}>
+      <Icon name={icon} size={24} color={t.textMuted} />
       {title ? <Text style={[type.h3, { color: t.text, textAlign: 'center' }]}>{title}</Text> : null}
-      <Text style={[type.small, { color: t.textMuted, textAlign: 'center' }]}>{message}</Text>
+      <Text style={[type.small, { color: t.textMuted, textAlign: 'center', maxWidth: 420 }]}>{message}</Text>
     </View>
   );
 }
@@ -182,13 +190,14 @@ export function ChoiceChips<T extends string>({
   onChange: (v: T) => void;
 }) {
   const t = useTheme();
+  const wide = useWide();
   // A few short choices read best as one connected control; many or long ones wrap as separate chips.
   const segmented = options.length >= 2 && options.length <= 4 && options.reduce((n, o) => n + o.label.length, 0) <= 30;
   return (
     <View style={{ gap: space.xs }}>
       {label ? <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text> : null}
       {segmented ? (
-        <View style={{ flexDirection: 'row', backgroundColor: t.neutralSoft, borderRadius: radius.md, padding: 3, gap: 3 }}>
+        <View style={{ flexDirection: 'row', backgroundColor: t.neutralSoft, borderRadius: radius.md, padding: 3, gap: 3, width: '100%', maxWidth: wide ? layout.field : undefined }}>
           {options.map((o) => {
             const selected = o.value === value;
             return (
@@ -409,7 +418,7 @@ export function TabBar<T extends string>({
 /** An introductory sentence or two under a screen's title. */
 export function Lead({ children }: { children: ReactNode }) {
   const t = useTheme();
-  return <Text style={[type.small, { color: t.textMuted, lineHeight: 20 }]}>{children}</Text>;
+  return <Text style={[type.small, { color: t.textMuted, lineHeight: 20, maxWidth: 680 }]}>{children}</Text>;
 }
 
 /** A row that opens another screen: title, one line of help, and an arrow. */
@@ -430,7 +439,7 @@ export function NavRow({ title, description, onPress }: { title: string; descrip
         <Text style={[type.h3, { color: t.text }]}>{title}</Text>
         {description ? <Text style={[type.small, { color: t.textMuted }]}>{description}</Text> : null}
       </View>
-      <Text style={{ color: t.textMuted, fontSize: 22 }} accessibilityElementsHidden>›</Text>
+      <Icon name="chevron-right" size={20} color={t.textMuted} />
     </Pressable>
   );
 }

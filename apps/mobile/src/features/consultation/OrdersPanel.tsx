@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { cancelOrder, createOrder, placeOrder } from '@/api/endpoints';
 import { Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
+import { sentence } from '@/domain/text';
 
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
@@ -32,7 +33,7 @@ export function OrdersPanel({ encId, data }: { encId: string; data: EncounterDat
             <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
               <StatusChip label={o.category.toLowerCase()} />
               <StatusChip label={o.priority.toLowerCase()} tone={o.priority === 'ROUTINE' ? 'neutral' : 'danger'} />
-              <StatusChip label={o.status === 'DRAFT' ? 'Draft — not yet ordered' : o.status.toLowerCase()} tone={tone(o.status)} />
+              <StatusChip label={o.status === 'DRAFT' ? 'Draft — not yet ordered' : sentence(o.status)} tone={tone(o.status)} />
             </View>
             {o.status === 'DRAFT' ? (
               <View style={{ flexDirection: 'row', gap: space.sm }}>

@@ -84,7 +84,7 @@ export function ConsentScreen() {
               <Card key={purpose} title={PURPOSE_LABELS[purpose] ?? purpose}>
                 <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
                   <StatusChip label={st?.active ? `Given${st.granted_by_type === 'REPRESENTATIVE' ? ' (by representative)' : ''}` : st?.blocked_by ? `Off: needs ${PURPOSE_LABELS[st.blocked_by]}` : 'Not given'} tone={st?.active ? 'success' : st?.blocked_by ? 'warning' : 'neutral'} />
-                  {w && !w.legally_reviewed ? <StatusChip label="template wording" tone="warning" /> : null}
+                  {w && !w.legally_reviewed ? <StatusChip label="Template wording" tone="warning" /> : null}
                 </View>
                 {w ? (
                   <>

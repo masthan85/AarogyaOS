@@ -26,7 +26,7 @@ export function EndOfDayScreen() {
   const d = q.data;
   const diff = paise === null ? null : paise - d.expected_cash_paise;
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720, alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720 }} keyboardShouldPersistTaps="handled">
       <Lead>Money received and refunded today, counted in India time. Count the cash in the drawer and compare.</Lead>
       <Card title="Today">
         {d.by_method.length === 0 ? <Text style={{ color: t.textMuted }}>No payments or refunds yet today.</Text> : null}

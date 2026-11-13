@@ -7,13 +7,14 @@ import { getQueue, startConsultation, walkIn } from '@/api/endpoints';
 import type { QueueItem } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
-import { space, useTheme, type } from '@/design-system/tokens';
+import { space, useTheme, useWide, type } from '@/design-system/tokens';
 import { formatTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { useFacility } from '@/features/facility/useFacility';
 
 export function QueueScreen() {
   const t = useTheme();
+  const wide = useWide();
   const { me } = useAuth();
   const qc = useQueryClient();
   const { facilityId, picker } = useFacility();
@@ -43,25 +44,8 @@ export function QueueScreen() {
   const canTriage = can(me, 'encounter:triage');
   const canConsult = can(me, 'encounter:consult');
 
-  const row = (q: QueueItem) => (
-    <Card>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={[type.display, { color: t.primary }]}>{q.token_number}</Text>
-        <View style={{ flexDirection: 'row', gap: space.sm }}>
-          {q.priority === 'URGENT' ? <StatusChip label="Urgent" tone="danger" /> : null}
-          <StatusChip label={q.status === 'IN_CONSULTATION' ? 'With doctor' : 'Waiting'} tone={q.status === 'IN_CONSULTATION' ? 'success' : 'warning'} />
-        </View>
-      </View>
-      <Text style={[type.h3, { color: t.text }]}>{q.patient_name}</Text>
-      <Text style={{ color: t.textMuted }}>
-        {q.patient_mrn} · {q.age_years ?? '?'} yrs · since {formatTime(q.waiting_since)}
-        {q.practitioner_name ? ` · ${q.practitioner_name}` : ''}
-      </Text>
-      {q.encounter_status === 'TRIAGE' || q.encounter_status === 'IN_PROGRESS' ? (
-        <StatusChip label={q.encounter_status === 'TRIAGE' ? 'Triage started' : 'Consultation open'} tone="success" />
-      ) : (
-        <StatusChip label="Not triaged" />
-      )}
+  const actions = (q: QueueItem) => (
+    <>
       {canTriage && q.status !== 'IN_CONSULTATION' ? (
         <Button
           title={q.encounter_status ? 'Continue triage' : 'Start triage'}
@@ -76,12 +60,42 @@ export function QueueScreen() {
           onPress={() => consult.mutate(q.appointment_id)}
         />
       ) : null}
+    </>
+  );
+
+  const row = (q: QueueItem) => (
+    <Card>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
+        <View
+          accessibilityLabel={`Token ${q.token_number}`}
+          style={{ width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: t.primarySoft }}>
+          <Text style={[type.title, { color: t.primary }]}>{q.token_number}</Text>
+        </View>
+        <View style={{ flex: 1, gap: space.xs }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm }}>
+            <Text style={[type.h2, { color: t.text }]}>{q.patient_name}</Text>
+            {q.priority === 'URGENT' ? <StatusChip label="Urgent" tone="danger" /> : null}
+            <StatusChip label={q.status === 'IN_CONSULTATION' ? 'With doctor' : 'Waiting'} tone={q.status === 'IN_CONSULTATION' ? 'success' : 'warning'} />
+            {q.encounter_status === 'TRIAGE' || q.encounter_status === 'IN_PROGRESS' ? (
+              <StatusChip label={q.encounter_status === 'TRIAGE' ? 'Triage started' : 'Consultation open'} tone="success" />
+            ) : (
+              <StatusChip label="Not triaged" />
+            )}
+          </View>
+          <Text style={[type.small, { color: t.textMuted }]}>
+            {q.patient_mrn} · {q.age_years ?? '?'} yrs · since {formatTime(q.waiting_since)}
+            {q.practitioner_name ? ` · ${q.practitioner_name}` : ''}
+          </Text>
+        </View>
+        {wide ? <View style={{ flexDirection: 'row', gap: space.sm, alignSelf: 'center' }}>{actions(q)}</View> : null}
+      </View>
+      {wide ? null : actions(q)}
     </Card>
   );
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ padding: space.md, gap: space.sm }}>
+      <View style={{ padding: space.md, paddingBottom: 0, gap: space.sm }}>
         {picker}
         {walkInPatientId && facilityId ? (
           <Card title={`Check in ${walkInName ?? 'patient'} as a walk-in`}>

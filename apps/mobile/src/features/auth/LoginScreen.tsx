@@ -152,7 +152,7 @@ export function LoginScreen() {
                 {formError}
               </Text>
             ) : null}
-            <Button title="Sign in" onPress={onSubmit} loading={isSubmitting} />
+            <Button title="Sign in" onPress={onSubmit} loading={isSubmitting} block />
             </Card>
           </View>
         </ScrollView>

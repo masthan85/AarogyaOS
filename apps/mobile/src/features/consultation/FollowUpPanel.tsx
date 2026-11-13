@@ -5,6 +5,7 @@ import { createFollowUp } from '@/api/endpoints';
 import { Button, Card, ChoiceChips, SectionTitle, StatusChip, TextField } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
 import { addDays, toDateString } from '@/domain/dates';
+import { sentence } from '@/domain/text';
 
 import { useAction } from './useAction';
 import type { EncounterData } from './useEncounterData';
@@ -27,7 +28,7 @@ export function FollowUpPanel({ encId, data }: { encId: string; data: EncounterD
         {list.map((f) => (
           <View key={f.id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: t.text }}>{f.due_date} · {f.reason}</Text>
-            <StatusChip label={f.status.toLowerCase()} />
+            <StatusChip label={sentence(f.status)} />
           </View>
         ))}
       </Card>
