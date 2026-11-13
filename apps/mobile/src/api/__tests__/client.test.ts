@@ -116,3 +116,32 @@ describe('ApiClient', () => {
     await expect(c2.requestBytes('/a')).rejects.toMatchObject({ status: 409, message: 'Only an approved document can be read aloud' });
   });
 });
+
+describe('request keys and reachability', () => {
+  it('sends the request key only when one is given', async () => {
+    const fetchImpl = jest.fn(async () => json(200, me));
+    const c = new ApiClient({ baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl });
+    await c.request('/auth/me', meSchema, { method: 'POST', body: {}, idempotencyKey: 'pay-12345678' });
+    await c.request('/auth/me', meSchema);
+    const headers = (n: number) => (fetchImpl.mock.calls[n] as unknown as [string, RequestInit])[1].headers as Record<string, string>;
+    expect(headers(0)['Idempotency-Key']).toBe('pay-12345678');
+    expect(headers(1)['Idempotency-Key']).toBeUndefined();
+  });
+
+  it('reports whether the server was reached, whatever it answered', async () => {
+    const seen: boolean[] = [];
+    const fetchImpl = jest
+      .fn()
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockResolvedValueOnce(json(500, { detail: 'broken' }))
+      .mockResolvedValueOnce(json(200, me));
+    const c = new ApiClient({
+      baseUrl: 'http://x', tokenStore: memoryStore(base), onSessionExpired: jest.fn(), fetchImpl,
+      onReachability: (ok) => seen.push(ok),
+    });
+    await expect(c.request('/auth/me', meSchema)).rejects.toBeInstanceOf(TypeError);
+    await expect(c.request('/auth/me', meSchema)).rejects.toBeInstanceOf(ApiError);
+    await c.request('/auth/me', meSchema);
+    expect(seen).toEqual([false, true, true]); // an error answer still means the server is there
+  });
+});

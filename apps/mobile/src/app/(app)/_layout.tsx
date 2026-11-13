@@ -1,8 +1,24 @@
 import { Stack } from 'expo-router';
-import { useWindowDimensions, View } from 'react-native';
+import { Text, useWindowDimensions, View } from 'react-native';
 
 import { displayFont, layout, useTheme } from '@/design-system/tokens';
 import { Sidebar } from '@/features/shell/Sidebar';
+import { useServerReachable } from '@/services/connectivity';
+
+/**
+ * Shown while the server cannot be reached. Nothing is saved offline, so the app says so plainly
+ * instead of letting someone type into a form that will not go anywhere.
+ */
+function ConnectionBanner() {
+  const t = useTheme();
+  if (useServerReachable()) return null;
+  return (
+    <View accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ backgroundColor: t.warningSoft, borderBottomWidth: 1, borderBottomColor: t.warning, paddingVertical: 10, paddingHorizontal: 16 }}>
+      <Text style={{ color: t.warning, fontWeight: '700' }}>No connection to the clinic server</Text>
+      <Text style={{ color: t.text, fontSize: 14 }}>Nothing you enter is saved until it returns. Each screen tells you when a save has gone through.</Text>
+    </View>
+  );
+}
 
 export default function AppLayout() {
   const t = useTheme();
@@ -48,11 +64,19 @@ export default function AppLayout() {
       <Stack.Screen name="admin/activity" options={{ title: 'Usage and audit' }} />
     </Stack>
   );
-  if (!wide) return stack;
+  if (!wide) {
+    return (
+      <View style={{ flex: 1, backgroundColor: t.background }}>
+        <ConnectionBanner />
+        {stack}
+      </View>
+    );
+  }
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: t.background }}>
       <Sidebar />
       <View style={{ flex: 1 }}>
+        <ConnectionBanner />
         <View style={{ flex: 1, width: '100%', maxWidth: layout.content, alignSelf: 'center' }}>{stack}</View>
       </View>
     </View>

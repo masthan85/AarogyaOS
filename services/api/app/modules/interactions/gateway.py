@@ -250,6 +250,16 @@ async def _close(ws: WebSocket, code: int, reason: str) -> None:
 async def audio_gateway(ws: WebSocket, interaction_id: uuid.UUID) -> None:
     app: FastAPI = ws.app
     await ws.accept()
+    settings = app.state.settings
+    # A browser states the page it came from; a native app sends no Origin. A page on another site
+    # must not be able to open a recording socket with a token it somehow obtained.
+    origin = ws.headers.get("origin")
+    if origin and settings.cors_origins and origin not in settings.cors_origins:
+        return await _close(ws, 4403, "origin not allowed")
+    lock = getattr(app.state, "instance_lock", None)
+    if lock is not None and not await _run(lock.held):
+        # Live transcript state is in this process's memory: a second instance must not record.
+        return await _close(ws, 4503, "instance not active")
     try:
         first = await asyncio.wait_for(ws.receive_json(), AUTH_TIMEOUT_SECONDS)
         if (

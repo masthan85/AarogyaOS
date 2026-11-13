@@ -6,7 +6,7 @@ import { getConsentPolicies, getOrgPolicy, installConsentWording, saveOrgPolicy 
 import type { OrgPolicy } from '@/api/schemas';
 import { Button, Card, ChoiceChips, ErrorState, LoadingState, SectionTitle, TextField, ToggleRow } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
-import { POLICY_HELP, policyProblem, togglePolicy } from '@/domain/admin';
+import { parseAllowance, POLICY_HELP, policyProblem, togglePolicy } from '@/domain/admin';
 import { useAction } from '@/features/consultation/useAction';
 
 export function PolicyScreen() {
@@ -16,18 +16,33 @@ export function PolicyScreen() {
   const wording = useQuery({ queryKey: ['consent-policies'], queryFn: getConsentPolicies, gcTime: 0 });
   const [draft, setDraft] = useState<OrgPolicy | null>(null);
   const [days, setDays] = useState('30');
+  const [speechLimit, setSpeechLimit] = useState('');
+  const [aiLimit, setAiLimit] = useState('');
   useEffect(() => {
     if (q.data) {
       setDraft(q.data);
       setDays(String(q.data.retain_days));
+      setSpeechLimit(q.data.monthly_speech_minutes_limit === null ? '' : String(q.data.monthly_speech_minutes_limit));
+      setAiLimit(q.data.monthly_ai_calls_limit === null ? '' : String(q.data.monthly_ai_calls_limit));
     }
   }, [q.data]);
-  const save = useAction(() => saveOrgPolicy({ ...(draft as OrgPolicy), retain_days: Number(days) || 0 }), () => void qc.invalidateQueries({ queryKey: ['org-policy'] }));
+  const speechValue = parseAllowance(speechLimit);
+  const aiValue = parseAllowance(aiLimit);
+  const save = useAction(
+    () => saveOrgPolicy({
+      ...(draft as OrgPolicy),
+      retain_days: Number(days) || 0,
+      monthly_speech_minutes_limit: speechValue as number | null,
+      monthly_ai_calls_limit: aiValue as number | null,
+    }),
+    () => void qc.invalidateQueries({ queryKey: ['org-policy'] }),
+  );
   const install = useAction(() => installConsentWording('en-IN'), () => void wording.refetch());
 
   if (q.isPending || !draft) return <LoadingState label="Loading settings…" />;
   if (q.isError) return <ErrorState message="Could not load settings." onRetry={() => q.refetch()} />;
-  const problem = policyProblem({ ...draft, retain_days: Number(days) || 0 });
+  const problem = policyProblem({ ...draft, retain_days: Number(days) || 0 })
+    ?? (speechValue === undefined || aiValue === undefined ? 'An allowance must be a whole number, or empty for no limit.' : null);
   const set = (key: keyof OrgPolicy, v: boolean) => setDraft(togglePolicy(draft, key, v));
   const installed = wording.data?.length ?? 0;
 
@@ -57,6 +72,15 @@ export function PolicyScreen() {
           <TextField label="Days to keep audio" value={days} onChangeText={setDays} keyboardType="number-pad" />
         ) : null}
         <Text style={[type.caption, { color: t.textMuted }]}>Audio is only ever kept when this setting and the patient's separate consent both allow it.</Text>
+      </Card>
+
+      <SectionTitle>Monthly allowances</SectionTitle>
+      <Card>
+        <Text style={{ color: t.textMuted }}>
+          Leave empty for no limit. When an allowance is used up, new recordings or software assistance switch off until next month. Every visit can still be documented by hand.
+        </Text>
+        <TextField label="Speech minutes a month" value={speechLimit} onChangeText={setSpeechLimit} keyboardType="number-pad" placeholder="No limit" />
+        <TextField label="AI requests a month" value={aiLimit} onChangeText={setAiLimit} keyboardType="number-pad" placeholder="No limit" />
       </Card>
 
       {problem ? <Text style={{ color: t.danger }}>{problem}</Text> : null}

@@ -23,9 +23,17 @@ type Options = {
   /** Called when the refresh token is rejected; the UI should return to sign-in. */
   onSessionExpired: () => void;
   fetchImpl?: typeof fetch;
+  /** Told after every attempt whether the server answered at all (any status) or could not be reached. */
+  onReachability?: (reached: boolean) => void;
 };
 
-type RequestInitLite = { method?: string; body?: unknown; auth?: boolean };
+type RequestInitLite = {
+  method?: string;
+  body?: unknown;
+  auth?: boolean;
+  /** Names one intended action so a retry after a lost reply is not done twice. */
+  idempotencyKey?: string;
+};
 
 export class ApiClient {
   private refreshing: Promise<Tokens | null> | null = null;
@@ -73,11 +81,19 @@ export class ApiClient {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (init.body !== undefined) headers['Content-Type'] = 'application/json';
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    return this.fetchImpl(`${this.opts.baseUrl}${path}`, {
-      method: init.method ?? 'GET',
-      headers,
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
-    });
+    if (init.idempotencyKey) headers['Idempotency-Key'] = init.idempotencyKey;
+    try {
+      const res = await this.fetchImpl(`${this.opts.baseUrl}${path}`, {
+        method: init.method ?? 'GET',
+        headers,
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      });
+      this.opts.onReachability?.(true);
+      return res;
+    } catch (err) {
+      this.opts.onReachability?.(false);
+      throw err;
+    }
   }
 
   private refreshOnce(stale: Tokens): Promise<Tokens | null> {

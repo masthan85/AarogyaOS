@@ -489,7 +489,24 @@ export const orgPolicySchema = z.object({
   ai_suggestions_require_source: z.boolean(),
   enabled_languages: z.array(z.string()).nullable(),
   guardian_consent_under_age: z.number(),
+  // Monthly allowances; null means no limit. Kept in the schema so saving the screen never drops them.
+  monthly_speech_minutes_limit: z.number().nullable(),
+  monthly_ai_calls_limit: z.number().nullable(),
+  usage_alert_percent: z.number(),
 });
+const allowanceSchema = z.object({
+  used: z.number(),
+  limit: z.number().nullable(),
+  state: z.enum(['UNLIMITED', 'OK', 'NEAR', 'REACHED']),
+});
+export const usagePositionSchema = z.object({
+  month_start: z.string(),
+  alert_percent: z.number(),
+  speech_minutes: allowanceSchema,
+  ai_calls: allowanceSchema,
+});
+export type UsagePosition = z.infer<typeof usagePositionSchema>;
+export type Allowance = z.infer<typeof allowanceSchema>;
 export const userSchema = z.object({
   id: z.string(),
   email: z.string(),

@@ -367,8 +367,11 @@
   "audio_retention",
   "enabled_languages",
   "guardian_consent_under_age",
+  "monthly_ai_calls_limit",
+  "monthly_speech_minutes_limit",
   "recording_enabled",
-  "retain_days"
+  "retain_days",
+  "usage_alert_percent"
  ],
  "GET /patients/search": [
   "administrative_gender",
@@ -603,6 +606,12 @@
   "output_tokens",
   "provider",
   "tokens_are_estimates"
+ ],
+ "GET /usage/limits": [
+  "ai_calls",
+  "alert_percent",
+  "month_start",
+  "speech_minutes"
  ],
  "GET /usage/speech": [
   "audio_seconds",
@@ -1958,8 +1967,11 @@
   "audio_retention",
   "enabled_languages",
   "guardian_consent_under_age",
+  "monthly_ai_calls_limit",
+  "monthly_speech_minutes_limit",
   "recording_enabled",
-  "retain_days"
+  "retain_days",
+  "usage_alert_percent"
  ],
  "PUT /practitioners/{practitioner_id}/working-hours": [
   "consultation_minutes",

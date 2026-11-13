@@ -31,7 +31,9 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | Variable | Default | Meaning |
 |---|---|---|
 | `AAROGYA_SPEECH_PROVIDER` | empty (becomes `development` outside production) | `sarvam` or `development`. Production must choose explicitly |
-| `AAROGYA_SPEECH_FALLBACK_PROVIDER` | empty | Provider to try if the first is unavailable |
+| `AAROGYA_SPEECH_FALLBACK_PROVIDER` | empty | Provider to try if the first is unavailable. In production it must also be an approved provider |
+| `AAROGYA_PATIENT_DATA_PROVIDERS` | `[]` | JSON list of vendors with a signed data-processing agreement. Production refuses to start if any configured speech, model, embedding, translation or read-aloud provider is not listed |
+| `AAROGYA_SINGLE_INSTANCE_GUARD` | on in production | Holds a database advisory lock so only one process serves recordings; any other reports `standby` on `/ready` |
 | `AAROGYA_SARVAM_API_KEY` | empty | Registers the Sarvam provider. Also used for Sarvam translation, text-to-speech and chat |
 | `AAROGYA_SARVAM_MODEL` | `saaras:v4` | Speech-to-text model |
 | `AAROGYA_SARVAM_MODE` | `transcribe` | `transcribe`, `verbatim`, `translit` or `codemix` |

@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
 import { API_BASE_URL, API_PREFIX } from '@/config';
+import { reportReachable } from '@/services/connectivity';
 import { secureTokenStore } from '@/services/token-store';
 
 import { ApiClient } from './client';
 import {
   aiUsageSchema,
+  usagePositionSchema,
   auditLogSchema,
   knowledgeDocSchema,
   orgPolicySchema,
@@ -79,6 +81,7 @@ export const api = new ApiClient({
   baseUrl: `${API_BASE_URL}${API_PREFIX}`,
   tokenStore: secureTokenStore,
   onSessionExpired: () => sessionExpiredListener(),
+  onReachability: reportReachable,
 });
 
 export const login = (body: { organisation_slug?: string; email: string; password: string; mfa_code?: string }) =>
@@ -400,6 +403,7 @@ export const retireKnowledgeDoc = (id: string) =>
 export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
 export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
 export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
+export const getUsageLimits = () => api.request('/usage/limits', usagePositionSchema);
 
 // ---- worklists ----------------------------------------------------------------------------
 
@@ -455,8 +459,9 @@ export const createInvoice = (body: { patient_id: string; encounter_id?: string 
 export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]) =>
   api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
 export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });
-export const payInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reference?: string }) =>
-  api.request(`/invoices/${id}/payments`, invoiceSchema, { method: 'POST', body });
+// The three money actions take a request key: sent twice with the same key, they are done once.
+export const payInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reference?: string }, key?: string) =>
+  api.request(`/invoices/${id}/payments`, invoiceSchema, { method: 'POST', body, idempotencyKey: key });
 export const voidInvoice = (id: string, reason: string) =>
   api.request(`/invoices/${id}/void`, invoiceSchema.nullable(), { method: 'POST', body: { reason } });
 
@@ -477,10 +482,10 @@ export const updateReferral = (id: string, body: { status?: string; outcome_note
   api.request(`/referrals/${id}`, referralSchema, { method: 'PUT', body });
 
 type LineBody = { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number };
-export const creditInvoice = (id: string, body: { amount_paise: number; reason: string }) =>
-  api.request(`/invoices/${id}/credit-notes`, invoiceSchema, { method: 'POST', body });
-export const refundInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reason: string; reference?: string }) =>
-  api.request(`/invoices/${id}/refunds`, invoiceSchema, { method: 'POST', body });
+export const creditInvoice = (id: string, body: { amount_paise: number; reason: string }, key?: string) =>
+  api.request(`/invoices/${id}/credit-notes`, invoiceSchema, { method: 'POST', body, idempotencyKey: key });
+export const refundInvoice = (id: string, body: { amount_paise: number; method: PaymentMethod; reason: string; reference?: string }, key?: string) =>
+  api.request(`/invoices/${id}/refunds`, invoiceSchema, { method: 'POST', body, idempotencyKey: key });
 export const getClaims = (id: string) => api.request(`/invoices/${id}/claims`, z.array(claimSchema));
 export const addClaim = (id: string, body: { insurer: string; claimed_paise: number; policy_number?: string; claim_reference?: string }) =>
   api.request(`/invoices/${id}/claims`, claimSchema, { method: 'POST', body });

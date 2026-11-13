@@ -151,7 +151,11 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   return (
     <View style={styles.center} accessibilityRole="alert">
       <Text style={{ color: t.danger, textAlign: 'center' }}>{message}</Text>
-      {onRetry ? <Button title="Try again" variant="secondary" onPress={onRetry} /> : null}
+      {onRetry ? (
+        <View style={{ alignSelf: 'center' }}>
+          <Button title="Try again" variant="secondary" onPress={onRetry} />
+        </View>
+      ) : null}
     </View>
   );
 }

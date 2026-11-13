@@ -31,6 +31,7 @@ only the exception class.
 | `purge-audio` | Deletes retained audio past its retention or after consent withdrawal (transcripts untouched) | hourly |
 | `pause-stale-recordings` | Pauses recordings whose audio stopped, so none claims to be live | every minute |
 | `purge-refresh-tokens` | Deletes refresh tokens 30+ days past expiry | daily |
+| `purge-idempotency-keys` | Deletes request keys older than two days (they only guard against retries) | daily |
 
 ## Database
 - The app connects as a **non-superuser** (row-level security is bypassed by superusers, and `/ready`-style checks
@@ -60,6 +61,16 @@ What is NOT covered by these scripts and must be decided before go-live:
   retention off (the default).
 - **Retention of backups** must respect the patient's erasure/withdrawal rights and legal retention rules: not decided.
 - Run the restore drill on a schedule (monthly at least) and after any backup change; alert if it fails.
+
+## One live instance
+
+Live transcript state is in process memory, so the API holds a PostgreSQL advisory lock for as long as it runs (`app/core/instance.py`, on by default in production). A second worker or a second container cannot take the lock: its `/ready` returns 503 `{"status":"standby"}` and it refuses audio connections with close code 4503. If you see `standby` on the only instance you meant to run, another process is still alive.
+
+Two consequences. Deployments are stop-then-start: a rolling update that waits for the new instance to be ready will not finish, because the new instance cannot be ready while the old one holds the lock. And any restart interrupts recordings in progress: on start-up they are marked paused with reason `SERVER_RESTART`, saved transcript lines are kept, and the clinician chooses whether to resume. Deploy outside clinic hours.
+
+## Usage allowances
+
+An administrator can set a monthly cap on speech minutes and on AI requests (Organisation settings in the app, or the policy endpoint). `GET /api/v1/usage/limits` returns this month's use against each cap with a state of `UNLIMITED`, `OK`, `NEAR` (past the alert share, 80 percent by default) or `REACHED`. Reaching a cap refuses new recordings or model calls with code `usage_limit_reached`; a recording already running is not cut off and manual work is never blocked. Months are calendar months in UTC. There is no outbound alert yet: someone has to look at the usage screen, or a monitor has to poll the endpoint.
 
 ## Known scaling limits (read before running more than one container)
 1. **Audio streaming and live (partial) transcripts are held in process memory.** Run one worker per container and

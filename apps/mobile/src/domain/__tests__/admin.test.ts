@@ -1,10 +1,11 @@
 import type { KnowledgeDoc, OrgPolicy } from '@/api/schemas';
 
-import { approvalState, describeHours, emailProblem, hoursFor, passwordProblem, policyProblem, splitPassages, timeProblem, togglePolicy } from '../admin';
+import { allowanceLine, approvalState, describeHours, emailProblem, hoursFor, parseAllowance, passwordProblem, policyProblem, splitPassages, timeProblem, togglePolicy } from '../admin';
 
 const policy: OrgPolicy = {
   recording_enabled: true, ai_processing_enabled: true, audio_retention: 'RETAIN_DAYS', retain_days: 30,
   ai_suggestions_enabled: true, ai_suggestions_require_source: true, enabled_languages: null, guardian_consent_under_age: 18,
+  monthly_speech_minutes_limit: null, monthly_ai_calls_limit: null, usage_alert_percent: 80,
 };
 const doc = (o: Partial<KnowledgeDoc>): KnowledgeDoc => ({
   id: 'd', title: 't', publisher: 'p', source: 's', version: '1', country: 'IN', specialty: null, licence: 'ORG_LICENSED',
@@ -61,5 +62,23 @@ describe('working hours', () => {
     expect(hours[0]).toEqual({ weekday: 0, start_time: '09:00:00', end_time: '13:30:00' });
     expect(describeHours(hours)).toBe('Mon 09:00-13:30, Tue 09:00-13:30, Fri 09:00-13:30');
     expect(describeHours([])).toMatch(/cannot be booked/);
+  });
+});
+
+describe('allowances', () => {
+  it('reads an empty box as no limit and refuses anything that is not a whole number', () => {
+    expect(parseAllowance('')).toBeNull();
+    expect(parseAllowance('  ')).toBeNull();
+    expect(parseAllowance('0')).toBe(0);
+    expect(parseAllowance(' 600 ')).toBe(600);
+    expect(parseAllowance('-5')).toBeUndefined();
+    expect(parseAllowance('12.5')).toBeUndefined();
+    expect(parseAllowance('lots')).toBeUndefined();
+  });
+
+  it('says where an allowance stands in plain words', () => {
+    expect(allowanceLine({ used: 12, limit: null, state: 'UNLIMITED' }, 'speech minutes')).toBe('12 speech minutes used this month. No limit set.');
+    expect(allowanceLine({ used: 90, limit: 100, state: 'NEAR' }, 'AI requests')).toContain('Close to the allowance');
+    expect(allowanceLine({ used: 100, limit: 100, state: 'REACHED' }, 'AI requests')).toContain('switched off until next month');
   });
 });

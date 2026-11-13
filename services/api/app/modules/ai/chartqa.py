@@ -40,6 +40,7 @@ from app.modules.clinical.models import (
     ServiceRequest,
 )
 from app.modules.consent.queries import active_consent
+from app.modules.ops import limits
 from app.modules.patients.models import Patient
 from app.modules.tenancy.policy import load_policy
 
@@ -248,10 +249,13 @@ def ask(
 
     policy = load_policy(session, principal.org_id)
     consented = active_consent(session, patient_id, "AI_PROCESSING") is not None
-    if not (policy.ai_processing_enabled and consented):
+    over = policy.ai_processing_enabled and limits.ai_reached(session, principal.org_id, policy)
+    if not (policy.ai_processing_enabled and consented) or over:
         why = (
             "AI answering is not switched on for this organisation."
             if not policy.ai_processing_enabled
+            else "This month's AI allowance is used up."
+            if over
             else "The patient has not consented to AI processing."
         )
         _audit(session, principal, patient_id, used_ai=False)

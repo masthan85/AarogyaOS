@@ -19,6 +19,25 @@ export function policyProblem(p: OrgPolicy): string | null {
   return null;
 }
 
+/**
+ * A monthly allowance as typed: empty means no limit (null), a whole number of zero or more is the
+ * limit, and anything else is a mistake (undefined) that must stop the form from saving.
+ */
+export function parseAllowance(typed: string): number | null | undefined {
+  const text = typed.trim();
+  if (text === '') return null;
+  return /^\d{1,7}$/.test(text) ? Number(text) : undefined;
+}
+
+/** How an allowance stands, in words an administrator can act on. */
+export function allowanceLine(a: { used: number; limit: number | null; state: string }, unit: string): string {
+  if (a.limit === null) return `${a.used} ${unit} used this month. No limit set.`;
+  const base = `${a.used} of ${a.limit} ${unit} used this month.`;
+  if (a.state === 'REACHED') return `${base} The allowance is used up, so this is switched off until next month.`;
+  if (a.state === 'NEAR') return `${base} Close to the allowance.`;
+  return base;
+}
+
 /** What each switch means in plain words, so an administrator knows what they are enabling. */
 export const POLICY_HELP: Record<string, string> = {
   recording_enabled: 'Doctors and nurses may record consultations (each patient still has to consent).',

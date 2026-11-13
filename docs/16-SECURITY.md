@@ -44,6 +44,8 @@ Sending audio or text to a vendor is a disclosure of health data. Before any rea
 
 Model output is untrusted input. It is parsed strictly, validated against a schema, and every proposed item needs an exact quote from the transcript line it cites. Transcript text is passed as delimited data, never as instructions, so injected text in a conversation cannot create an ungrounded candidate or a safety suggestion. Reception sessions cannot produce clinical facts, and AI needs its own consent, re-checked on every run. The model receives the transcript window and, for suggestions, coded record items and approved reference passages; the record's names, phone numbers, addresses and identifiers are not sent, although whatever people say aloud in the conversation is, which is one reason AI processing has its own consent. No clinical text appears in logs, events or usage rows.
 
+In production the API also refuses to start if any configured provider is missing from `AAROGYA_PATIENT_DATA_PROVIDERS`, the list of vendors whose agreements are signed. The speech fallback is checked the same way, so an unapproved vendor cannot receive audio on the day the approved one fails. The list records a decision made elsewhere; it is not evidence that an agreement exists.
+
 ## Mobile application
 
 Tokens are in the secure store; response data is validated; lists that hold patient data are not cached after use (zero cache time) and the whole cache is cleared on sign-out, with a general 60-second cache time for other queries. The app holds no vendor keys; everything named `EXPO_PUBLIC_*` is public. Clinical writes are never queued offline. Not built: blocking screenshots on sensitive screens (B-17), and an encrypted offline store (none is needed because nothing is stored offline). The "copy visit as text" action deliberately puts clinical text on the clipboard so it can be pasted into another record system, which means other apps may read it; the app warns about this and clears the clipboard after a minute if it still holds exactly that text (the timer does not survive closing the app).
@@ -52,6 +54,8 @@ Tokens are in the secure store; response data is validated; lists that hold pati
 
 Security headers on every response; a restrictive content security policy on `/api/`; a request-size cap; production configuration that refuses default secrets, default database passwords and wildcard CORS; metric labels that carry route templates, not identifiers; job failures recorded as an exception class only; backups that refuse to be written unencrypted; a container image that runs as a non-root user.
 
+The audio WebSocket refuses a browser whose `Origin` is not in the allowed list (native apps send none). Only one process may serve recordings: each holds a database advisory lock, and any other reports `standby` and refuses audio (`OPERATIONS.md`).
+
 ## Rate limiting
 
 Login is limited per client address and patient search per user (60 a minute each by default; `0` turns a limit off). The limiter lives in each worker's memory, so with several workers the real limit is higher, a restart clears it, and behind a proxy that hides client addresses all users share one login bucket. Accounts also lock after repeated failures and every search is audited. A shared limiter is planned (A-10).
@@ -59,6 +63,8 @@ Login is limited per client address and patient search per user (60 a minute eac
 ## Financial integrity
 
 Money is integers in paise. Issued invoices, payments, credit notes, refunds and day closings cannot be edited or deleted, and a refund can never exceed money held beyond what is owed. Role separation: reception and billing staff can invoice and take payments; only billing staff and administrators can issue credit notes or refunds or track claims. The application adds up staff-entered tax rates and does not decide what tax applies.
+
+Payments, credit notes and refunds accept an `Idempotency-Key`, so a request repeated after a lost reply is recorded once. The key is claimed in the same transaction as the write and the key table holds no amounts or other content.
 
 ## Audit
 

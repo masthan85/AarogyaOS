@@ -170,6 +170,7 @@ Checks: `ruff check . && ruff format --check . && mypy app && pytest -q` in `ser
 | [docs/11-DEPLOYMENT-GUIDE.md](docs/11-DEPLOYMENT-GUIDE.md), [docs/OPERATIONS.md](docs/OPERATIONS.md) | Release procedure and target topology; runbook |
 | [docs/12-FEATURE-STATUS.md](docs/12-FEATURE-STATUS.md), [docs/13-PRODUCT-BACKLOG.md](docs/13-PRODUCT-BACKLOG.md), [docs/14-ROADMAP.md](docs/14-ROADMAP.md) | What exists, what is left, in what order |
 | [docs/15-TROUBLESHOOTING.md](docs/15-TROUBLESHOOTING.md), [docs/16-SECURITY.md](docs/16-SECURITY.md) | Fixes for common problems; security model and gaps |
+| [docs/17-BASELINE-AND-RELEASE-GATES.md](docs/17-BASELINE-AND-RELEASE-GATES.md) | What was verified in the November 2026 review, the safeguards added, and what stands between this build and real patients |
 | [docs/CLINICAL_SAFETY.md](docs/CLINICAL_SAFETY.md) | Hazard log, controls and what remains open |
 | [docs/AI_ARCHITECTURE.md](docs/AI_ARCHITECTURE.md), [docs/SPEECH_ARCHITECTURE.md](docs/SPEECH_ARCHITECTURE.md), [docs/SARVAM.md](docs/SARVAM.md) | How AI and speech are kept safe and replaceable |
 | [docs/INTEROPERABILITY.md](docs/INTEROPERABILITY.md) | FHIR export and what ABDM still needs |

@@ -1,4 +1,7 @@
 import hmac
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
@@ -12,8 +15,9 @@ from app.ai.sarvam import SarvamLLMProvider
 from app.ai.self_hosted import SelfHostedLLMProvider
 from app.core.config import Settings, get_settings
 from app.core.crypto import crypto_from_settings
-from app.core.db import create_db_engine, create_sessionmaker
+from app.core.db import create_db_engine, create_sessionmaker, set_tenant
 from app.core.errors import install_error_handlers
+from app.core.instance import InstanceLock
 from app.core.logging import RequestContextMiddleware, configure_logging
 from app.core.observability import (
     HardeningMiddleware,
@@ -34,6 +38,7 @@ from app.modules.cover.router import router as cover_router
 from app.modules.identity.router import auth_router, users_router
 from app.modules.interactions.gateway import router as gateway_router
 from app.modules.interactions.router import router as interactions_router
+from app.modules.interactions.service import interrupt_after_restart
 from app.modules.interop.router import router as fhir_router
 from app.modules.languages.router import router as languages_router
 from app.modules.patients.router import router as patients_router
@@ -49,18 +54,41 @@ from app.speech.sarvam import SarvamSpeechProvider
 
 API_PREFIX = "/api/v1"
 
+log = logging.getLogger("aarogya.app")
+
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
     engine = create_db_engine(settings.database_url)
 
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        lock: InstanceLock | None = app.state.instance_lock
+        active = lock is None or lock.acquire()
+        if lock is not None and not active:
+            log.error("another instance is already active: this one will not serve recordings")
+        if active:
+            try:
+                with app.state.sessionmaker() as session:
+                    set_tenant(session, None, bypass=True)
+                    interrupted = interrupt_after_restart(session)
+                if interrupted:
+                    log.warning("recordings interrupted by restart", extra={"count": interrupted})
+            except Exception:  # noqa: BLE001  (an unmigrated database is reported by /ready)
+                log.warning("could not reconcile recordings at start-up")
+        yield
+        if lock is not None:
+            lock.release()
+
     app = FastAPI(
         title="AarogyaOS API",
         version="0.1.0",
         docs_url="/docs" if settings.environment != "production" else None,
         redoc_url=None,
+        lifespan=lifespan,
     )
+    app.state.instance_lock = InstanceLock(engine) if settings.single_instance_guard else None
     app.state.settings = settings
     llm_key = settings.anthropic_api_key.get_secret_value()
     if llm_key:
@@ -174,6 +202,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return JSONResponse({"status": "unavailable"}, status_code=503)
         if state == "behind":
             return JSONResponse({"status": "migrations_pending"}, status_code=503)
+        lock: InstanceLock | None = app.state.instance_lock
+        if lock is not None and not lock.held():
+            # Another worker or replica is the active one. Stay out of rotation.
+            return JSONResponse({"status": "standby"}, status_code=503)
         return JSONResponse({"status": "ready", "migrations": state})
 
     @app.get("/metrics", tags=["ops"], include_in_schema=False)
