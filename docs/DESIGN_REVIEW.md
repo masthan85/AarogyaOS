@@ -39,7 +39,7 @@ Looked at in light and dark: sign-in, home (doctor and administrator), patients,
 ## Not done
 
 - Layouts were not reworked screen by screen beyond what is listed above; everything else follows from the shared components.
-- No icons: the project has no icon library. Meaning is carried by words, position and colour together. Adding icons is a dependency decision for later.
+- No icons: the project had no icon library at this point (added in the fourth pass below).
 - Not checked on a phone, with large system fonts, with a screen reader, or in Telugu, Hindi or other long scripts. Text sizes use fixed points and some rows may need to wrap differently.
 - The new look is a proposal: show it to a doctor and a receptionist before settling on it.
 
@@ -59,3 +59,18 @@ Found and fixed:
 Performance of the API (local, demo data, median of five): most screens' requests take 10 to 20 ms and 6 to 13 database queries, of which about five are the per-request sign-in and permission lookup. Login takes about 80 ms because of password hashing, which is intended. Two real problems were fixed: the invoice list ran about 600 queries for 100 invoices and now runs 11 (26 ms); the staff list ran a query per person and now runs one for all roles.
 
 Not done or not checked: nothing was run on a phone, so touch feel, fonts, keyboard behaviour and safe areas are unchecked; the web bundle is 2.4 MB (the Android bundle size was not measured); lists use plain scroll views, which is fine for clinic-sized data but would need virtualised lists for very long ones; the per-request permission lookup (about five queries) could be cached if load ever requires it.
+
+## Fourth pass: wide screens, navigation, icons and a display face
+
+Prompted by seeing the app in a desktop browser, where the phone layout stretched edge to edge and left most of the screen empty. Checked as before, in a headless browser against the demo clinic: 1440 px, 820 px and 390 px wide, light and dark, as doctor, receptionist and administrator, with no console errors. Not checked on a phone or tablet.
+
+- **Wide screens (1024 px and up)** now have a sidebar: the wordmark and clinic name, Home, the same role-filtered sections as the home tiles, and the signed-in person with Settings and Sign out. Content sits in a column capped at 960 px. Below 1024 px nothing changes: the stack fills the screen and navigation starts from the home tiles. See `features/shell/Sidebar.tsx` and `app/(app)/_layout.tsx`.
+- **Icons**: outline icons (Feather, through `@expo/vector-icons`) on the sidebar, the home tiles and the attention cards. This is the dependency decision the first pass deferred. Icons always sit beside a label and are hidden from screen readers.
+- **Headings use the website's serif** (`displayFont` in the tokens: Iowan Old Style, Palatino or Georgia, whichever the device has). Nothing is downloaded. Section labels are now sentence case; capitals are kept for warnings.
+- **Home**: the header shows the date; Settings moved from a loose link at the bottom to the header (phones) or the sidebar (wide); the role line reads "Doctor at Demo Clinic".
+- **Honest counts**: the attention cards used to show "None critical" beside a dash while the number was still loading or had failed. They now say "Checking…" or "Could not load. Open to try again."
+- **Sign-in**: on wide screens a panel states what the product is for beside the form; the form has a "Show password" control.
+
+Screens: [home, wide](design/home-wide.png), [sign-in, wide](design/sign-in-wide.png), [home, phone](design/home-phone.png).
+
+Not done: the inner screens (patients, appointments, billing and the rest) were not redesigned. They gain the sidebar, the capped width and the serif titles, but their forms still use full-width buttons that look heavy at 960 px. The sidebar repeats the home tiles on wide screens, which is deliberate for now. As with the earlier passes, show it to a doctor and a receptionist before settling on it.

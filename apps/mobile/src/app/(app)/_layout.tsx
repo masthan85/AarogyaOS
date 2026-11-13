@@ -1,17 +1,25 @@
 import { Stack } from 'expo-router';
+import { useWindowDimensions, View } from 'react-native';
 
-import { useTheme } from '@/design-system/tokens';
+import { layout, useTheme } from '@/design-system/tokens';
+import { Sidebar } from '@/features/shell/Sidebar';
 
 export default function AppLayout() {
   const t = useTheme();
-  return (
+  const { width } = useWindowDimensions();
+  // Wide screens (desktop browsers, landscape tablets) get a sidebar and a readable column;
+  // phones keep the full-width stack and navigate from the home screen.
+  const wide = width >= layout.wide;
+  const stack = (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: t.surface },
+        headerStyle: { backgroundColor: wide ? t.background : t.surface },
         headerTintColor: t.text,
+        headerTitleStyle: { fontWeight: '700' },
+        headerShadowVisible: !wide,
         contentStyle: { backgroundColor: t.background },
       }}>
-      <Stack.Screen name="index" options={{ title: 'AarogyaOS', headerStyle: { backgroundColor: t.hero }, headerTintColor: t.heroText, headerShadowVisible: false }} />
+      <Stack.Screen name="index" options={{ title: 'AarogyaOS', headerShown: !wide, headerStyle: { backgroundColor: t.hero }, headerTintColor: t.heroText, headerShadowVisible: false }} />
       <Stack.Screen name="facilities" options={{ title: 'Facilities' }} />
       <Stack.Screen name="patients/index" options={{ title: 'Patients' }} />
       <Stack.Screen name="patients/new" options={{ title: 'New patient' }} />
@@ -39,5 +47,14 @@ export default function AppLayout() {
       <Stack.Screen name="admin/knowledge" options={{ title: 'Reference library' }} />
       <Stack.Screen name="admin/activity" options={{ title: 'Usage and audit' }} />
     </Stack>
+  );
+  if (!wide) return stack;
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: t.background }}>
+      <Sidebar />
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, width: '100%', maxWidth: layout.content, alignSelf: 'center' }}>{stack}</View>
+      </View>
+    </View>
   );
 }
