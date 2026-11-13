@@ -17,6 +17,7 @@ from app.modules.billing.service import (
     ToBillOut,
     VoidIn,
 )
+from app.modules.ops.idempotency import Key, claim
 
 router = APIRouter(tags=["billing"])
 Reader = Annotated[Principal, Depends(require("billing:read"))]
@@ -60,7 +61,16 @@ def issue_invoice(invoice_id: uuid.UUID, db: TenantDb, principal: Writer) -> Inv
 
 
 @router.post("/invoices/{invoice_id}/payments", response_model=InvoiceOut, status_code=201)
-def pay(invoice_id: uuid.UUID, body: PaymentIn, db: TenantDb, principal: Writer) -> InvoiceOut:
+def pay(
+    invoice_id: uuid.UUID,
+    body: PaymentIn,
+    db: TenantDb,
+    principal: Writer,
+    idempotency_key: Key = None,
+) -> InvoiceOut:
+    # A repeat of a request that already did this returns the invoice as it stands.
+    if not claim(db, principal, f"payment:{invoice_id}", idempotency_key):
+        return service.get(db, invoice_id)
     return service.record_payment(db, principal, invoice_id, body)
 
 
@@ -82,13 +92,29 @@ Manager = Annotated[Principal, Depends(require("billing:manage"))]
 
 @router.post("/invoices/{invoice_id}/credit-notes", response_model=InvoiceOut, status_code=201)
 def credit_note(
-    invoice_id: uuid.UUID, body: CreditNoteIn, db: TenantDb, principal: Adjuster
+    invoice_id: uuid.UUID,
+    body: CreditNoteIn,
+    db: TenantDb,
+    principal: Adjuster,
+    idempotency_key: Key = None,
 ) -> InvoiceOut:
+    # A repeat of a request that already did this returns the invoice as it stands.
+    if not claim(db, principal, f"credit-note:{invoice_id}", idempotency_key):
+        return service.get(db, invoice_id)
     return service.add_credit_note(db, principal, invoice_id, body)
 
 
 @router.post("/invoices/{invoice_id}/refunds", response_model=InvoiceOut, status_code=201)
-def refund(invoice_id: uuid.UUID, body: RefundIn, db: TenantDb, principal: Adjuster) -> InvoiceOut:
+def refund(
+    invoice_id: uuid.UUID,
+    body: RefundIn,
+    db: TenantDb,
+    principal: Adjuster,
+    idempotency_key: Key = None,
+) -> InvoiceOut:
+    # A repeat of a request that already did this returns the invoice as it stands.
+    if not claim(db, principal, f"refund:{invoice_id}", idempotency_key):
+        return service.get(db, invoice_id)
     return service.add_refund(db, principal, invoice_id, body)
 
 

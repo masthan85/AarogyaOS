@@ -13,6 +13,7 @@ import { draftTotals, emptyLine, formatRupees, invoiceState, METHOD_LABELS, pars
 import { formatDateTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
 import { invoiceHtml } from '@/domain/print';
+import { newRequestKey } from '@/domain/requestKey';
 import { printHtml, sharePdf } from '@/services/print';
 
 const fail = (title: string) => (e: unknown) => Alert.alert(title, e instanceof ApiError ? e.message : 'Check your connection.');
@@ -123,9 +124,11 @@ function Adjustments({ inv, onChanged }: { inv: Invoice; onChanged: () => void }
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const paise = parseRupees(amount);
   const limit = mode === 'credit' ? inv.net_paise : inv.refund_due_paise;
-  const done = () => { setMode(null); setAmount(''); setReason(''); onChanged(); };
+  // One key per intended adjustment: a retry after a lost reply reuses it, so it is recorded once.
+  const [requestKey, setRequestKey] = useState(newRequestKey);
+  const done = () => { setMode(null); setAmount(''); setReason(''); setRequestKey(newRequestKey()); onChanged(); };
   const send = useMutation({
-    mutationFn: () => (mode === 'credit' ? creditInvoice(inv.id, { amount_paise: paise as number, reason: reason.trim() }) : refundInvoice(inv.id, { amount_paise: paise as number, method, reason: reason.trim() })),
+    mutationFn: () => (mode === 'credit' ? creditInvoice(inv.id, { amount_paise: paise as number, reason: reason.trim() }, requestKey) : refundInvoice(inv.id, { amount_paise: paise as number, method, reason: reason.trim() }, requestKey)),
     onSuccess: done,
     onError: fail(mode === 'credit' ? 'Could not issue the credit note' : 'Could not record the refund'),
   });
@@ -227,9 +230,11 @@ function IssuedView({ inv, canWrite, onChanged }: { inv: Invoice; canWrite: bool
   const [voiding, setVoiding] = useState(false);
   useEffect(() => setAmount(String(inv.balance_paise / 100)), [inv.balance_paise]);
   const paise = parseRupees(amount);
+  // One key per intended payment: a retry after a lost reply reuses it, so it is recorded once.
+  const [requestKey, setRequestKey] = useState(newRequestKey);
   const pay = useMutation({
-    mutationFn: () => payInvoice(inv.id, { amount_paise: paise as number, method, reference: reference.trim() || undefined }),
-    onSuccess: () => { setReference(''); onChanged(); },
+    mutationFn: () => payInvoice(inv.id, { amount_paise: paise as number, method, reference: reference.trim() || undefined }, requestKey),
+    onSuccess: () => { setReference(''); setRequestKey(newRequestKey()); onChanged(); },
     onError: fail('Could not record the payment'),
   });
   const cancel = useMutation({ mutationFn: () => voidInvoice(inv.id, reason.trim()), onSuccess: onChanged, onError: fail('Could not void the invoice') });
@@ -313,7 +318,7 @@ export function InvoiceScreen() {
   const state = invoiceState(inv);
   const canWrite = can(me, 'billing:write');
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720, alignSelf: 'center' }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md, width: '100%', maxWidth: 720 }} keyboardShouldPersistTaps="handled">
       <View style={{ gap: space.xs }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
           <Text style={[type.title, { color: t.text }]}>{inv.number ?? 'Draft invoice'}</Text>

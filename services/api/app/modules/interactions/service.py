@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -28,6 +28,7 @@ from app.modules.interactions.schemas import (
     TranscriptOut,
     UsageRow,
 )
+from app.modules.ops import limits
 from app.modules.patients.models import Patient
 from app.modules.scheduling.models import Appointment
 from app.modules.tenancy.policy import OrgPolicy, load_policy
@@ -127,6 +128,7 @@ def create_interaction(
         raise Forbidden("You cannot record this kind of conversation")
     policy = load_policy(session, org_id)
     _check_policy(policy, body.ai_processing)
+    limits.check_speech(session, org_id, policy)
     patient = session.get(Patient, body.patient_id)
     if patient is None or patient.status != "ACTIVE":
         raise NotFound("Patient not found")
@@ -259,7 +261,9 @@ def start(session: Session, principal: Principal, interaction_id: uuid.UUID) -> 
         raise Conflict(f"This recording has ended{why}")
     if ia.status != "CREATED":
         raise Conflict("This recording has already been started")
-    _check_policy(load_policy(session, ia.organisation_id), ia.ai_processing)
+    policy = load_policy(session, ia.organisation_id)
+    _check_policy(policy, ia.ai_processing)
+    limits.check_speech(session, ia.organisation_id, policy)
     _check_consent(session, ia.patient_id, ia.ai_processing)  # consent may have changed since setup
     now = datetime.now(UTC)
     ia.status, ia.recording_started_at, ia.last_audio_at = "ACTIVE", now, now
@@ -391,6 +395,19 @@ def reconcile_stale(session: Session, ia: ClinicalInteraction) -> None:
     ):
         ia.status, ia.pause_reason = "PAUSED", "CONNECTION_LOST"
         session.commit()
+
+
+def interrupt_after_restart(session: Session) -> int:
+    """Called once when the API starts. Live transcript state lived in the previous process, so a
+    recording it was serving cannot still be running: say so instead of leaving it marked active.
+    Final segments already saved stay; the clinician decides whether to start recording again."""
+    result = session.execute(
+        update(ClinicalInteraction)
+        .where(ClinicalInteraction.status == "ACTIVE")
+        .values(status="PAUSED", pause_reason="SERVER_RESTART")
+    )
+    session.commit()
+    return result.rowcount or 0  # type: ignore[attr-defined]
 
 
 def list_for_patient(

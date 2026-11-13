@@ -24,14 +24,18 @@ def test_ready_reports_database_and_migration_state(client: TestClient) -> None:
 
 
 def test_ready_fails_closed_when_migrations_are_pending(client: TestClient, db: Session) -> None:
+    # Put back exactly what was there: a fixed revision here would go stale with the next migration
+    # and leave every later readiness check in the run reporting pending migrations.
+    original = db.scalar(text("select version_num from alembic_version"))
     db.execute(text("update alembic_version set version_num = '0005'"))
     db.commit()
     try:
         r = client.get("/ready")
         assert r.status_code == 503 and r.json() == {"status": "migrations_pending"}
     finally:
-        db.execute(text("update alembic_version set version_num = '0006'"))
+        db.execute(text("update alembic_version set version_num = :v"), {"v": original})
         db.commit()
+    assert client.get("/ready").status_code == 200
 
 
 def test_api_responses_are_not_cacheable_and_carry_security_headers(client: TestClient) -> None:

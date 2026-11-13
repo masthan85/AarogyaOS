@@ -1,4 +1,4 @@
-import { Platform, useColorScheme, type ViewStyle } from 'react-native';
+import { Platform, useColorScheme, useWindowDimensions, type ViewStyle } from 'react-native';
 
 /**
  * Colour roles, not colours. Every text/background pairing used by the components was checked against
@@ -64,16 +64,33 @@ export const MIN_TOUCH = 48;
 /** Smaller controls (inline actions in a list) never go below the 44-point platform minimum. */
 export const MIN_TOUCH_SMALL = 44;
 
+/**
+ * Headings use the same serif as the website (DESIGN.md), so the product reads like a well-kept
+ * clinic note. Each family is already on the device: nothing is downloaded.
+ */
+export const displayFont = Platform.select({
+  ios: 'Iowan Old Style',
+  android: 'serif',
+  default: '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif',
+}) as string;
+
+/** Widths that decide the layout: where the sidebar appears and how wide content may grow. */
+export const layout = { wide: 1024, content: 960, sidebar: 256, form: 400, field: 560 } as const;
+/** True where the sidebar layout applies. Controls sized for a thumb become sized for a pointer. */
+export const useWide = (): boolean => useWindowDimensions().width >= layout.wide;
+
 /** One type scale for the whole app, so sizes are decisions rather than accidents. */
 export const type = {
-  display: { fontSize: 28, fontWeight: '800', letterSpacing: -0.4 },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.2 },
+  hero: { fontSize: 34, lineHeight: 40, fontWeight: '700', letterSpacing: -0.5, fontFamily: displayFont },
+  display: { fontSize: 28, fontWeight: '700', letterSpacing: -0.4, fontFamily: displayFont },
+  title: { fontSize: 22, fontWeight: '700', letterSpacing: -0.2, fontFamily: displayFont },
   h2: { fontSize: 18, fontWeight: '700' },
   h3: { fontSize: 16, fontWeight: '700' },
   body: { fontSize: 16, fontWeight: '400' },
   small: { fontSize: 14, fontWeight: '400' },
   caption: { fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
-  overline: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  /** Section label. Sentence case: capitals are kept for warnings that must not be missed. */
+  overline: { fontSize: 14, fontWeight: '700', letterSpacing: 0.1 },
 } as const;
 
 /** A whisper of depth in light mode; dark mode relies on borders alone. */

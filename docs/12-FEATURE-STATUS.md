@@ -27,6 +27,12 @@ This is the evidence-based inventory of what exists. Status words are used stric
 | Encrypted backup and restore drill | Working (checked by hand) | Run against a development database; a tampered backup was rejected. Not automated |
 | Load test | Working (checked by hand) | One run: about 147 requests per second, no errors, on one machine, excluding login, AI and audio |
 | Docker image and compose stack | Built, not run live | No Docker daemon was available |
+| Repeated payment, credit note and refund requests recorded once (`Idempotency-Key`) | Working (tested) | `test_release_gates.py`, including four identical requests racing. Not yet on draft invoices, prescriptions or walk-ins |
+| Provider approval list checked at start-up in production, fallback included | Working (tested) | `test_release_gates.py`. Records a decision; does not prove an agreement exists |
+| One live instance (advisory lock, `standby` readiness, audio refused elsewhere) | Working (tested) | `test_release_gates.py`. Not exercised on a real platform |
+| Recordings marked interrupted after a restart | Working (tested) | `test_release_gates.py` |
+| Monthly speech and AI allowances per organisation | Working (tested) | `test_release_gates.py`. No outbound alert: the usage screen or a monitor must be watched |
+| Connection banner in the app; nothing queued offline | Built, partly checked | Client behaviour in `client.test.ts`. In a browser the banner appeared when the server was stopped and cleared when it returned. Not exercised on a device |
 
 ## Front desk
 

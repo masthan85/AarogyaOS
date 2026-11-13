@@ -34,6 +34,7 @@ from app.modules.interactions.models import (
     TranscriptSegment,
 )
 from app.modules.interactions.service import ConsentRequired
+from app.modules.ops import limits
 from app.modules.tenancy.policy import load_policy
 
 MAX_NEW_SEGMENTS = 40
@@ -101,6 +102,7 @@ def analyse(
     policy = load_policy(session, org_id)
     if not policy.ai_processing_enabled:
         raise Conflict("AI processing is not enabled for this organisation")
+    limits.check_ai(session, org_id, policy)
     missing = [
         p
         for p in ("SPEECH_TRANSCRIPTION", "AI_PROCESSING")

@@ -39,7 +39,7 @@ Looked at in light and dark: sign-in, home (doctor and administrator), patients,
 ## Not done
 
 - Layouts were not reworked screen by screen beyond what is listed above; everything else follows from the shared components.
-- No icons: the project has no icon library. Meaning is carried by words, position and colour together. Adding icons is a dependency decision for later.
+- No icons: the project had no icon library at this point (added in the fourth pass below).
 - Not checked on a phone, with large system fonts, with a screen reader, or in Telugu, Hindi or other long scripts. Text sizes use fixed points and some rows may need to wrap differently.
 - The new look is a proposal: show it to a doctor and a receptionist before settling on it.
 
@@ -59,3 +59,42 @@ Found and fixed:
 Performance of the API (local, demo data, median of five): most screens' requests take 10 to 20 ms and 6 to 13 database queries, of which about five are the per-request sign-in and permission lookup. Login takes about 80 ms because of password hashing, which is intended. Two real problems were fixed: the invoice list ran about 600 queries for 100 invoices and now runs 11 (26 ms); the staff list ran a query per person and now runs one for all roles.
 
 Not done or not checked: nothing was run on a phone, so touch feel, fonts, keyboard behaviour and safe areas are unchecked; the web bundle is 2.4 MB (the Android bundle size was not measured); lists use plain scroll views, which is fine for clinic-sized data but would need virtualised lists for very long ones; the per-request permission lookup (about five queries) could be cached if load ever requires it.
+
+## Fourth pass: wide screens, navigation, icons and a display face
+
+Prompted by seeing the app in a desktop browser, where the phone layout stretched edge to edge and left most of the screen empty. Checked as before, in a headless browser against the demo clinic: 1440 px, 820 px and 390 px wide, light and dark, as doctor, receptionist and administrator, with no console errors. Not checked on a phone or tablet.
+
+- **Wide screens (1024 px and up)** now have a sidebar: the wordmark and clinic name, Home, the same role-filtered sections as the home tiles, and the signed-in person with Settings and Sign out. Content sits in a column capped at 960 px. Below 1024 px nothing changes: the stack fills the screen and navigation starts from the home tiles. See `features/shell/Sidebar.tsx` and `app/(app)/_layout.tsx`.
+- **Icons**: outline icons (Feather, through `@expo/vector-icons`) on the sidebar, the home tiles and the attention cards. This is the dependency decision the first pass deferred. Icons always sit beside a label and are hidden from screen readers.
+- **Headings use the website's serif** (`displayFont` in the tokens: Iowan Old Style, Palatino or Georgia, whichever the device has). Nothing is downloaded. Section labels are now sentence case; capitals are kept for warnings.
+- **Home**: the header shows the date; Settings moved from a loose link at the bottom to the header (phones) or the sidebar (wide); the role line reads "Doctor at Demo Clinic".
+- **Honest counts**: the attention cards used to show "None critical" beside a dash while the number was still loading or had failed. They now say "Checking…" or "Could not load. Open to try again."
+- **Sign-in**: on wide screens a panel states what the product is for beside the form; the form has a "Show password" control.
+
+Screens: [home, wide](design/home-wide.png), [sign-in, wide](design/sign-in-wide.png), [home, phone](design/home-phone.png).
+
+Not done at this point: the inner screens, which the fifth pass below covers. The sidebar repeats the home tiles on wide screens, which is deliberate for now. As with the earlier passes, show it to a doctor and a receptionist before settling on it.
+
+## Fifth pass: every inner screen
+
+Method: all 26 routes and the 11 consultation tabs were rendered at 1280 px as doctor, nurse, receptionist, lab technician and administrator, against a demo clinic with four patients at different stages of a visit, and again at 390 px for the doctor, receptionist and consultation. No console errors. As before, this is a browser rendering, not a device.
+
+The same few faults appeared on nearly every screen, so most of the work is in the shared components:
+
+- **Buttons** fill the row on phones and are as wide as their label on wide screens (`Button`, with `block` to opt out, used on sign-in).
+- **Text fields and short segmented choices** stop at 560 px on wide screens instead of running the width of the column.
+- **Empty states** carry an icon and more room, so "nothing here" reads as a state, not a stray grey bar.
+- **Page titles** in the navigation header use the display serif.
+- **Status words** are sentence case everywhere ("In consultation", "Active"). Before, some chips shouted in capitals and others did not; capitals are now left for clinical warnings. `domain/text.ts` holds the helper, with a test.
+
+Screen-specific changes:
+
+- **Queue**: the token sits in a circle beside the name and status, and on wide screens the action is on the same line, so four patients fit where one and a half did.
+- **Appointments**: time, patient and status on one line; day stepping uses icon buttons and a "Back to today" link.
+- **Usage and audit**: the activity log is one ruled list with clinic-style dates, in place of a card per entry with raw action names and US dates.
+- **Patient profile**: "Speaks English" in place of the language code. **Facilities**: readable kind and status.
+- **Billing screens**: aligned with the page title instead of floating in the centre.
+
+Screens: [queue](design/queue-wide.png), [appointments](design/appointments-wide.png), [consultation](design/consultation-wide.png), [audit](design/audit-wide.png).
+
+Not done: the invoice screen with a real invoice, the lab result entry form with a real order, and the Draft EMR with real findings were not exercised, because the demo data had none; they use the same components. Dates are still typed as text (YYYY-MM-DD), which wants a proper date picker. The staff list still puts "Deactivate account" on its own line. Dark mode was checked on the home screen only in this pass.

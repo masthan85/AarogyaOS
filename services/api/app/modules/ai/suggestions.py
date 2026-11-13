@@ -47,6 +47,7 @@ from app.modules.clinical.models import (
     ServiceRequest,
 )
 from app.modules.consent.queries import active_consent
+from app.modules.ops import limits
 from app.modules.tenancy.policy import load_policy
 
 SAFETY_CATEGORIES = frozenset({"ALLERGY_WARNING", "INTERACTION", "CONTRAINDICATION"})
@@ -417,7 +418,9 @@ def generate(
 
     model_used = False
     message: str | None = None
-    if policy.ai_processing_enabled and active_consent(session, enc.patient_id, "AI_PROCESSING"):
+    if policy.ai_processing_enabled and limits.ai_reached(session, org_id, policy):
+        message = "This month's AI allowance is used up. The rule-based checks above still ran."
+    elif policy.ai_processing_enabled and active_consent(session, enc.patient_id, "AI_PROCESSING"):
         model_used, message = _model_pass(
             session,
             principal,

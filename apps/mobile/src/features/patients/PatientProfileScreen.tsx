@@ -9,6 +9,7 @@ import { AlertBanner, Button, Card, EmptyState, ErrorState, LoadingState, Status
 import { space, useTheme } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { eventLabel } from '@/domain/events';
+import { LANGUAGE_OPTIONS } from '@/domain/languages';
 import { can } from '@/domain/permissions';
 
 /** Admins only: stops retention jobs deleting anything about this patient while a legal matter is open. */
@@ -68,7 +69,7 @@ export function PatientProfileScreen() {
           {p.mrn} · {p.age_years ?? '?'} yrs{p.dob_is_estimated ? ' (estimated)' : ''} · {p.administrative_gender}
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-          <StatusChip label={`Language: ${p.preferred_language}`} />
+          <StatusChip label={`Speaks ${LANGUAGE_OPTIONS.find((l) => l.tag === p.preferred_language)?.label ?? p.preferred_language}`} />
           {p.identifiers.map((i) => (
             <StatusChip key={i.id} label={`${i.system.replace('_', ' ')} ${i.masked}${i.verified ? '' : ' (unverified)'}`} />
           ))}

@@ -31,6 +31,12 @@ class OrgPolicy(BaseModel):
     enabled_languages: list[str] | None = None
     # Patients younger than this need a guardian's consent. Confirm the right value with counsel.
     guardian_consent_under_age: int = Field(default=18, ge=0, le=21)
+    # Monthly allowances (calendar month, UTC). None = no limit. Reaching one switches off new
+    # recordings or new model calls only; manual work is never blocked (app/modules/ops/limits.py).
+    monthly_speech_minutes_limit: int | None = Field(default=None, ge=0, le=1_000_000)
+    monthly_ai_calls_limit: int | None = Field(default=None, ge=0, le=10_000_000)
+    # Administrators are shown a warning once usage passes this share of an allowance.
+    usage_alert_percent: int = Field(default=80, ge=1, le=100)
 
     @model_validator(mode="after")
     def _consistent(self) -> "OrgPolicy":

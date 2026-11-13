@@ -86,6 +86,7 @@ by the state machine but unused until consent/triage steps exist. Transitions ou
 | Reference knowledge | `GET/POST /knowledge/documents`, `POST /knowledge/documents/{id}/approve`, `/retire` | `knowledge:read` / `knowledge:manage` (approver must differ from creator) |
 | Patient summary | `POST/GET /encounters/{id}/summaries`, `PUT /summaries/{id}`, `POST /summaries/{id}/approve` | `summary:write` / `summary:read`; encounter's doctor |
 | AI usage | `GET /usage/ai` | `usage:read` |
+| This month's use against the organisation's allowances | `GET /usage/limits` | `usage:read` |
 
 | FHIR export | `GET /fhir/metadata`, `/fhir/Patient/{id}`, `/fhir/Encounter/{id}`, `/fhir/Encounter/{id}/$export-document` (see `INTEROPERABILITY.md`; `application/fhir+json`, errors as OperationOutcome) | `fhir:export`; encounter's doctor |
 
@@ -335,6 +336,7 @@ Generated from the router files; the permission column shows the permission decl
 | PUT | `/interactions/{interaction_id}/speakers/{speaker_id}` | speaker:assign |
 | GET | `/patients/{patient_id}/interactions` | transcript:read |
 | GET | `/usage/speech` | usage:read |
+| GET | `/usage/limits` | usage:read |
 | GET | `/interactions/{interaction_id}/events` | - |
 
 ### FHIR
@@ -441,3 +443,10 @@ Authenticator-app TOTP (RFC 6238: SHA-1, six digits, 30 seconds, one step either
 - `POST /auth/mfa/disable` `{password, code}` needs the password and a current code or a recovery code.
 - `POST /auth/login` for a user with it on answers 401 with error title `mfa_required` until `mfa_code` is supplied; a wrong code gives `invalid_mfa_code` and counts towards the account lockout. A code is accepted once (the newest accepted time step is stored, so a replay fails).
 - `POST /users/{id}/mfa/reset` (`user:manage`) clears a colleague's second factor after a lost phone and lost recovery codes. It is audited as `MFA_RESET_BY_ADMIN`.
+
+## Repeated requests
+
+`POST /invoices/{id}/payments`, `/credit-notes` and `/refunds` accept an optional `Idempotency-Key` header of 8 to 100 characters. Send a new key for each intended action and the same key when retrying it. The first request with a key does the work; a repeat returns the invoice as it stands and records nothing. A request that is refused does not use up its key. Keys are scoped to the user, the invoice and the kind of action, and are deleted after two days.
+
+A request refused because a monthly allowance is used up returns 409 with `"title": "usage_limit_reached"`.
+

@@ -13,6 +13,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from app.core.context import Principal, RequestMeta
 from app.core.db import set_tenant
 from app.core.deps import PrincipalDep, SettingsDep, TenantDb, build_principal, get_claims, require
+from app.core.errors import NotFound
 from app.modules.audit.service import record_audit
 from app.modules.interactions import service
 from app.modules.interactions.schemas import (
@@ -28,6 +29,8 @@ from app.modules.interactions.schemas import (
     TranscriptOut,
     UsageRow,
 )
+from app.modules.ops import limits
+from app.modules.tenancy.policy import load_policy
 
 router = APIRouter(tags=["recording"])
 
@@ -130,6 +133,16 @@ def speech_usage(
 ) -> list[UsageRow]:
     end = until or datetime.now(UTC) + timedelta(minutes=1)
     return service.usage_summary(db, since or end - timedelta(days=30), end)
+
+
+@router.get("/usage/limits", response_model=limits.UsagePosition)
+def usage_limits(
+    db: TenantDb, principal: Annotated[Principal, Depends(require("usage:read"))]
+) -> limits.UsagePosition:
+    """This month's speech minutes and AI calls against the organisation's allowances."""
+    if principal.org_id is None:
+        raise NotFound("No organisation")
+    return limits.position(db, principal.org_id, load_policy(db, principal.org_id))
 
 
 @router.get("/interactions/{interaction_id}/events")

@@ -4,6 +4,7 @@ import { FlatList, Text } from 'react-native';
 import { getFacilities } from '@/api/endpoints';
 import { Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
 import { space, useTheme } from '@/design-system/tokens';
+import { sentence } from '@/domain/text';
 
 export function FacilitiesScreen() {
   const t = useTheme();
@@ -22,9 +23,9 @@ export function FacilitiesScreen() {
       renderItem={({ item }) => (
         <Card title={item.name}>
           <Text style={{ color: t.textMuted }}>
-            {item.code} · {item.kind.toLowerCase()} · {item.timezone}
+            {sentence(item.kind)}, code {item.code}, {item.timezone}
           </Text>
-          <StatusChip label={item.status} tone={item.status === 'ACTIVE' ? 'success' : 'warning'} />
+          <StatusChip label={sentence(item.status)} tone={item.status === 'ACTIVE' ? 'success' : 'warning'} />
         </Card>
       )}
     />

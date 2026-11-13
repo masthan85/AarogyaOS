@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     speech_max_session_seconds: int = Field(default=3600, ge=60, le=14400)
     # Local development audio store only. Production uses encrypted S3-compatible storage (Phase 7).
     audio_store_path: str = "/tmp/aarogya-audio"  # noqa: S108
+    # Vendors approved to receive patient data: each needs a signed data-processing agreement
+    # covering residency, retention and training for the exact service used. Production refuses to
+    # start if any configured provider, including the speech fallback, is missing from this list.
+    patient_data_providers: list[str] = []
+    # Refuse to serve recordings from more than one process (see app/core/instance.py).
+    # None means on in production and off elsewhere.
+    single_instance_guard: bool | None = None
 
     @model_validator(mode="after")
     def _defaults_and_production_rules(self) -> "Settings":
@@ -96,7 +103,29 @@ class Settings(BaseSettings):
                 raise ValueError("AAROGYA_DATABASE_URL still uses the development password")
             if self.field_encryption_key == _DEV_FIELD_KEY:
                 raise ValueError("AAROGYA_FIELD_ENCRYPTION_KEY must be set in production")
+            approved = {p.strip().lower() for p in self.patient_data_providers}
+            for setting, value in self.external_providers().items():
+                if value not in approved:
+                    raise ValueError(
+                        f"AAROGYA_{setting.upper()}={value} is not in "
+                        "AAROGYA_PATIENT_DATA_PROVIDERS. A provider may receive patient data only "
+                        "after its data-processing agreement is signed; list it there once it is."
+                    )
+        if self.single_instance_guard is None:
+            self.single_instance_guard = self.environment == "production"
         return self
+
+    def external_providers(self) -> dict[str, str]:
+        """Every setting that names a service patient data would be sent to, with its value."""
+        chosen = {
+            "speech_provider": self.speech_provider,
+            "speech_fallback_provider": self.speech_fallback_provider,
+            "llm_provider": self.llm_provider,
+            "embedding_provider": self.embedding_provider,
+            "translation_provider": self.translation_provider,
+            "tts_provider": self.tts_provider,
+        }
+        return {k: v.strip().lower() for k, v in chosen.items() if v.strip()}
 
 
 @lru_cache

@@ -20,10 +20,12 @@ from app.modules.identity.models import RefreshToken
 from app.modules.interactions.models import ClinicalInteraction
 from app.modules.interactions.retention import purge_due_audio
 from app.modules.interactions.service import STALE_AFTER
+from app.modules.ops.idempotency import IdempotencyKey
 from app.modules.ops.models import JobRun
 from app.speech.audio_store import LocalEncryptedAudioStore
 
 log = logging.getLogger("aarogya.jobs")
+IDEMPOTENCY_KEEP = timedelta(days=2)  # long enough for any retry, short enough to stay small
 REFRESH_TOKEN_KEEP = timedelta(days=30)  # kept past expiry so reuse of a stolen token is still seen
 
 JobFn = Callable[[Session, Settings], dict[str, int]]
@@ -56,7 +58,19 @@ def purge_refresh_tokens(session: Session, settings: Settings) -> dict[str, int]
     return {"deleted": result.rowcount or 0}  # type: ignore[attr-defined]
 
 
+def purge_idempotency_keys(session: Session, settings: Settings) -> dict[str, int]:
+    set_tenant(session, None, bypass=True)
+    result = session.execute(
+        delete(IdempotencyKey).where(
+            IdempotencyKey.created_at < datetime.now(UTC) - IDEMPOTENCY_KEEP
+        )
+    )
+    session.commit()
+    return {"deleted": result.rowcount or 0}  # type: ignore[attr-defined]
+
+
 JOBS: dict[str, JobFn] = {
+    "purge-idempotency-keys": purge_idempotency_keys,
     "purge-audio": purge_audio,
     "pause-stale-recordings": pause_stale_recordings,
     "purge-refresh-tokens": purge_refresh_tokens,

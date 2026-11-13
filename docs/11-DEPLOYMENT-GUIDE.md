@@ -32,6 +32,14 @@ Set `AAROGYA_ENVIRONMENT=production`. The API then refuses to start unless a str
 
 The application database role must be neither a superuser nor `BYPASSRLS`. If the hosting provider gives you only an administrator role, create a second, ordinary role for the application and run migrations as the owner.
 
+## Pilot topology: one container, one worker
+
+Run exactly one API container with one worker, with automatic scaling switched off. The image starts uvicorn with `--workers 1`; do not override it, and do not assume a platform's "one instance" setting means one process. The API enforces this itself (see "One live instance" in `OPERATIONS.md`), so a mistake shows up as a `standby` instance, not as recordings split between processes. With one instance there is nothing to route between, so sticky sessions are not needed.
+
+Use the platform's recreate or stop-then-start deployment strategy. Each deployment interrupts recordings in progress and makes the service unavailable for the seconds it takes to restart; this is the accepted availability limit of the pilot. Host in an Indian region on infrastructure that keeps WebSockets open for at least 20 minutes, with managed PostgreSQL (point-in-time recovery, TLS) and a secret manager.
+
+Before the first production start, set `AAROGYA_PATIENT_DATA_PROVIDERS` to the vendors whose agreements are signed. With the list empty and a provider configured, the API will not start; with no provider configured it runs as a manual record system.
+
 ## Scheduled jobs
 
 Run from cron or a Kubernetes CronJob with the API image. A database advisory lock prevents overlap.
@@ -41,6 +49,7 @@ Run from cron or a Kubernetes CronJob with the API image. A database advisory lo
 | `python -m app.cli run-job purge-audio` | Delete retained audio past its date or after consent withdrawal; skips patients under a legal hold | hourly |
 | `python -m app.cli run-job pause-stale-recordings` | Pause recordings whose audio stopped, so none claims to be live | every minute |
 | `python -m app.cli run-job purge-refresh-tokens` | Delete refresh tokens 30 or more days past expiry | daily |
+| `python -m app.cli run-job purge-idempotency-keys` | Delete request keys older than two days | daily |
 
 ## Target topology (not built)
 
