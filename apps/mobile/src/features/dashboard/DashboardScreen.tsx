@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getFollowUps, getOrganisation, getResultsAwaitingReview } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
@@ -47,6 +48,7 @@ export function DashboardScreen() {
   const dark = useIsDark();
   const { me } = useAuth();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const wide = width >= layout.wide;
   // 2 columns on phones, 3 from tablet width up (the wide layout caps the column, so 3 still fits).
   const columns = width >= 640 ? 3 : 2;
@@ -72,7 +74,7 @@ export function DashboardScreen() {
   const edge = wide ? space.lg : space.md;
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: space.xl, paddingTop: wide ? space.lg : 0 }}>
+    <ScrollView contentContainerStyle={{ paddingBottom: space.xl + insets.bottom, paddingTop: wide ? space.lg + insets.top : 0 }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <View
         style={{
           backgroundColor: t.hero,

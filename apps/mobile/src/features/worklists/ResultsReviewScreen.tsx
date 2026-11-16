@@ -23,7 +23,7 @@ export function ResultsReviewScreen() {
   const rows = reviewOrder(q.data);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <Lead>
         Results for investigations you ordered that you have not yet reviewed. Critical values come first. Marking a result reviewed is
         your confirmation that you have looked at it; it does not tell the patient anything.

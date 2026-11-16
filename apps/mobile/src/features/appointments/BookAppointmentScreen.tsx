@@ -43,7 +43,7 @@ export function BookAppointmentScreen() {
   if (doctors.isError) return <ErrorState message="Could not load doctors." onRetry={() => doctors.refetch()} />;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <Card title={`Book for ${name ?? 'patient'}`} />
       {doctors.data.length === 0 ? (
         <EmptyState message="No doctors are set up for booking yet. Ask an administrator to add practitioners." />

@@ -18,7 +18,7 @@ export function AdminHome() {
   const { me } = useAuth();
   const items = ITEMS.filter((i) => can(me, i.permission));
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.sm }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.sm }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       {items.length === 0 ? <Lead>Your role has no administration screens.</Lead> : null}
       {items.map((i) => (
         <NavRow key={i.title} title={i.title} description={i.description} onPress={() => router.push(i.href)} />

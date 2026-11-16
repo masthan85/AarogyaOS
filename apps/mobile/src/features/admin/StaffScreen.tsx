@@ -34,7 +34,7 @@ export function StaffScreen() {
   const profileOf = (u: StaffUser) => pracs.data?.find((p) => p.user_id === u.id);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <SectionTitle>Staff</SectionTitle>
       {users.data?.length === 0 ? <EmptyState message="No staff yet." /> : null}
       {users.data?.map((u) => <UserCard key={u.id} user={u} profile={profileOf(u)} onChanged={refresh} />)}

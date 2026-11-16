@@ -49,7 +49,7 @@ export function ConsentScreen() {
     ?? policies.data?.find((p) => p.purpose === purpose && p.language === 'en-IN');
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Card>
         <Text style={[type.title, { color: t.text }]}>{patient.data?.full_name ?? 'Patient'}</Text>
         <Text style={{ color: t.textMuted }}>

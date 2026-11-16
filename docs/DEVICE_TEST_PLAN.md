@@ -41,3 +41,21 @@ reaches the speech vendor.
 ## 3. Accept for pilot only if
 Every row passes on each device class you will use, the Sarvam word error rate on reviewed clinical recordings
 is acceptable to the clinical lead, and the findings are recorded in the clinical-safety log.
+
+## Layout on phones and tablets
+
+The layout was checked in a browser at phone and tablet sizes (`DESIGN_REVIEW.md`, sixth pass). These need a device, on at least one small Android phone, one iPhone with a notch, one Android tablet and one iPad:
+
+| Check | Expected |
+|---|---|
+| Open the app on an iPad | It fills the screen; it is not a scaled-up phone app |
+| Hold a tablet on its side | The sidebar appears and nothing sits under the status bar or the home indicator |
+| Turn the tablet upright, then back | The layout switches between phone and sidebar form without losing what was typed |
+| Open a consultation on a tablet on its side | The record and the patient panel sit side by side |
+| Tap the last field on a long form (new patient, triage, prescription) | The field stays visible above the keyboard, on iOS and on Android |
+| With the keyboard open, tap a button | It works on the first tap |
+| Stop the server while signed in | The connection banner is fully visible below the status bar |
+| Set the system font to its largest size | Text wraps; nothing is cut off and every button can still be reached |
+| Put the app beside another app in split view on an iPad | It uses the phone layout and stays usable |
+| Use a tablet with a hardware keyboard | Tab moves between fields in order |
+

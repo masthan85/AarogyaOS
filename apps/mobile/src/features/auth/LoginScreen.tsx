@@ -79,7 +79,7 @@ export function LoginScreen() {
         </View>
       ) : null}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: space.lg }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: space.lg }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
           <View style={{ width: '100%', maxWidth: wide ? layout.form : 480, alignSelf: 'center', gap: space.lg }}>
             {wide ? null : mark(false)}
             <View style={{ gap: space.xs }}>

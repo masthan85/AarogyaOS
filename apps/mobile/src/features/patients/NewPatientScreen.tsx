@@ -80,7 +80,7 @@ export function NewPatientScreen() {
   const onSubmit = handleSubmit((v) => submit(v, false));
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       {duplicates.length > 0 ? (
         <Card title="This person may already be registered">
           <Text style={{ color: t.textMuted }}>Check these before creating a new record.</Text>

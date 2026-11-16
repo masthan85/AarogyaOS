@@ -34,7 +34,7 @@ export function CoverScreen() {
 
   if (colleagues.isPending || cover.isPending) return <LoadingState />;
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Lead>
         Ask a colleague to review your investigation results while you are away. They will see your results in their review list for
         those dates only, and each review is recorded under their name. Your patients and orders stay yours.

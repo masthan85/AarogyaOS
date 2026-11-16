@@ -98,7 +98,7 @@ function TriageForm({ encounterId, name }: { encounterId: string; name?: string 
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Card>
         <Text style={[type.title, { color: t.text }]}>{data.patient?.full_name ?? name ?? 'Patient'}</Text>
         <Text style={{ color: t.textMuted }}>
