@@ -98,3 +98,17 @@ Screen-specific changes:
 Screens: [queue](design/queue-wide.png), [appointments](design/appointments-wide.png), [consultation](design/consultation-wide.png), [audit](design/audit-wide.png).
 
 Not done: the invoice screen with a real invoice, the lab result entry form with a real order, and the Draft EMR with real findings were not exercised, because the demo data had none; they use the same components. Dates are still typed as text (YYYY-MM-DD), which wants a proper date picker. The staff list still puts "Deactivate account" on its own line. Dark mode was checked on the home screen only in this pass.
+
+## Sixth pass: phones and tablets
+
+Method: the doctor's screens and consultation tabs were rendered at 360 by 740 (a small Android phone), 768 by 1024 (a tablet held upright) and 1180 by 820 (an iPad on its side), and the receptionist's at 390 by 844. Nothing overflowed, was cut off or needed sideways scrolling at any of them. At 1180 px the sidebar layout applies and the consultation shows its two columns; below 1024 px the app uses the phone layout, which also covers a tablet held upright and an iPad in split view. Layout follows the window size as it changes, so rotating the device switches between the two.
+
+A browser cannot show how an app sits around a notch, a status bar or a keyboard, so these were fixed from the code and still need a device:
+
+- **iPad support was not declared.** `app.json` lacked `ios.supportsTablet`, so on an iPad the app would have run as a scaled-up iPhone app and never reached the tablet layout. It is now set.
+- **Safe areas.** The sidebar, the connection banner and the home header on wide screens now keep clear of the status bar, the home indicator and side cut-outs. Screens with a navigation header were already handled by the header.
+- **Keyboard.** Every scrolling form now moves its focused field clear of the keyboard on iOS and keeps a tap on a button working while the keyboard is open. Before, only the sign-in screen did.
+
+Touch targets were already sized for fingers and stay so: buttons are 48 points high, sidebar rows and icon buttons 44. On wide screens buttons are narrower, not shorter.
+
+Not checked, and only a device can settle them: the real effect of the safe-area and keyboard changes; Android's keyboard behaviour with edge-to-edge display; large system font sizes; a hardware keyboard on a tablet; and the tablet in split view beside another app. These are added to `DEVICE_TEST_PLAN.md`.

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { displayFont, layout, useTheme } from '@/design-system/tokens';
 import { Sidebar } from '@/features/shell/Sidebar';
@@ -11,9 +12,11 @@ import { useServerReachable } from '@/services/connectivity';
  */
 function ConnectionBanner() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   if (useServerReachable()) return null;
+  // The banner sits above the navigation header, so it must clear the status bar itself.
   return (
-    <View accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ backgroundColor: t.warningSoft, borderBottomWidth: 1, borderBottomColor: t.warning, paddingVertical: 10, paddingHorizontal: 16 }}>
+    <View accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ backgroundColor: t.warningSoft, borderBottomWidth: 1, borderBottomColor: t.warning, paddingTop: 10 + insets.top, paddingBottom: 10, paddingLeft: 16 + insets.left, paddingRight: 16 + insets.right }}>
       <Text style={{ color: t.warning, fontWeight: '700' }}>No connection to the clinic server</Text>
       <Text style={{ color: t.text, fontSize: 14 }}>Nothing you enter is saved until it returns. Each screen tells you when a save has gone through.</Text>
     </View>

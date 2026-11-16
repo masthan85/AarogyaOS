@@ -26,7 +26,7 @@ function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: ()
   });
   const canRecord = can(me, 'prescription:dispense');
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <Card>
         <Text style={[type.h2, { color: t.text }]}>{patient.full_name}</Text>
         <Text style={{ color: t.textMuted }}>{patient.mrn} · {patient.age_years ?? '?'} yrs</Text>

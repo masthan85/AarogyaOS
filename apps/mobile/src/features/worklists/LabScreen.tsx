@@ -67,7 +67,7 @@ export function LabScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <ChoiceChips
         value={category}
         onChange={(c) => { setCategory(c); setOpen(undefined); }}

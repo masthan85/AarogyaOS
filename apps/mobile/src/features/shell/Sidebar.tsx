@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { type Href, router, usePathname } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getOrganisation } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
@@ -44,6 +45,7 @@ export function Sidebar() {
   const t = useTheme();
   const { me, signOut } = useAuth();
   const path = usePathname();
+  const insets = useSafeAreaInsets();
   const org = useQuery({ queryKey: ['organisation'], queryFn: getOrganisation, enabled: can(me, 'org:read') });
   if (!me) return null;
   const groups = arrange(DASHBOARD_ACTIONS, (p) => can(me, p));
@@ -52,7 +54,7 @@ export function Sidebar() {
   return (
     <View
       accessibilityRole="navigation"
-      style={{ width: layout.sidebar, backgroundColor: t.surface, borderRightWidth: 1, borderRightColor: t.border }}>
+      style={{ width: layout.sidebar + insets.left, paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, backgroundColor: t.surface, borderRightWidth: 1, borderRightColor: t.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.md, paddingTop: space.lg }}>
         <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: t.hero, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: t.heroText, fontSize: 20, fontWeight: '700', fontFamily: displayFont }}>A</Text>
@@ -65,7 +67,7 @@ export function Sidebar() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: space.md, gap: space.md }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
         <Item icon="grid" label="Home" active={path === '/'} onPress={() => open('/')} />
         {groups.map((g) => (
           <View key={g.group} style={{ gap: 2 }}>

@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "in.aarogyaos.app"
+      "bundleIdentifier": "in.aarogyaos.app",
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {

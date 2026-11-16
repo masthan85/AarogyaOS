@@ -36,7 +36,7 @@ export function KnowledgeScreen() {
   if (q.isPending) return <LoadingState label="Loading library…" />;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <SectionTitle>Reference documents</SectionTitle>
       <Text style={{ color: t.textMuted }}>Software suggestions may cite only approved documents. Whoever adds a document cannot approve it.</Text>
       {q.data?.length === 0 ? <EmptyState message="No documents yet." /> : null}

@@ -38,7 +38,7 @@ export function TemplatesScreen() {
   const own = (q.data ?? []).filter((x) => !x.builtin);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <SectionTitle>Your layouts</SectionTitle>
       {own.length === 0 ? <EmptyState message="None yet. Doctors can use the built-in layouts." /> : null}
       {own.map((x) => <TemplateCard key={x.id} template={x} onChanged={refresh} />)}

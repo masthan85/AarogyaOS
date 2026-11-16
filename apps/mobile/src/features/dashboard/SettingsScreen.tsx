@@ -33,7 +33,7 @@ export function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <Card title="Account">
         <Text style={{ color: t.text }}>{me?.full_name}</Text>
         <Text style={{ color: t.textMuted }}>{me?.email}</Text>

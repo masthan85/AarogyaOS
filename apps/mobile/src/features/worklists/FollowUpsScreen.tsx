@@ -32,7 +32,7 @@ export function FollowUpsScreen() {
   const groups = groupFollowUps(q.data, today, toDateString(addDays(new Date(), 7)));
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       <Lead>
         Patients a doctor asked to see again. Contact them using the details on their record; this screen does not message anyone.
       </Lead>

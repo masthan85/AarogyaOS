@@ -24,7 +24,7 @@ export function ActivityScreen() {
   if (audit.isPending) return <LoadingState label="Loading activity…" />;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       {canUsage ? (
         <>
           <SectionTitle>This month's allowances</SectionTitle>

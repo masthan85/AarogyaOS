@@ -61,7 +61,7 @@ export function PatientProfileScreen() {
   const p = patient.data;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }}>
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
       {/* Patient header: identity is always the first thing on screen. */}
       <Card>
         <Text style={{ color: t.text, fontSize: 24, fontWeight: '800' }}>{p.full_name}</Text>

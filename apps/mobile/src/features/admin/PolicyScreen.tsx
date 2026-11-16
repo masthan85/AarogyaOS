@@ -47,7 +47,7 @@ export function PolicyScreen() {
   const installed = wording.data?.length ?? 0;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space.md, gap: space.md }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <SectionTitle>Switches</SectionTitle>
       <Card>
         <Text style={{ color: t.textMuted }}>Everything starts off. Turning something on never overrides a patient's own consent.</Text>

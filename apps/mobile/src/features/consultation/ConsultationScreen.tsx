@@ -148,13 +148,13 @@ function ConsultationBody({ id, data, patientId }: { id: string; data: Encounter
       <TabBar value={tab} onChange={setTab} tabs={tabs.map((x) => ({ ...x, badge: x.value === 'emr' ? waiting : undefined }))} />
       {wide ? (
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          <ScrollView style={{ flex: 2 }} contentContainerStyle={{ padding: space.md }}>{panel}</ScrollView>
-          <ScrollView style={{ flex: 1.3 }} contentContainerStyle={{ padding: space.md }}>
+          <ScrollView style={{ flex: 2 }} contentContainerStyle={{ padding: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">{panel}</ScrollView>
+          <ScrollView style={{ flex: 1.3 }} contentContainerStyle={{ padding: space.md }} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">
             <ContextPanel data={data} />
           </ScrollView>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: space.md, gap: 0 }} keyboardShouldPersistTaps="handled">{panel}</ScrollView>
+        <ScrollView contentContainerStyle={{ padding: space.md, gap: 0 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>{panel}</ScrollView>
       )}
     </View>
   );
