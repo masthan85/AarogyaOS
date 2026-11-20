@@ -112,3 +112,16 @@ A browser cannot show how an app sits around a notch, a status bar or a keyboard
 Touch targets were already sized for fingers and stay so: buttons are 48 points high, sidebar rows and icon buttons 44. On wide screens buttons are narrower, not shorter.
 
 Not checked, and only a device can settle them: the real effect of the safe-area and keyboard changes; Android's keyboard behaviour with edge-to-edge display; large system font sizes; a hardware keyboard on a tablet; and the tablet in split view beside another app. These are added to `DEVICE_TEST_PLAN.md`.
+
+## Seventh pass: an operational home screen and restrained motion
+
+Asked for a more polished, enterprise feel. No Figma file was supplied, so nothing was imported from a design tool; the changes were made in code with the animation library already in the project (Reanimated).
+
+- **Today at a glance.** The home screen now opens with up to four figures, each shown only to roles allowed to see it: people waiting now with the longest wait, appointments booked today with how many are done, results to review with how many are critical, and follow-ups due. Each opens its screen. A figure that has not loaded says "Checking…" and never carries a description it has not earned. A wait of 45 minutes or more turns the waiting figure amber, with the reason in words.
+- **Next in the queue.** For roles that see the queue, the next five people waiting are listed with token, triage state, doctor and how long they have waited, refreshed every 30 seconds. It shares its data with the Queue screen, so no extra requests are made.
+- **Motion, used once.** When the home screen opens, its sections fade and rise into place 45 ms apart over about 260 ms (`design-system/motion.tsx`). Nothing moves after that. With the device's reduce-motion setting on, the sections appear at once; this was measured frame by frame in a browser in both settings. Tiles shrink slightly while pressed.
+- **Details.** Two faint rings give the header band some depth; the active sidebar section carries an accent bar as well as its tint and bold label; development builds show "Development build · synthetic data only" in the sidebar, so nobody mistakes a test build for the real one.
+
+Screens: [home, wide](design/home-wide.png), [home, tablet](design/home-tablet.png), [home, phone](design/home-phone.png).
+
+Not checked: the animation on a real Android or iOS device, where Reanimated runs natively rather than in a browser. In the browser the first frame of the home screen may paint fully visible for one frame before the fade begins; this was not visible to the eye in captures but should be watched for on devices.
