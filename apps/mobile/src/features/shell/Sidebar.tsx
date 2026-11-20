@@ -34,6 +34,8 @@ function Item({ icon, label, active, onPress }: { icon: IconName; label: string;
         borderRadius: radius.md,
         backgroundColor: active ? t.primarySoft : hovered || pressed ? t.neutralSoft : 'transparent',
       })}>
+      {/* A bar on the left edge marks where you are, alongside the tint and the bold label. */}
+      <View accessibilityElementsHidden style={{ position: 'absolute', left: 0, top: 10, bottom: 10, width: 3, borderRadius: 2, backgroundColor: active ? t.primary : 'transparent' }} />
       <Icon name={icon} size={18} color={active ? t.primary : t.textMuted} />
       <Text style={{ fontSize: 15, fontWeight: active ? '700' : '500', color: active ? t.primary : t.text }}>{label}</Text>
     </Pressable>
@@ -80,6 +82,13 @@ export function Sidebar() {
       </ScrollView>
 
       <View style={{ borderTopWidth: 1, borderTopColor: t.border, padding: 12, gap: 2 }}>
+        {__DEV__ ? (
+          // Development builds simulate the microphone and use synthetic providers: say so plainly.
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.warning }} />
+            <Text style={[type.caption, { color: t.textMuted, fontWeight: '600' }]}>Development build · synthetic data only</Text>
+          </View>
+        ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4, paddingVertical: space.sm }}>
           <Avatar name={me.full_name} size={36} />
           <View style={{ flex: 1 }}>
