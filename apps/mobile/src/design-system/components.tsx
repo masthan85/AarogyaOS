@@ -22,8 +22,11 @@ export function Button({
   variant = 'primary',
   size = 'md',
   block,
+  testID,
 }: {
   title: string;
+  /** A stable handle for device tests (Maestro), where the label alone is ambiguous. */
+  testID?: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -42,6 +45,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      testID={testID}
       aria-disabled={!!off}
       aria-busy={!!loading}
       onPress={onPress}

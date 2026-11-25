@@ -181,7 +181,7 @@ jobs:
           script: |
             curl --retry 20 --retry-delay 1 --retry-all-errors -sf http://localhost:8000/ready
             adb install -r android/app/build/outputs/apk/release/app-release.apk
-            maestro test .maestro --format junit --output "$RUNNER_TEMP/maestro.xml"
+            maestro test .maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro-debug"
       - if: failure()
         run: cat "$RUNNER_TEMP/api.log"
       - if: failure()
@@ -189,6 +189,7 @@ jobs:
         with:
           name: maestro-debug
           path: |
-            ~/.maestro/tests
+            ${{ runner.temp }}/maestro-debug
             ${{ runner.temp }}/maestro.xml
+          include-hidden-files: true
           retention-days: 7
