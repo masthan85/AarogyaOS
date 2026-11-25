@@ -401,7 +401,8 @@ export const approveKnowledgeDoc = (id: string) =>
 export const retireKnowledgeDoc = (id: string) =>
   api.request(`/knowledge/documents/${id}/retire`, knowledgeDocSchema, { method: 'POST', body: {} });
 
-export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
+export const getAuditLogs = (limit = 50, before?: string) =>
+  api.request(`/audit-logs${qs({ limit: String(limit), before })}`, z.array(auditLogSchema));
 export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
 export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
 export const getUsageLimits = () => api.request('/usage/limits', usagePositionSchema);
@@ -452,11 +453,15 @@ export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PA
 
 export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'INSURER' | 'OTHER';
 export const getToBill = () => api.request('/billing/to-bill', z.array(toBillSchema));
-export const getInvoices = (params: { unpaid?: boolean; status?: string }) =>
-  api.request(`/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status })}`, z.array(invoiceSchema));
+/** Lists that page pass `before`, the id of the last row already shown, to get the next older page. */
+export const getInvoices = (params: { unpaid?: boolean; status?: string; limit?: number; before?: string }) =>
+  api.request(
+    `/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status, limit: params.limit ? String(params.limit) : undefined, before: params.before })}`,
+    z.array(invoiceSchema),
+  );
 export const getInvoice = (id: string) => api.request(`/invoices/${id}`, invoiceSchema);
-export const createInvoice = (body: { patient_id: string; encounter_id?: string }) =>
-  api.request('/invoices', invoiceSchema, { method: 'POST', body });
+export const createInvoice = (body: { patient_id: string; encounter_id?: string }, key?: string) =>
+  api.request('/invoices', invoiceSchema, { method: 'POST', body, idempotencyKey: key });
 export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]) =>
   api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
 export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });

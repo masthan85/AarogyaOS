@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.context import Principal
 from app.core.errors import Conflict, NotFound
+from app.core.pagination import newest_first
 from app.modules.audit.service import record_audit
 from app.modules.billing.models import (
     MAX_PAISE,
@@ -473,17 +474,31 @@ def list_invoices(
     status: str | None = None,
     patient_id: uuid.UUID | None = None,
     unpaid: bool = False,
+    limit: int = 100,
+    before: uuid.UUID | None = None,
 ) -> list[InvoiceOut]:
-    stmt = select(Invoice).order_by(Invoice.created_at.desc()).limit(100)
+    stmt = select(Invoice)
     if unpaid:
-        # Filter before the limit, so an old unpaid invoice is never pushed off the list.
-        stmt = select(Invoice).where(Invoice.status == "ISSUED").order_by(Invoice.created_at.desc())
+        # Filter on the status before the limit, so an old unpaid invoice is never pushed off the
+        # list. Paid-off invoices are still ISSUED, so the balance is checked page by page below.
+        stmt = stmt.where(Invoice.status == "ISSUED")
     if status:
         stmt = stmt.where(Invoice.status == status)
     if patient_id:
         stmt = stmt.where(Invoice.patient_id == patient_id)
-    rows = out_many(session, list(session.scalars(stmt)))
-    return [r for r in rows if r.balance_paise > 0][:100] if unpaid else rows
+    stmt = newest_first(session, stmt, Invoice, Invoice.created_at, before)
+    if not unpaid:
+        return out_many(session, list(session.scalars(stmt.limit(limit))))
+    found: list[InvoiceOut] = []
+    batch = max(limit, 100)
+    offset = 0
+    while len(found) < limit:
+        rows = list(session.scalars(stmt.limit(batch).offset(offset)))
+        found += [r for r in out_many(session, rows) if r.balance_paise > 0]
+        if len(rows) < batch:
+            break
+        offset += batch
+    return found[:limit]
 
 
 def to_bill(session: Session, *, days: int = 7) -> list[ToBillOut]:
