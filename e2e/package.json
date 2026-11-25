@@ -1,0 +1,12 @@
+{
+  "name": "@aarogyaos/e2e",
+  "private": true,
+  "description": "Browser tests of the web build, written and maintained with the Playwright test agents.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

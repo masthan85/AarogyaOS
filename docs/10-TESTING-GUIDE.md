@@ -62,6 +62,20 @@ API coverage is measured in CI (`pytest --cov`) and was 94% of lines in November
 - The backup and restore-drill scripts have been run by hand, not in CI.
 - No automated prompt-injection corpus beyond a handful of cases.
 
+## Browser tests and Playwright agents
+
+`e2e/` holds Playwright tests that drive the web build in a real browser, at desktop and phone sizes. They are not run in CI yet: they need the API and the web app running with the demo clinic loaded, as described in the local run steps. Then:
+
+```bash
+cd e2e
+npm ci
+npx playwright test
+```
+
+`E2E_BASE_URL` points the tests at another address (the default is `http://localhost:8081`); `E2E_ORGANISATION`, `E2E_EMAIL` and `E2E_PASSWORD` change the sign-in. Use the demo clinic and synthetic patients only, never a database with real patient data.
+
+`e2e/tests/seed.spec.ts` signs in as the demo doctor and is the starting point for the Playwright test agents in `.claude/agents/`: the planner explores the app and writes a plan to `specs/`, the generator turns a plan into tests under `e2e/tests/`, and the healer runs a failing test and repairs it. They use the `playwright-test` MCP server defined in `.mcp.json`, which runs the pinned Playwright in `e2e/node_modules`, so run `npm ci` in `e2e` before starting Claude Code. `.claude/skills/playwright-cli/` lets Claude drive a browser from the command line with `playwright-cli`, which is installed separately (`npm install -g @playwright/cli@latest`).
+
 ## Manual verification checklists
 
 `DEVICE_TEST_PLAN.md` covers the microphone and Sarvam on real devices, with acceptance criteria for a pilot. `SARVAM.md` lists the live checks for translation, read-aloud and chat. `CLINICAL_SAFETY.md` lists, per hazard, the control that should be tested and what is still open. `OPERATIONS.md` describes the restore drill, which should be run monthly once there is a real environment.
