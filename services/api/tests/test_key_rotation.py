@@ -88,3 +88,24 @@ def test_rotating_stored_identifiers_keeps_lookups_working(
         },
     )
     assert r.status_code == 409, r.text
+
+
+def test_retained_audio_is_re_encrypted_under_the_new_key(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from app.speech.audio_store import LocalEncryptedAudioStore
+
+    old_store = LocalEncryptedAudioStore(str(tmp_path), FieldCrypto(OLD))
+    w = old_store.writer("org/a.audio")
+    w.append(b"first-chunk")
+    w.append(b"second-chunk")
+    w.close()
+
+    rotating = LocalEncryptedAudioStore(str(tmp_path), FieldCrypto(NEW, [OLD]))
+    assert rotating.rewrap("org/a.audio") is True
+    assert rotating.rewrap("org/a.audio") is False  # nothing left to do
+    # Readable with the new key alone, chunk for chunk, and no temporary file is left behind.
+    new_only = LocalEncryptedAudioStore(str(tmp_path), FieldCrypto(NEW))
+    assert list(new_only.read_chunks("org/a.audio")) == [b"first-chunk", b"second-chunk"]
+    assert [p.name for p in (tmp_path / "org").iterdir()] == ["a.audio"]
+    # A file no configured key can read is refused, not rewritten.
+    with pytest.raises(ValueError):
+        LocalEncryptedAudioStore(str(tmp_path), FieldCrypto(OLD)).rewrap("org/a.audio")

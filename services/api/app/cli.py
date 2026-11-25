@@ -39,13 +39,29 @@ def main(argv: list[str]) -> int:
             return 0 if run.status in ("OK", "SKIPPED") else 1
         if command == "rotate-field-key":
             from app.core.crypto import crypto_from_settings
+            from app.modules.interactions.rotation import rotate_audio
             from app.modules.patients.rotation import rotate_identifiers
+            from app.speech.audio_store import LocalEncryptedAudioStore
 
             crypto = crypto_from_settings(settings)
             done = rotate_identifiers(session, crypto)
             print(f"Identifiers re-encrypted under key {crypto.key_id}: {done}.")
             print("No identifier needs an older key any more.")
-            print("Retained audio is not re-encrypted; keep older keys listed while it exists.")
+            audio = rotate_audio(
+                session, LocalEncryptedAudioStore(settings.audio_store_path, crypto)
+            )
+            print(
+                f"Retained audio re-encrypted: {audio.reencrypted}; already current: "
+                f"{audio.already_current}; file missing: {audio.missing}."
+            )
+            if audio.still_recording:
+                print(
+                    f"{audio.still_recording} recording(s) have not ended and were left as they "
+                    "are. "
+                    "Keep the older key listed and run this again once they have."
+                )
+                return 1
+            print("Older keys can now be removed from AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS.")
             return 0
         if command == "demo-seed":
             from app.demo_seed import run as seed_demo

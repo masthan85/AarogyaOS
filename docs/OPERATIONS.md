@@ -106,8 +106,8 @@ Rotation changes the key that protects patient identifiers (and keys their blind
 
 1. Generate a new key: `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"`.
 2. Set `AAROGYA_FIELD_ENCRYPTION_KEY` to the new key and `AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS` to the old one, then restart. New data uses the new key; old data still reads; searches for identifiers check both.
-3. Run `python -m app.cli rotate-field-key`. It re-encrypts every identifier and rebuilds its index; it can be run again if interrupted.
-4. Keep the old key listed while any retained audio recorded under it exists (audio is not re-encrypted; the default policy discards audio after transcription). Then remove it. Keep an offline copy of retired keys for as long as backups made under them may need restoring.
+3. Run `python -m app.cli rotate-field-key`. It re-encrypts every identifier and rebuilds its index, then re-encrypts retained audio from recordings that have ended. Each audio file is rewritten beside the original and swapped in whole, so an interrupted run leaves one complete copy; the command can be run again. Recordings that are active or paused are left alone, because they may still be written to: the command lists how many and exits with status 1.
+4. Once the command exits with status 0, nothing needs the old key any more, so remove it from `AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS`. Keep an offline copy of retired keys for as long as backups made under them may need restoring.
 
 Tested on a development database only (`tests/test_key_rotation.py`); rehearse on a restore of production data before relying on it.
 
