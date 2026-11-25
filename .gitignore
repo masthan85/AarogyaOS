@@ -29,3 +29,6 @@ npm-debug.log*
 # local copies of the docker settings (may hold your API keys)
 infrastructure/*.local.env
 *.egg-info/
+.coverage
+coverage.xml
+htmlcov/
