@@ -1,15 +1,19 @@
-# Signs in to the demo clinic with EMAIL and PASSWORD, both passed by the calling flow.
+# Signs in to the demo clinic with EMAIL and PASSWORD, both passed by the calling flow. Inputs are
+# found by test id: tapping a field's visible label does not move focus to it.
 appId: in.aarogyaos.app
 ---
 - launchApp:
     clearState: true
-- tapOn: "Organisation"
+- tapOn:
+    id: "login-organisation"
 - inputText: "demo-clinic"
-- tapOn: "Email"
+- tapOn:
+    id: "login-email"
 - inputText: ${EMAIL}
-- tapOn: "Password"
+- tapOn:
+    id: "login-password"
 - inputText: ${PASSWORD}
-# Tapping plain text closes the keyboard on this screen; the inputs offer no standard dismiss.
-- tapOn: "Use the account your clinic gave you."
+# Back closes the keyboard on Android; these inputs offer no standard dismiss action.
+- pressKey: back
 - tapOn:
     id: "sign-in"

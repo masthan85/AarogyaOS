@@ -93,6 +93,7 @@ export function LoginScreen() {
               render={({ field }) => (
                 <TextField
                   label="Organisation"
+                  testID="login-organisation"
                   placeholder="sunrise-clinic"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -108,6 +109,7 @@ export function LoginScreen() {
               render={({ field }) => (
                 <TextField
                   label="Email"
+                  testID="login-email"
                   autoCapitalize="none"
                   autoComplete="email"
                   keyboardType="email-address"
@@ -125,6 +127,7 @@ export function LoginScreen() {
               render={({ field }) => (
                 <TextField
                   label="Password"
+                  testID="login-password"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoComplete="password"
