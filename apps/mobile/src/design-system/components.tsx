@@ -46,6 +46,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={title}
       testID={testID}
       aria-disabled={off || undefined}
       aria-busy={loading || undefined}
