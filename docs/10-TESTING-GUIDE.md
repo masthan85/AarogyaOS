@@ -78,7 +78,7 @@ npx playwright test
 
 ## Native app flows
 
-`apps/mobile/.maestro/` holds Maestro flows that mirror the browser smoke tests on Android and iOS: each demo role signs in and sees its own sections, and a wrong password is refused. They have been written but not yet run on a device or emulator, so expect to adjust them on the first run. `apps/mobile/.maestro/README.md` explains how to run them against a development build.
+`apps/mobile/.maestro/` holds Maestro flows that mirror the browser smoke tests on Android and iOS: each demo role signs in and sees its own sections, and a wrong password is refused. CI runs them in the `android-maestro` job on an Android 14 emulator against a release build and a real API with the demo clinic. They have not run on iOS or a physical device. `apps/mobile/.maestro/README.md` explains how to run them locally and what to watch for when writing new ones.
 
 ## Manual verification checklists
 

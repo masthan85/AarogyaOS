@@ -4,8 +4,18 @@ Smoke flows for the Android and iOS app, matching the browser tests in `e2e/`: e
 in, sees its own sections and not another role's, and opens its main screen without an error; a wrong
 password is refused.
 
-**Status: written, not yet run on a device or emulator.** Expect to adjust labels or waits the first
-time they run. They become a CI job once a device farm (or an emulator runner) is chosen.
+**Status: running in CI** in the `android-maestro` job: a release build on an Android 14 emulator
+(Pixel 6 profile) against a real API with the demo clinic, about 22 minutes, in parallel with the
+other jobs. `run-ci.sh` runs each flow separately and prints the screen's elements when one fails,
+so a failure can be read from the log. The flows have not run on iOS or on a physical device yet.
+
+Notes from making them pass, which also apply to anyone writing new flows:
+
+- Find inputs and buttons by test id (`login-organisation`, `sign-in`). Tapping a field's visible
+  label does not move focus, and "Sign in" is both a heading and a button.
+- An open keyboard covers the lower fields. Move on with the keyboard's Next key, as a person would.
+- On a phone, some sections are panels on the home screen rather than tiles (the queue is "Open
+  queue"), so check for what the phone actually shows.
 
 To run them:
 
