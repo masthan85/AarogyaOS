@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
  *
  *   API:  python -m uvicorn app.main:create_app --factory --port 8000
  *   App:  EXPO_PUBLIC_API_URL=http://localhost:8000 npx expo start --web --port 8081
+ *   or the production build, as CI does:
+ *         EXPO_PUBLIC_API_URL=http://localhost:8000 npx expo export -p web --output-dir ../../e2e/web
+ *         node serve-web.mjs web 8081   (from e2e/)
  *
  * E2E_BASE_URL points them at another address. Use the demo clinic only: never a clinic with real
  * patients.

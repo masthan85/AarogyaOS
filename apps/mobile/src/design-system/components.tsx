@@ -42,7 +42,8 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: !!off, busy: !!loading }}
+      aria-disabled={!!off}
+      aria-busy={!!loading}
       onPress={onPress}
       disabled={off}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
@@ -208,7 +209,7 @@ export function ChoiceChips<T extends string>({
               <Pressable
                 key={o.value}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                aria-selected={selected}
                 onPress={() => onChange(o.value)}
                 style={{
                   flex: 1,
@@ -232,7 +233,7 @@ export function ChoiceChips<T extends string>({
               <Pressable
                 key={o.value}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                aria-selected={selected}
                 onPress={() => onChange(o.value)}
                 style={{
                   minHeight: MIN_TOUCH,
@@ -299,7 +300,7 @@ export function MultiChips<T extends string | number>({
             <Pressable
               key={String(o.value)}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected }}
+              aria-checked={selected}
               onPress={() => onChange(selected ? value.filter((v) => v !== o.value) : [...value, o.value])}
               style={{
                 minHeight: MIN_TOUCH,
@@ -393,7 +394,7 @@ export function TabBar<T extends string>({
           <Pressable
             key={tab.value}
             accessibilityRole="tab"
-            accessibilityState={{ selected }}
+            aria-selected={selected}
             accessibilityLabel={tab.badge ? `${tab.label}, ${tab.badge} waiting` : tab.label}
             onPress={() => onChange(tab.value)}
             style={{

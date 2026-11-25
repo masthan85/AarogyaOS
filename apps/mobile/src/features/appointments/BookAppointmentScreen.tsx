@@ -74,7 +74,7 @@ export function BookAppointmentScreen() {
               <Pressable
                 key={s.start_at}
                 accessibilityRole="button"
-                accessibilityState={{ selected: slot === s.start_at }}
+                aria-selected={slot === s.start_at}
                 onPress={() => setSlot(s.start_at)}
                 style={{
                   minHeight: MIN_TOUCH, minWidth: 92, alignItems: 'center', justifyContent: 'center',

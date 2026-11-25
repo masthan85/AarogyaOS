@@ -64,7 +64,7 @@ API coverage is measured in CI (`pytest --cov`) and was 94% of lines in November
 
 ## Browser tests and Playwright agents
 
-`e2e/` holds Playwright tests that drive the web build in a real browser, at desktop and phone sizes. They are not run in CI yet: they need the API and the web app running with the demo clinic loaded, as described in the local run steps. Then:
+`e2e/` holds Playwright tests that drive the web build in a real browser, at desktop and phone sizes. `tests/roles.spec.ts` signs in as each demo role, checks that the sidebar shows that role's sections and none of the others, opens the role's main screen and fails on any refused or failed API request; it also covers a wrong password and signing out. CI runs them in the `web-e2e` job against the production web export (`npx expo export -p web`, served by `e2e/serve-web.mjs`, which resolves dynamic routes the way expo-router does) and a real API with the demo clinic. Locally, start the API and the web app with the demo clinic loaded, as described in the local run steps, either with `npx expo start --web` or as CI does. Then:
 
 ```bash
 cd e2e

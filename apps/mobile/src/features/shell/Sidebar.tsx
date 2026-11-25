@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getOrganisation } from '@/api/endpoints';
 import { useAuth } from '@/auth/AuthProvider';
 import { Avatar } from '@/design-system/components';
+import { currentPage } from '@/design-system/a11y';
 import { Icon, type IconName } from '@/design-system/icons';
 import { displayFont, layout, MIN_TOUCH_SMALL, radius, space, type, useTheme } from '@/design-system/tokens';
 import { can, roleLabel } from '@/domain/permissions';
@@ -22,7 +23,8 @@ function Item({ icon, label, active, onPress }: { icon: IconName; label: string;
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityState={{ selected: !!active }}
+      aria-selected={!!active}
+      {...currentPage(!!active)}
       accessibilityLabel={label}
       onPress={onPress}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => ({
