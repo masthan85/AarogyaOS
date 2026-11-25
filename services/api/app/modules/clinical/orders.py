@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, date, datetime
 
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from app.core.context import Principal
@@ -474,10 +474,20 @@ def review_result(session: Session, principal: Principal, result_id: uuid.UUID) 
     return ResultOut.model_validate(res)
 
 
+REVIEW_QUEUE_LIMIT = 200
+
+
 def results_awaiting_review(session: Session, principal: Principal) -> list[ResultOut]:
     """Abnormal-first list of unreviewed results for orders this doctor placed, plus those of any
     colleague who has currently asked this doctor to cover."""
     covered = covering_for(session, principal.user_id)
+    # Ranked in the query, before the limit: however many results are waiting, critical ones come
+    # first and are never the ones left off the list.
+    rank = case(
+        (InvestigationResult.interpretation.in_(["CRITICAL_LOW", "CRITICAL_HIGH"]), 0),
+        (InvestigationResult.interpretation.in_(["LOW", "HIGH"]), 1),
+        else_=2,
+    )
     rows = session.execute(
         select(InvestigationResult, ServiceRequest.ordered_by)
         .join(ServiceRequest, ServiceRequest.id == InvestigationResult.service_request_id)
@@ -485,17 +495,16 @@ def results_awaiting_review(session: Session, principal: Principal) -> list[Resu
             InvestigationResult.reviewed_at.is_(None),
             ServiceRequest.ordered_by.in_([principal.user_id, *covered]),
         )
-        .order_by(InvestigationResult.reported_at.desc())
-        .limit(100)
+        .order_by(rank, InvestigationResult.reported_at.desc(), InvestigationResult.id)
+        .limit(REVIEW_QUEUE_LIMIT)
     ).all()
-    rank = {"CRITICAL_LOW": 0, "CRITICAL_HIGH": 0, "LOW": 1, "HIGH": 1}
     out = []
     for res, ordered_by in rows:
         item = ResultOut.model_validate(res)
         if ordered_by is not None and ordered_by != principal.user_id:
             item.covering_for = covered.get(ordered_by)
         out.append(item)
-    return sorted(out, key=lambda r: rank.get(r.interpretation, 2))
+    return out
 
 
 def patient_results(session: Session, patient_id: uuid.UUID) -> list[ResultOut]:
