@@ -20,7 +20,7 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | `AAROGYA_MAX_FAILED_LOGINS` | 5 | Failed attempts before an account locks (minimum 3) |
 | `AAROGYA_LOCKOUT_MINUTES` | 15 | Lock duration |
 | `AAROGYA_CORS_ORIGINS` | `[]` | JSON list of allowed origins. A wildcard is refused in production |
-| `AAROGYA_REDIS_URL` | empty | Redis for login and search rate limits shared by every API process, for example `redis://redis:6379/0`. Empty keeps limits in each process. If Redis cannot be reached, requests are allowed and a warning is logged |
+| `AAROGYA_REDIS_URL` | empty | Redis shared by every API process, for example `redis://redis:6379/0`: login and search rate limits, the live partial transcript line, and the one-connection-per-session claim. Empty keeps all of these in each process and only one process may serve recordings. If Redis cannot be reached, requests are allowed, partial lines are skipped and a warning is logged |
 | `AAROGYA_LOGIN_ATTEMPTS_PER_MINUTE_PER_IP` | 60 | Per worker process; 0 turns the limit off |
 | `AAROGYA_PATIENT_SEARCHES_PER_MINUTE_PER_USER` | 60 | Per worker process; 0 turns the limit off |
 | `AAROGYA_MAX_REQUEST_BYTES` | 5000000 | Request body cap, 10 000 to 50 000 000 |
@@ -34,7 +34,7 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | `AAROGYA_SPEECH_PROVIDER` | empty (becomes `development` outside production) | `sarvam` or `development`. Production must choose explicitly |
 | `AAROGYA_SPEECH_FALLBACK_PROVIDER` | empty | Provider to try if the first is unavailable. In production it must also be an approved provider |
 | `AAROGYA_PATIENT_DATA_PROVIDERS` | `[]` | JSON list of vendors with a signed data-processing agreement. Production refuses to start if any configured speech, model, embedding, translation or read-aloud provider is not listed |
-| `AAROGYA_SINGLE_INSTANCE_GUARD` | on in production | Holds a database advisory lock so only one process serves recordings; any other reports `standby` on `/ready` |
+| `AAROGYA_SINGLE_INSTANCE_GUARD` | on in production without Redis | Holds a database advisory lock so only one process serves recordings; any other reports `standby` on `/ready`. Off by default when `AAROGYA_REDIS_URL` is set, because live state is then shared |
 | `AAROGYA_SARVAM_API_KEY` | empty | Registers the Sarvam provider. Also used for Sarvam translation, text-to-speech and chat |
 | `AAROGYA_SARVAM_MODEL` | `saaras:v4` | Speech-to-text model |
 | `AAROGYA_SARVAM_MODE` | `transcribe` | `transcribe`, `verbatim`, `translit` or `codemix` |
@@ -43,7 +43,16 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | `AAROGYA_SARVAM_REST_URL` | `https://api.sarvam.ai` | Must be `https://` in production |
 | `AAROGYA_SPEECH_MONITOR_INTERVAL_SECONDS` | 2 | How often the gateway re-checks consent and session state |
 | `AAROGYA_SPEECH_MAX_SESSION_SECONDS` | 3600 | Hard limit on one recording, 60 to 14 400 |
-| `AAROGYA_AUDIO_STORE_PATH` | `/tmp/aarogya-audio` | Local encrypted audio store. Development only; production needs an object store that is not built |
+| `AAROGYA_AUDIO_STORE` | `local` | Where retained audio is kept: `local` (encrypted files under the path below) or `s3` (encrypted objects in S3-compatible storage). Audio is always encrypted with the field key before it leaves the API |
+| `AAROGYA_AUDIO_STORE_PATH` | `/tmp/aarogya-audio` | The local store; with `s3`, where an open recording is spooled before upload and where a failed upload waits to be retried. Use a persistent volume |
+| `AAROGYA_AUDIO_S3_BUCKET` | empty | Bucket for `s3`; required with it |
+| `AAROGYA_AUDIO_S3_PREFIX` | `audio/` | Prefix for object names |
+| `AAROGYA_AUDIO_S3_ENDPOINT_URL` | empty | For S3-compatible services other than AWS; empty means AWS |
+| `AAROGYA_AUDIO_S3_REGION` | empty | Region, for example `ap-south-1` |
+| `AAROGYA_AUDIO_S3_SERVER_SIDE_ENCRYPTION` | empty | `AES256` or `aws:kms`: the service's own encryption, in addition to the API's |
+| `AAROGYA_AUDIO_S3_KMS_KEY_ID` | empty | KMS key for `aws:kms` |
+
+Storage credentials are never settings: the S3 client reads the standard AWS chain (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from a secret manager, or better a role attached to the container).
 
 ## Language model, translation and read-aloud
 

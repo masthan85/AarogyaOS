@@ -20,11 +20,11 @@ def main(argv: list[str]) -> int:
         if command == "purge-audio":
             from app.core.crypto import crypto_from_settings
             from app.modules.interactions.retention import purge_due_audio
-            from app.speech.audio_store import LocalEncryptedAudioStore
+            from app.speech.audio_store import audio_store_from_settings
 
-            store = LocalEncryptedAudioStore(
-                settings.audio_store_path, crypto_from_settings(settings)
-            )
+            store = audio_store_from_settings(settings, crypto_from_settings(settings))
+            if hasattr(store, "upload_pending"):
+                print(f"Audio uploads retried: {store.upload_pending()}")
             print(f"Audio files removed: {purge_due_audio(session, store)}")
             return 0
         if command == "run-job":
@@ -41,15 +41,13 @@ def main(argv: list[str]) -> int:
             from app.core.crypto import crypto_from_settings
             from app.modules.interactions.rotation import rotate_audio
             from app.modules.patients.rotation import rotate_identifiers
-            from app.speech.audio_store import LocalEncryptedAudioStore
+            from app.speech.audio_store import audio_store_from_settings
 
             crypto = crypto_from_settings(settings)
             done = rotate_identifiers(session, crypto)
             print(f"Identifiers re-encrypted under key {crypto.key_id}: {done}.")
             print("No identifier needs an older key any more.")
-            audio = rotate_audio(
-                session, LocalEncryptedAudioStore(settings.audio_store_path, crypto)
-            )
+            audio = rotate_audio(session, audio_store_from_settings(settings, crypto))
             print(
                 f"Retained audio re-encrypted: {audio.reencrypted}; already current: "
                 f"{audio.already_current}; file missing: {audio.missing}."

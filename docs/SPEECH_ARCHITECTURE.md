@@ -145,7 +145,7 @@ which is why the version is pinned: re-verify them on every upgrade.
 
 ## Known limits
 * The mobile app polls the transcript every second; SSE exists server-side for web/tablet clients.
-* The "live partial" and the one-connection-per-session guard are per-process; running several API workers
-  needs Redis (Phase 7).
+* The "live partial" and the one-connection-per-session guard are per process unless `AAROGYA_REDIS_URL` is set,
+  in which case they are shared in Redis (`app/speech/live.py`).
 * Manual correction of transcript *text* is not built; corrections will live in derived layers so the raw
   transcript is never altered.

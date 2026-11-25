@@ -22,7 +22,7 @@ from app.modules.interactions.retention import purge_due_audio
 from app.modules.interactions.service import STALE_AFTER
 from app.modules.ops.idempotency import IdempotencyKey
 from app.modules.ops.models import JobRun
-from app.speech.audio_store import LocalEncryptedAudioStore
+from app.speech.audio_store import audio_store_from_settings
 
 log = logging.getLogger("aarogya.jobs")
 IDEMPOTENCY_KEEP = timedelta(days=2)  # long enough for any retry, short enough to stay small
@@ -32,8 +32,10 @@ JobFn = Callable[[Session, Settings], dict[str, int]]
 
 
 def purge_audio(session: Session, settings: Settings) -> dict[str, int]:
-    store = LocalEncryptedAudioStore(settings.audio_store_path, crypto_from_settings(settings))
-    return {"removed": purge_due_audio(session, store)}
+    store = audio_store_from_settings(settings, crypto_from_settings(settings))
+    # An upload that failed when a recording closed is retried before anything is purged.
+    retried = store.upload_pending() if hasattr(store, "upload_pending") else 0
+    return {"removed": purge_due_audio(session, store), "uploaded": retried}
 
 
 def pause_stale_recordings(session: Session, settings: Settings) -> dict[str, int]:

@@ -8,8 +8,8 @@ advisory lock for as long as it lives. The one that holds it is the active insta
 reports itself as not ready and refuses audio connections.
 
 The lock belongs to a database connection, so it is released automatically when the process dies,
-however it dies. Redis would let state be shared; it would not make this check unnecessary until
-shared session coordination is built and tested.
+however it dies. With `AAROGYA_REDIS_URL` set, live state is shared (app/speech/live.py) and the
+lock is off by default, so several instances may serve recordings.
 """
 
 import logging

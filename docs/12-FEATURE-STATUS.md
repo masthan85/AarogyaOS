@@ -29,7 +29,7 @@ This is the evidence-based inventory of what exists. Status words are used stric
 | Docker image and compose stack | Built, not run live | No Docker daemon was available |
 | Repeated payment, credit note and refund requests recorded once (`Idempotency-Key`) | Working (tested) | `test_release_gates.py`, including four identical requests racing. Not yet on draft invoices, prescriptions or walk-ins |
 | Provider approval list checked at start-up in production, fallback included | Working (tested) | `test_release_gates.py`. Records a decision; does not prove an agreement exists |
-| One live instance (advisory lock, `standby` readiness, audio refused elsewhere) | Working (tested) | `test_release_gates.py`. Not exercised on a real platform |
+| One live instance (advisory lock, `standby` readiness, audio refused elsewhere), or several sharing Redis | Working (tested) | `test_release_gates.py`, `test_live_state.py`. Not exercised on a real platform |
 | Recordings marked interrupted after a restart | Working (tested) | `test_release_gates.py` |
 | Monthly speech and AI allowances per organisation | Working (tested) | `test_release_gates.py`. No outbound alert: the usage screen or a monitor must be watched |
 | Connection banner in the app; nothing queued offline | Built, partly checked | Client behaviour in `client.test.ts`. In a browser the banner appeared when the server was stopped and cleared when it returned. Not exercised on a device |
@@ -73,7 +73,7 @@ This is the evidence-based inventory of what exists. Status words are used stric
 |---|---|---|
 | Eight consent purposes, versioned wording, guardians, withdrawal | Working (tested) | `test_consent.py`. Wording is unreviewed templates |
 | Recording sessions, explicit start and stop, consent re-checks | Working (tested) | `test_interactions.py` |
-| Audio WebSocket gateway, limits, retention, purge | Working (tested) | `test_gateway.py`. Live partial transcripts are in process memory |
+| Audio WebSocket gateway, limits, retention, purge | Working (tested) | `test_gateway.py`, `test_live_state.py`, `test_s3_audio_store.py`. Live partials and the one-connection claim are shared in Redis when configured, otherwise in process memory. Retained audio goes to local disk or S3-compatible storage, encrypted either way |
 | Speech provider layer with fallback, development provider | Working (tested) | `test_speech_package.py` |
 | Sarvam streaming speech-to-text | Built, not run live (partly) | `test_sarvam.py` against a fake server. One live run with a short English clip connected and returned segments. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
 | Microphone capture on a device | Built, not run live | Unit-tested against fakes (`gateway.test.ts`, `capture.test.ts`). Never on a device: see `DEVICE_TEST_PLAN.md` |

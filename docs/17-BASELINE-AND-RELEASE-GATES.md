@@ -142,7 +142,7 @@ The pilot assumptions (one clinic, about five doctors, 100 to 200 visits a day, 
 
 **A provider cannot receive patient data until it is approved.** `AAROGYA_PATIENT_DATA_PROVIDERS` lists the vendors with a signed agreement. In production the API refuses to start if any configured provider is missing from it. This includes the speech fallback, which is how an unapproved vendor would otherwise receive audio on the day the approved one failed.
 
-**One live instance is enforced, not assumed.** Each process tries to hold a PostgreSQL advisory lock. The holder is active; any other reports `standby` and refuses audio. This covers both a second worker in one container and a second replica.
+**One live instance is enforced, not assumed, unless live state is shared.** Without Redis, each process tries to hold a PostgreSQL advisory lock. The holder is active; any other reports `standby` and refuses audio. This covers both a second worker in one container and a second replica. With `AAROGYA_REDIS_URL` set, the partial line and the per-session connection claim live in Redis, the lock is off by default, and an instance starting up pauses only recordings no instance holds.
 
 **A restart is stated honestly.** Recordings that were active when the process stopped are marked paused on start-up instead of staying marked active until someone opened them.
 
@@ -154,7 +154,7 @@ The pilot assumptions (one clinic, about five doctors, 100 to 200 visits a day, 
 
 ## 4. Decisions made
 
-- **One container, one worker for the pilot.** Live transcript state is in process memory. This is a deliberate availability limit: if the process stops, the service is down until it restarts, and recordings in progress are interrupted. It is acceptable for a single-clinic pilot and must be revisited before more than one clinic depends on the service.
+- **One container, one worker for the pilot, unless Redis is configured.** Without Redis, live transcript state is in process memory. This is a deliberate availability limit: if the process stops, the service is down until it restarts, and recordings in progress are interrupted. It is acceptable for a single-clinic pilot and must be revisited before more than one clinic depends on the service.
 - **Deployments use stop-then-start.** A rolling deployment that waits for the new instance to be ready before stopping the old one will never complete, because the new instance cannot take the lock. This is intended.
 - **Allowances count calendar months in UTC** and count every model attempt, including failures, since a failed call may still be charged.
 - **No offline clinical writes.** They need a design for local storage protection, synchronisation and conflict resolution on shared devices, which does not exist. Until it does, the app shows connectivity and saves nothing locally.

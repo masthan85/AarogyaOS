@@ -68,8 +68,17 @@ class Settings(BaseSettings):
     speech_fallback_provider: str = ""
     speech_monitor_interval_seconds: float = Field(default=2.0, gt=0, le=30)
     speech_max_session_seconds: int = Field(default=3600, ge=60, le=14400)
-    # Local development audio store only. Production uses encrypted S3-compatible storage (Phase 7).
+    # Retained audio. "local": encrypted files under audio_store_path. "s3": encrypted objects in
+    # S3-compatible storage, spooled under audio_store_path while a recording is open. Credentials
+    # come from the standard AWS chain (environment or role), never from these settings.
+    audio_store: Literal["local", "s3"] = "local"
     audio_store_path: str = "/tmp/aarogya-audio"  # noqa: S108
+    audio_s3_bucket: str = ""
+    audio_s3_prefix: str = "audio/"
+    audio_s3_endpoint_url: str = ""  # for S3-compatible services; empty means AWS
+    audio_s3_region: str = ""
+    audio_s3_server_side_encryption: Literal["", "AES256", "aws:kms"] = ""
+    audio_s3_kms_key_id: str = ""
     # Vendors approved to receive patient data: each needs a signed data-processing agreement
     # covering residency, retention and training for the exact service used. Production refuses to
     # start if any configured provider, including the speech fallback, is missing from this list.
@@ -92,6 +101,12 @@ class Settings(BaseSettings):
                 raise ValueError(f"AAROGYA_SELF_HOSTED_LLM_URL {problem}")
             if not self.self_hosted_llm_model:
                 raise ValueError("AAROGYA_SELF_HOSTED_LLM_MODEL is required with a model address")
+        if self.audio_store == "s3" and not self.audio_s3_bucket:
+            raise ValueError("AAROGYA_AUDIO_S3_BUCKET is required with AAROGYA_AUDIO_STORE=s3")
+        if self.audio_s3_kms_key_id and self.audio_s3_server_side_encryption != "aws:kms":
+            raise ValueError(
+                "AAROGYA_AUDIO_S3_KMS_KEY_ID needs AAROGYA_AUDIO_S3_SERVER_SIDE_ENCRYPTION=aws:kms"
+            )
         if self.environment == "production":
             if self.jwt_secret == _DEV_SECRET or len(self.jwt_secret) < 32:
                 raise ValueError("AAROGYA_JWT_SECRET must be set to a strong secret in production")
@@ -114,7 +129,8 @@ class Settings(BaseSettings):
                         "after its data-processing agreement is signed; list it there once it is."
                     )
         if self.single_instance_guard is None:
-            self.single_instance_guard = self.environment == "production"
+            # With Redis, live state is shared and several instances may serve recordings.
+            self.single_instance_guard = self.environment == "production" and not self.redis_url
         return self
 
     def external_providers(self) -> dict[str, str]:

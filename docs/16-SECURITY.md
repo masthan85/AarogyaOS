@@ -58,7 +58,7 @@ With the `protect_screens` setting on (the default), the app stops screenshots a
 
 Security headers on every response; a restrictive content security policy on `/api/`; a request-size cap; production configuration that refuses default secrets, default database passwords and wildcard CORS; metric labels that carry route templates, not identifiers; job failures recorded as an exception class only; backups that refuse to be written unencrypted; a container image that runs as a non-root user.
 
-The audio WebSocket refuses a browser whose `Origin` is not in the allowed list (native apps send none). Only one process may serve recordings: each holds a database advisory lock, and any other reports `standby` and refuses audio (`OPERATIONS.md`).
+The audio WebSocket refuses a browser whose `Origin` is not in the allowed list (native apps send none). Each session has one audio connection at a time, whichever process it reaches. Without Redis only one process may serve recordings: each holds a database advisory lock, and any other reports `standby` and refuses audio (`OPERATIONS.md`).
 
 ## Rate limiting
 
@@ -83,7 +83,7 @@ Payments, credit notes and refunds accept an `Idempotency-Key`, so a request rep
 | No facility or care-team scoping, no break-glass | Any clinician in an organisation can open any of its patients (audited) | A-12 |
 | Rate limits are per process unless Redis is configured; patient search can enumerate by three-letter prefixes, twenty results at a time, limited only by the rate limit and the audit | Enumeration by an authorised user | A-10 |
 | No TLS, WAF or secret manager in the repository; nothing deployed | Production protections are all still to be built | A-06 |
-| Audio store is local disk | Retention is unsafe to enable in production | A-11 |
+| The S3 audio store is tested only against an in-memory S3; the field key that encrypts audio is a setting, not held in a key service | Run it on staging before enabling retention in production | A-06, A-11 |
 | No screenshot blocking; clipboard holds clinical text for up to a minute after "copy visit" | Local leakage on the device | B-17 |
 | Seals fall back to a key derived from the field encryption key unless `AAROGYA_SEAL_KEYS` is set | Rotating without the old key breaks verification of older seals | B-13 (set the dedicated key) |
 | No vulnerability disclosure process or security contact | Researchers have nowhere to report | B-19 |

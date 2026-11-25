@@ -57,29 +57,35 @@ What is NOT covered by these scripts and must be decided before go-live:
   each other. Without the field key, encrypted identifiers (ABHA numbers) in a restored database are unreadable.
   Rotation exists (see "Rotating the field encryption key" below); keep retired keys as long as backups made under them may be restored. The same key also keys the prescription seal.
 - **Audio.** Retained audio lives in the audio store, not the database, and is separately encrypted. The only store
-  built is a local-disk one; an S3-compatible encrypted store (with KMS) is not built. Back it up, or leave audio
-  retention off (the default).
+  local-disk store must be backed up with its volume. The S3 store (`AAROGYA_AUDIO_STORE=s3`) relies on the bucket's
+  versioning and replication; turn versioning on so a purge or a mistaken delete can be undone within the retention
+  window you choose. With `s3`, a recording is spooled to `AAROGYA_AUDIO_STORE_PATH` while open and uploaded when its
+  connection closes; an upload that fails stays there and is retried by the `purge-audio` job. Losing that volume
+  before the retry loses those recordings' audio, never their transcripts. Restore has been tested against an
+  in-memory S3 only. Or leave audio retention off (the default).
 - **Retention of backups** must respect the patient's erasure/withdrawal rights and legal retention rules: not decided.
 - Run the restore drill on a schedule (monthly at least) and after any backup change; alert if it fails.
 
-## One live instance
+## One live instance, or several with Redis
 
-Live transcript state is in process memory, so the API holds a PostgreSQL advisory lock for as long as it runs (`app/core/instance.py`, on by default in production). A second worker or a second container cannot take the lock: its `/ready` returns 503 `{"status":"standby"}` and it refuses audio connections with close code 4503. If you see `standby` on the only instance you meant to run, another process is still alive.
+Without Redis, live transcript state is in process memory, so the API holds a PostgreSQL advisory lock for as long as it runs (`app/core/instance.py`, on by default in production). A second worker or a second container cannot take the lock: its `/ready` returns 503 `{"status":"standby"}` and it refuses audio connections with close code 4503. If you see `standby` on the only instance you meant to run, another process is still alive.
 
 Two consequences. Deployments are stop-then-start: a rolling update that waits for the new instance to be ready will not finish, because the new instance cannot be ready while the old one holds the lock. And any restart interrupts recordings in progress: on start-up they are marked paused with reason `SERVER_RESTART`, saved transcript lines are kept, and the clinician chooses whether to resume. Deploy outside clinic hours.
+
+With `AAROGYA_REDIS_URL` set, the live partial line and the one-connection-per-session claim are kept in Redis (`app/speech/live.py`), so several workers and containers may serve recordings and the instance lock is off by default (`AAROGYA_SINGLE_INSTANCE_GUARD` still forces it on). A process renews the claim for each connection it serves every five seconds; if it dies, the claim lapses within 15 seconds and the app can reconnect to any instance. An instance starting up pauses only recordings that no running instance holds, so a rolling deployment no longer interrupts recordings on the instances that stay up. A WebSocket served by an instance that is stopped is still cut, and that recording pauses until the clinician resumes it. If Redis cannot be reached, partial lines are not shown, duplicate connections are still refused on the same process, and start-up pauses nothing it cannot confirm is orphaned (the stale-recording job pauses those once their audio stops). This has been tested with several API instances in one test process sharing a real Redis, not yet on a hosting platform.
 
 ## Usage allowances
 
 An administrator can set a monthly cap on speech minutes and on AI requests (Organisation settings in the app, or the policy endpoint). `GET /api/v1/usage/limits` returns this month's use against each cap with a state of `UNLIMITED`, `OK`, `NEAR` (past the alert share, 80 percent by default) or `REACHED`. Reaching a cap refuses new recordings or model calls with code `usage_limit_reached`; a recording already running is not cut off and manual work is never blocked. Months are calendar months in UTC. There is no outbound alert yet: someone has to look at the usage screen, or a monitor has to poll the endpoint.
 
 ## Known scaling limits (read before running more than one container)
-1. **Audio streaming and live (partial) transcripts are held in process memory.** Run one worker per container and
-   keep a session's WebSocket and its transcript polling on the same container (sticky routing). Finalised transcript
-   segments are in the database, so a lost partial only loses the unfinalised words. A Redis-backed hub is the fix and
-   is not built.
-2. The audio gateway's duplicate-connection guard and the per-minute AI rate limit are per-process too (the AI limit
-   counts database rows, so it is correct across replicas).
-3. Login and patient-search rate limits are per process (see `16-SECURITY.md`), on top of per-account lockout. Put a WAF or shared rate limiter in front.
+1. **Without Redis, live (partial) transcripts and the duplicate-connection guard are held in process memory**, and
+   the instance lock allows one process to serve recordings. Set `AAROGYA_REDIS_URL` before running more than one
+   (see above). Finalised transcript segments are always in the database, so a lost partial only loses the
+   unfinalised words.
+2. The per-minute AI limit counts database rows, so it is correct across processes either way.
+3. Login and patient-search rate limits are per process unless `AAROGYA_REDIS_URL` is set (see `16-SECURITY.md`), on
+   top of per-account lockout.
 
 ## Load test (what exists, what it showed)
 `services/api/scripts/loadtest.py` runs mixed clinic traffic (search, chart, clinical state, vitals, notes) from N
