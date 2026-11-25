@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 import { ApiError } from '@/api/client';
 import { confirmMfa, disableMfa, getMfaStatus, startMfaEnrolment } from '@/api/endpoints';
@@ -10,8 +11,12 @@ import { groupSecret, looksLikeCode, tidyCode } from '@/domain/mfa';
 
 const fail = (title: string) => (e: unknown) => Alert.alert(title, e instanceof ApiError ? e.message : 'Check your connection.');
 
-/** Two-step sign-in with an authenticator app. The secret is shown as text; there is no QR code. */
-export function MfaCard() {
+/**
+ * Two-step sign-in with an authenticator app. Enrolment shows a QR code to scan, with the key in
+ * text for apps or devices that cannot scan. `required` hides the switch-off option, which the
+ * server refuses anyway when the clinic requires it for this person's role.
+ */
+export function MfaCard({ required = false, onEnabled }: { required?: boolean; onEnabled?: () => void } = {}) {
   const t = useTheme();
   const status = useQuery({ queryKey: ['mfa'], queryFn: getMfaStatus, gcTime: 0 });
   const [enrol, setEnrol] = useState<{ secret: string; uri: string } | null>(null);
@@ -46,7 +51,7 @@ export function MfaCard() {
           Each code works once if you lose your phone. They are shown only now: write them down or store them in a password manager.
         </Text>
         {codes.map((c) => <Text key={c} selectable style={[type.body, { color: t.text, fontVariant: ['tabular-nums'] }]}>{c}</Text>)}
-        <Button title="I have saved them" onPress={() => setCodes(null)} />
+        <Button title="I have saved them" onPress={() => { setCodes(null); onEnabled?.(); }} />
       </Card>
     );
   }
@@ -55,8 +60,15 @@ export function MfaCard() {
     return (
       <Card title="Set up two-step sign-in">
         <Text style={[type.small, { color: t.textMuted }]}>
-          In your authenticator app choose "enter a setup key" and type this key (time-based, 6 digits), then enter the code the app shows.
+          Scan this code with your authenticator app, then enter the 6-digit code it shows.
         </Text>
+        <View
+          accessibilityLabel="QR code for your authenticator app"
+          style={{ alignSelf: 'flex-start', padding: space.sm, backgroundColor: '#FFFFFF', borderRadius: 8 }}>
+          {/* Always dark on white, whatever the theme: phone cameras read that most reliably. */}
+          <QRCode value={enrol.uri} size={176} color="#0E1B2C" backgroundColor="#FFFFFF" />
+        </View>
+        <Text style={[type.small, { color: t.textMuted }]}>Cannot scan? Choose "enter a setup key" in the app and type:</Text>
         <Text selectable style={[type.h3, { color: t.text }]}>{groupSecret(enrol.secret)}</Text>
         <TextField label="Code from the app" keyboardType="number-pad" value={code} onChangeText={setCode} />
         <Button title="Turn on" loading={confirm.isPending} disabled={!looksLikeCode(code)} onPress={() => confirm.mutate()} />
@@ -70,7 +82,9 @@ export function MfaCard() {
       <Card title="Two-step sign-in">
         <Text style={{ color: t.success, fontWeight: '700' }}>On</Text>
         <Text style={[type.small, { color: t.textMuted }]}>{status.data.recovery_codes_remaining} recovery codes left.</Text>
-        {turningOff ? (
+        {required ? (
+          <Text style={[type.small, { color: t.textMuted }]}>Your clinic requires this for your role, so it stays on.</Text>
+        ) : turningOff ? (
           <View style={{ gap: space.sm }}>
             <TextField label="Your password" secureTextEntry autoCapitalize="none" value={password} onChangeText={setPassword} />
             <TextField label="Code from the app, or a recovery code" autoCapitalize="none" value={code} onChangeText={setCode} />

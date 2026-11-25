@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { addNote, getNoteTemplates, getPractitioners } from '@/api/endpoints';
@@ -39,14 +39,13 @@ export function NotesPanel({ encId, data }: { encId: string; data: EncounterData
   // Offer the layout made for this doctor's specialty once, without taking over: the doctor can pick Free note.
   const facilityId = data.detail?.encounter.facility_id;
   const practitioners = useQuery({ queryKey: ['practitioners-site', facilityId], queryFn: () => getPractitioners(facilityId), enabled: !!facilityId, gcTime: 0 });
-  const offered = useRef(false);
-  useEffect(() => {
-    if (offered.current || !templates.data || !practitioners.data) return;
-    offered.current = true;
+  const [offered, setOffered] = useState(false);
+  if (!offered && templates.data && practitioners.data && data.detail) {
+    setOffered(true);
     const mine = practitioners.data.find((p) => p.id === data.detail?.encounter.practitioner_id);
     const suggested = layoutForSpecialty(templates.data, mine?.specialty);
-    if (suggested && (data.detail?.notes.length ?? 0) === 0) setTemplate(suggested);
-  }, [templates.data, practitioners.data, data.detail]);
+    if (suggested && data.detail.notes.length === 0) setTemplate(suggested);
+  }
   return (
     <View style={{ gap: space.md }}>
       <SectionTitle>Notes for this visit</SectionTitle>

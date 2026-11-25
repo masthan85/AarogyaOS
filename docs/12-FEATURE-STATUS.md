@@ -33,6 +33,9 @@ This is the evidence-based inventory of what exists. Status words are used stric
 | Recordings marked interrupted after a restart | Working (tested) | `test_release_gates.py` |
 | Monthly speech and AI allowances per organisation | Working (tested) | `test_release_gates.py`. No outbound alert: the usage screen or a monitor must be watched |
 | Connection banner in the app; nothing queued offline | Built, partly checked | Client behaviour in `client.test.ts`. In a browser the banner appeared when the server was stopped and cleared when it returned. Not exercised on a device |
+| Two-step sign-in required by role, chosen by the clinic; QR enrolment | Working (tested) | `test_mfa_policy.py`; set-up screen in `MfaRequiredScreen.test.tsx` and checked in a browser |
+| Screenshot and screen-recording protection (`protect_screens`, on by default) | Built, partly checked | Setting tested in `test_mfa_policy.py`; the native effect has not been seen on a device, and browsers cannot block screenshots |
+| One active visit per patient enforced by the database; repeated walk-in and prescription requests return the first record | Working (tested) | `test_duplicates.py`, including four walk-ins racing |
 
 ## Front desk
 

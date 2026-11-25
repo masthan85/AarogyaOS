@@ -1,31 +1,38 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { getConsentPolicies, getOrgPolicy, installConsentWording, saveOrgPolicy } from '@/api/endpoints';
 import type { OrgPolicy } from '@/api/schemas';
-import { Button, Card, ChoiceChips, ErrorState, LoadingState, SectionTitle, TextField, ToggleRow } from '@/design-system/components';
+import { useAuth } from '@/auth/AuthProvider';
+import { Button, Card, ChoiceChips, ErrorState, LoadingState, MultiChips, SectionTitle, TextField, ToggleRow } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
 import { parseAllowance, POLICY_HELP, policyProblem, togglePolicy } from '@/domain/admin';
+import { ROLE_LABELS, roleLabel } from '@/domain/permissions';
 import { useAction } from '@/features/consultation/useAction';
+
+// Clinic roles only: the platform role does not belong to an organisation.
+const MFA_ROLES = Object.keys(ROLE_LABELS).filter((r) => r !== 'super_admin');
 
 export function PolicyScreen() {
   const t = useTheme();
   const qc = useQueryClient();
+  const { me, retryBoot } = useAuth();
   const q = useQuery({ queryKey: ['org-policy'], queryFn: getOrgPolicy, gcTime: 0 });
   const wording = useQuery({ queryKey: ['consent-policies'], queryFn: getConsentPolicies, gcTime: 0 });
-  const [draft, setDraft] = useState<OrgPolicy | null>(null);
-  const [days, setDays] = useState('30');
-  const [speechLimit, setSpeechLimit] = useState('');
-  const [aiLimit, setAiLimit] = useState('');
-  useEffect(() => {
-    if (q.data) {
-      setDraft(q.data);
-      setDays(String(q.data.retain_days));
-      setSpeechLimit(q.data.monthly_speech_minutes_limit === null ? '' : String(q.data.monthly_speech_minutes_limit));
-      setAiLimit(q.data.monthly_ai_calls_limit === null ? '' : String(q.data.monthly_ai_calls_limit));
-    }
-  }, [q.data]);
+  // What the administrator has changed but not saved. Unchanged fields show the saved value, so a
+  // refetch (for example when the window regains focus) never wipes an edit in progress.
+  const [edited, setEdited] = useState<OrgPolicy | null>(null);
+  const [daysEdit, setDays] = useState<string | null>(null);
+  const [speechEdit, setSpeechLimit] = useState<string | null>(null);
+  const [aiEdit, setAiLimit] = useState<string | null>(null);
+  const setDraft = setEdited;
+  const draft = edited ?? q.data ?? null;
+  const asText = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(n));
+  const days = daysEdit ?? String(q.data?.retain_days ?? 30);
+  const speechLimit = speechEdit ?? asText(q.data?.monthly_speech_minutes_limit);
+  const aiLimit = aiEdit ?? asText(q.data?.monthly_ai_calls_limit);
+  const forget = () => { setEdited(null); setDays(null); setSpeechLimit(null); setAiLimit(null); };
   const speechValue = parseAllowance(speechLimit);
   const aiValue = parseAllowance(aiLimit);
   const save = useAction(
@@ -35,7 +42,12 @@ export function PolicyScreen() {
       monthly_speech_minutes_limit: speechValue as number | null,
       monthly_ai_calls_limit: aiValue as number | null,
     }),
-    () => void qc.invalidateQueries({ queryKey: ['org-policy'] }),
+    () => {
+      const mine = (draft?.mfa_required_roles ?? []).some((r) => me?.roles.includes(r));
+      forget();
+      void qc.invalidateQueries({ queryKey: ['org-policy'] });
+      if (mine) retryBoot(); // reload who I am, which now asks me to set it up
+    },
   );
   const install = useAction(() => installConsentWording('en-IN'), () => void wording.refetch());
 
@@ -57,6 +69,16 @@ export function PolicyScreen() {
         <ToggleRow label="Suggestions must cite a reference" help={POLICY_HELP.ai_suggestions_require_source} value={draft.ai_suggestions_require_source} onChange={(v) => set('ai_suggestions_require_source', v)} />
       </Card>
 
+      <SectionTitle>Devices</SectionTitle>
+      <Card>
+        <ToggleRow
+          label="Block screenshots and screen recording"
+          help="On Android, staff cannot screenshot or record the app and it is blanked in the recent-apps view. On iPhone and iPad it is hidden from screen recordings; Apple does not let apps block screenshots. Browsers cannot block either."
+          value={draft.protect_screens}
+          onChange={(v) => setDraft({ ...draft, protect_screens: v })}
+        />
+      </Card>
+
       <SectionTitle>Audio</SectionTitle>
       <Card>
         <ChoiceChips
@@ -72,6 +94,22 @@ export function PolicyScreen() {
           <TextField label="Days to keep audio" value={days} onChangeText={setDays} keyboardType="number-pad" />
         ) : null}
         <Text style={[type.caption, { color: t.textMuted }]}>Audio is only ever kept when this setting and the patient's separate consent both allow it.</Text>
+      </Card>
+
+      <SectionTitle>Two-step sign-in</SectionTitle>
+      <Card>
+        <Text style={{ color: t.textMuted }}>
+          People in the roles you choose must use an authenticator app when they sign in. Anyone who has not set it up yet is asked to before they can do anything else.
+        </Text>
+        <MultiChips
+          label="Required for"
+          options={MFA_ROLES.map((r) => ({ value: r, label: roleLabel(r) }))}
+          value={draft.mfa_required_roles}
+          onChange={(v) => setDraft({ ...draft, mfa_required_roles: v })}
+        />
+        {draft.mfa_required_roles.some((r) => me?.roles.includes(r)) ? (
+          <Text style={[type.small, { color: t.warning }]}>This includes your own role: after saving you will be asked to set it up before continuing.</Text>
+        ) : null}
       </Card>
 
       <SectionTitle>Monthly allowances</SectionTitle>

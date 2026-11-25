@@ -1,6 +1,6 @@
 import { can, roleLabel } from '../permissions';
 
-const me = { id: '1', organisation_id: 'o', email: 'a@b.com', full_name: 'A', roles: ['doctor'], permissions: ['facility:read'] };
+const me = { id: '1', organisation_id: 'o', email: 'a@b.com', full_name: 'A', roles: ['doctor'], permissions: ['facility:read'], mfa_setup_required: false, protect_screens: true };
 
 describe('permissions helpers', () => {
   it('checks permissions', () => {

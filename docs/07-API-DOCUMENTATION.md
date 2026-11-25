@@ -446,7 +446,8 @@ Authenticator-app TOTP (RFC 6238: SHA-1, six digits, 30 seconds, one step either
 
 ## Repeated requests
 
-`POST /invoices/{id}/payments`, `/credit-notes` and `/refunds` accept an optional `Idempotency-Key` header of 8 to 100 characters. Send a new key for each intended action and the same key when retrying it. The first request with a key does the work; a repeat returns the invoice as it stands and records nothing. A request that is refused does not use up its key. Keys are scoped to the user, the invoice and the kind of action, and are deleted after two days.
+`POST /invoices/{id}/payments`, `/credit-notes` and `/refunds`, `POST /walk-ins` and `POST /encounters/{id}/prescriptions` accept an optional `Idempotency-Key` header of 8 to 100 characters. Send a new key for each intended action and the same key when retrying it. The first request with a key does the work; a repeat records nothing and returns the invoice as it stands, or the visit or draft prescription the first request created. A repeat that arrives while the first is still being saved gets 409 and should be retried. A request that is refused does not use up its key. Keys are scoped to the user, the invoice and the kind of action, and are deleted after two days.
 
 A request refused because a monthly allowance is used up returns 409 with `"title": "usage_limit_reached"`.
 
+A person whose role the clinic requires to use two-step sign-in, and who has not set it up, gets 403 with `"title": "mfa_setup_required"` from every endpoint that needs a permission. `GET /auth/me` returns `mfa_setup_required` and `protect_screens` so the app can show the set-up screen and apply screen protection.

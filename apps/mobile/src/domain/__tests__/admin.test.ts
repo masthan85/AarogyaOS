@@ -5,7 +5,7 @@ import { allowanceLine, approvalState, describeHours, emailProblem, hoursFor, pa
 const policy: OrgPolicy = {
   recording_enabled: true, ai_processing_enabled: true, audio_retention: 'RETAIN_DAYS', retain_days: 30,
   ai_suggestions_enabled: true, ai_suggestions_require_source: true, enabled_languages: null, guardian_consent_under_age: 18,
-  monthly_speech_minutes_limit: null, monthly_ai_calls_limit: null, usage_alert_percent: 80,
+  monthly_speech_minutes_limit: null, monthly_ai_calls_limit: null, usage_alert_percent: 80, mfa_required_roles: [], protect_screens: true,
 };
 const doc = (o: Partial<KnowledgeDoc>): KnowledgeDoc => ({
   id: 'd', title: 't', publisher: 'p', source: 's', version: '1', country: 'IN', specialty: null, licence: 'ORG_LICENSED',

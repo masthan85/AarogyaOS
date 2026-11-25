@@ -46,6 +46,7 @@ from app.modules.clinical.schemas import (
     VitalsIn,
     VoidIn,
 )
+from app.modules.ops.idempotency import Key, claim, created_before, remember
 
 router = APIRouter(tags=["clinical"])
 
@@ -261,9 +262,21 @@ RxWrite = Annotated[Principal, Depends(require("prescription:write"))]
     "/encounters/{encounter_id}/prescriptions", response_model=PrescriptionOut, status_code=201
 )
 def create_prescription(
-    encounter_id: uuid.UUID, body: PrescriptionIn, db: TenantDb, principal: RxWrite
+    encounter_id: uuid.UUID,
+    body: PrescriptionIn,
+    db: TenantDb,
+    principal: RxWrite,
+    idempotency_key: Key = None,
 ) -> PrescriptionOut:
-    return orders.create_prescription(db, principal, encounter_id, body)
+    # A double tap or a retried request returns the draft the first one made, not a second draft.
+    scope = f"prescription:{encounter_id}"
+    if not claim(db, principal, scope, idempotency_key):
+        return orders.prescription_out(
+            db, orders.get_rx(db, created_before(db, principal, scope, idempotency_key))
+        )
+    rx = orders.create_prescription(db, principal, encounter_id, body)
+    remember(db, principal, scope, idempotency_key, rx.id)
+    return rx
 
 
 @router.put("/prescriptions/{rx_id}", response_model=PrescriptionOut)

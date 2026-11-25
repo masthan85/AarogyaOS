@@ -24,7 +24,8 @@ jobs:
       - run: mypy app
       - run: pip install pip-audit && pip-audit --skip-editable --progress-spinner off
         continue-on-error: true  # advisory until triaged; see docs/OPERATIONS.md
-      - run: pytest -q
+      # Coverage is reported, not enforced: a threshold will be set once a baseline is agreed.
+      - run: pytest -q --cov=app --cov-report=term:skip-covered
         env:
           AAROGYA_TEST_ADMIN_URL: postgresql+psycopg://postgres:postgres@localhost:5432/postgres
 

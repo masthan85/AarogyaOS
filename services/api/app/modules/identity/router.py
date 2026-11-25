@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.core.context import Principal
 from app.core.deps import MetaDep, PrincipalDep, SettingsDep, SystemDb, TenantDb, require
+from app.core.errors import Conflict
 from app.core.ratelimit import limiter_of
 from app.modules.identity import mfa, service
 from app.modules.identity.models import User
@@ -18,6 +19,7 @@ from app.modules.identity.schemas import (
     UserOut,
     UserRolesUpdate,
 )
+from app.modules.tenancy.policy import load_policy, mfa_required
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 users_router = APIRouter(tags=["users"])
@@ -55,7 +57,8 @@ def logout(body: RefreshRequest, db: SystemDb, meta: MetaDep) -> Response:
 
 
 @auth_router.get("/me", response_model=MeResponse)
-def me(principal: PrincipalDep) -> MeResponse:
+def me(principal: PrincipalDep, db: TenantDb) -> MeResponse:
+    protect = load_policy(db, principal.org_id).protect_screens if principal.org_id else True
     return MeResponse(
         id=principal.user_id,
         organisation_id=principal.org_id,
@@ -63,6 +66,8 @@ def me(principal: PrincipalDep) -> MeResponse:
         full_name=principal.full_name,
         roles=sorted(principal.roles),
         permissions=sorted(principal.permissions),
+        mfa_setup_required=principal.needs_mfa_setup,
+        protect_screens=protect,
     )
 
 
@@ -99,7 +104,14 @@ def mfa_disable(
     settings: SettingsDep,
     meta: MetaDep,
 ) -> Response:
-    mfa.disable(db, settings, meta, _me_row(db, principal), body.password, body.code)
+    user = _me_row(db, principal)
+    if principal.org_id is not None and mfa_required(
+        load_policy(db, principal.org_id), principal.roles
+    ):
+        raise Conflict(
+            "Your clinic requires two-step sign-in for your role, so it cannot be turned off."
+        )
+    mfa.disable(db, settings, meta, user, body.password, body.code)
     return Response(status_code=204)
 
 

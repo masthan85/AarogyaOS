@@ -14,13 +14,13 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Header
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from app.core.context import Principal
 from app.core.db import Base, new_uuid
-from app.core.errors import AppError
+from app.core.errors import AppError, Conflict
 
 
 class IdempotencyKey(Base):
@@ -34,6 +34,8 @@ class IdempotencyKey(Base):
     user_id: Mapped[uuid.UUID] = mapped_column()
     scope: Mapped[str] = mapped_column(String(80))
     key: Mapped[str] = mapped_column(String(100))
+    # For requests that create something: the record the first request created.
+    resource_id: Mapped[uuid.UUID | None] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -64,3 +66,40 @@ def claim(session: Session, principal: Principal, scope: str, key: str | None) -
         .returning(IdempotencyKey.id)
     ).first()
     return inserted is not None
+
+
+def remember(
+    session: Session, principal: Principal, scope: str, key: str | None, resource_id: uuid.UUID
+) -> None:
+    """Record what a create request made, so that repeating it returns the same record."""
+    if key is None or principal.org_id is None:
+        return
+    session.execute(
+        update(IdempotencyKey)
+        .where(
+            IdempotencyKey.organisation_id == principal.org_id,
+            IdempotencyKey.user_id == principal.user_id,
+            IdempotencyKey.scope == scope,
+            IdempotencyKey.key == key,
+        )
+        .values(resource_id=resource_id)
+    )
+    session.commit()
+
+
+def created_before(
+    session: Session, principal: Principal, scope: str, key: str | None
+) -> uuid.UUID:
+    """The record an earlier request with this key created. Called only when `claim` said no."""
+    found = session.scalar(
+        select(IdempotencyKey.resource_id).where(
+            IdempotencyKey.organisation_id == principal.org_id,
+            IdempotencyKey.user_id == principal.user_id,
+            IdempotencyKey.scope == scope,
+            IdempotencyKey.key == key,
+        )
+    )
+    if found is None:
+        # The first request is still finishing. Saying so is safer than doing the work twice.
+        raise Conflict("This request is already being processed. Refresh in a moment.")
+    return found

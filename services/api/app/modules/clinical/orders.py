@@ -98,6 +98,10 @@ def prescription_out(session: Session, rx: Prescription) -> PrescriptionOut:
     return out
 
 
+def get_rx(session: Session, rx_id: uuid.UUID) -> Prescription:
+    return _get_rx(session, rx_id)
+
+
 def _get_rx(session: Session, rx_id: uuid.UUID, *, lock: bool = False) -> Prescription:
     stmt = select(Prescription).where(Prescription.id == rx_id)
     rx = session.scalar(stmt.with_for_update() if lock else stmt)

@@ -4,7 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { displayFont, layout, useTheme } from '@/design-system/tokens';
 import { Sidebar } from '@/features/shell/Sidebar';
+import { useAuth } from '@/auth/AuthProvider';
 import { useServerReachable } from '@/services/connectivity';
+import { useScreenGuard } from '@/services/screenGuard';
 
 /**
  * Shown while the server cannot be reached. Nothing is saved offline, so the app says so plainly
@@ -25,6 +27,9 @@ function ConnectionBanner() {
 
 export default function AppLayout() {
   const t = useTheme();
+  const { me } = useAuth();
+  // Everything under this layout is signed-in content, much of it about patients.
+  useScreenGuard(me?.protect_screens ?? true);
   const { width } = useWindowDimensions();
   // Wide screens (desktop browsers, landscape tablets) get a sidebar and a readable column;
   // phones keep the full-width stack and navigate from the home screen.

@@ -110,3 +110,16 @@ Rotation changes the key that protects patient identifiers (and keys their blind
 4. Keep the old key listed while any retained audio recorded under it exists (audio is not re-encrypted; the default policy discards audio after transcription). Then remove it. Keep an offline copy of retired keys for as long as backups made under them may need restoring.
 
 Tested on a development database only (`tests/test_key_rotation.py`); rehearse on a restore of production data before relying on it.
+
+## Migration 0017: one active visit per patient
+
+0017 adds a unique index allowing each patient only one visit that is waiting, checked in or in consultation. The application already refused a second check-in; the index makes that hold when two requests arrive together. If the upgrade fails on this index, a patient already has two active visits from before: find them with
+
+```sql
+select patient_id, count(*) from appointments
+where status in ('WAITING', 'CHECKED_IN', 'IN_CONSULTATION')
+group by patient_id having count(*) > 1;
+```
+
+close or cancel the extra visit through the app, and run the upgrade again. 0016 and 0017 are reversible (`alembic downgrade 0015`); `tests/test_migrations.py` checks this with data in place.
+

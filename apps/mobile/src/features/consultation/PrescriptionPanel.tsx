@@ -8,6 +8,7 @@ import { AlertBanner, Button, Card, ChoiceChips, SectionTitle, StatusChip, TextF
 import { space, useTheme, type } from '@/design-system/tokens';
 import { itemsFromPrescription, parseNumber } from '@/domain/clinical';
 import { parseFrequency } from '@/domain/dosing';
+import { newRequestKey } from '@/domain/requestKey';
 import { prescriptionHtml, type Letterhead } from '@/domain/print';
 import { printHtml, sharePdf } from '@/services/print';
 
@@ -54,9 +55,11 @@ export function PrescriptionPanel({ encId, data, letterhead }: { encId: string; 
     }]);
     setF(BLANK);
   };
+  // One key per new prescription: a double tap or a retry returns the first draft instead of a second.
+  const [rxKey, setRxKey] = useState(newRequestKey);
   const save = useAction(
-    () => (editing ? updatePrescription(editing, items) : createPrescription(encId, items)),
-    () => { setItems([]); setEditing(null); done(); },
+    () => (editing ? updatePrescription(editing, items) : createPrescription(encId, items, rxKey)),
+    () => { setItems([]); setEditing(null); setRxKey(newRequestKey()); done(); },
   );
   const share = useAction(async (html: string) => sharePdf(html, 'Prescription'));
   const print = useAction(async (html: string) => printHtml(html));

@@ -125,3 +125,8 @@ Asked for a more polished, enterprise feel. No Figma file was supplied, so nothi
 Screens: [home, wide](design/home-wide.png), [home, tablet](design/home-tablet.png), [home, phone](design/home-phone.png).
 
 Not checked: the animation on a real Android or iOS device, where Reanimated runs natively rather than in a browser. In the browser the first frame of the home screen may paint fully visible for one frame before the fade begins; this was not visible to the eye in captures but should be watched for on devices.
+
+## Code review, November 2026
+
+The five lint warnings left from the third pass were reviewed rather than silenced. Two were real defects: Organisation settings and the GSTIN form reloaded from the server whenever the browser window regained focus, wiping anything typed but not saved. Both now keep unsaved edits on top of the saved values and drop them after a successful save. The other three (the payment amount, the note layout offered once, and the recording hook's pause reference) were rewritten in the patterns React recommends. Both rules are errors again, so new cases fail the build.
+

@@ -33,8 +33,10 @@
   "email",
   "full_name",
   "id",
+  "mfa_setup_required",
   "organisation_id",
   "permissions",
+  "protect_screens",
   "roles"
  ],
  "GET /auth/mfa": [
@@ -367,8 +369,10 @@
   "audio_retention",
   "enabled_languages",
   "guardian_consent_under_age",
+  "mfa_required_roles",
   "monthly_ai_calls_limit",
   "monthly_speech_minutes_limit",
+  "protect_screens",
   "recording_enabled",
   "retain_days",
   "usage_alert_percent"
@@ -1967,8 +1971,10 @@
   "audio_retention",
   "enabled_languages",
   "guardian_consent_under_age",
+  "mfa_required_roles",
   "monthly_ai_calls_limit",
   "monthly_speech_minutes_limit",
+  "protect_screens",
   "recording_enabled",
   "retain_days",
   "usage_alert_percent"

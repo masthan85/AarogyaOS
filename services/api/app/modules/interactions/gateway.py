@@ -107,6 +107,8 @@ def _authenticate(app: FastAPI, token: str, interaction_id: uuid.UUID, host: str
             raise Refusal(4401, "not authenticated") from exc
         if principal.org_id is None:
             raise Refusal(4403, "not allowed")
+        if principal.needs_mfa_setup:
+            raise Refusal(4403, "two-step sign-in required")
         try:
             ia = service.visible(db, principal, interaction_id)
         except NotFound as exc:

@@ -151,7 +151,7 @@ export const walkIn = (body: {
   facility_id: string;
   practitioner_id?: string;
   priority?: 'ROUTINE' | 'URGENT';
-}) => api.request('/walk-ins', appointmentSchema, { method: 'POST', body });
+}, key?: string) => api.request('/walk-ins', appointmentSchema, { method: 'POST', body, idempotencyKey: key });
 export const getQueue = (facilityId: string, practitionerId?: string) =>
   api.request(
     `/queue${qs({ facility_id: facilityId, practitioner_id: practitionerId })}`,
@@ -233,8 +233,9 @@ export type RxItemInput = {
   duration_days?: number;
   instructions?: string;
 };
-export const createPrescription = (encId: string, items: RxItemInput[]) =>
-  api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items } });
+// Both take a request key: a double tap or a retry returns what the first request made.
+export const createPrescription = (encId: string, items: RxItemInput[], key?: string) =>
+  api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items }, idempotencyKey: key });
 export const getPatientPrescriptions = (patientId: string) =>
   api.request(`/patients/${patientId}/prescriptions`, z.array(prescriptionSchema));
 export const updatePrescription = (rxId: string, items: RxItemInput[]) =>

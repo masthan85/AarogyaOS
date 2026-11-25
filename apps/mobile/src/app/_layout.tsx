@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
+import { MfaRequiredScreen } from '@/features/auth/MfaRequiredScreen';
 import { Button, ErrorState, LoadingState } from '@/design-system/components';
 import { useTheme } from '@/design-system/tokens';
 
 function Gate() {
-  const { status, signOut, retryBoot } = useAuth();
+  const { status, me, signOut, retryBoot } = useAuth();
   const t = useTheme();
 
   if (status === 'booting') return <Centered><LoadingState label="Starting AarogyaOS…" /></Centered>;
@@ -30,6 +31,9 @@ function Gate() {
       </Centered>
     );
   }
+
+  // The server refuses everything else until required two-step sign-in is set up, so show only that.
+  if (status === 'signedIn' && me?.mfa_setup_required) return <MfaRequiredScreen />;
 
   const signedIn = status === 'signedIn';
   return (
