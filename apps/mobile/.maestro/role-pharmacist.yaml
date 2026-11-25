@@ -1,0 +1,9 @@
+# The pharmacist signs in, is offered "Pharmacy" and not "Results to review" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: pharmacist@demo.example.com
+      SEES: "Pharmacy"
+      NEVER: "Results to review"

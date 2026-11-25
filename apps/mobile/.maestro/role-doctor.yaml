@@ -1,0 +1,9 @@
+# The doctor signs in, is offered "Results to review" and not "Billing" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: doctor@demo.example.com
+      SEES: "Results to review"
+      NEVER: "Billing"
