@@ -8,12 +8,16 @@ and an empty or short page means it has reached the end."""
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
+from fastapi import Query
 from sqlalchemy import Select, tuple_
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from app.core.errors import AppError
+
+Before = Annotated[uuid.UUID | None, Query(description="Id of the last row already received")]
+PageSize = Annotated[int, Query(ge=1, le=200)]
 
 
 def newest_first[T](

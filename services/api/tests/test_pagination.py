@@ -11,6 +11,7 @@ from tests.clinical_helpers import Visit, get, make_visit, post
 from tests.conftest import make_staff
 
 H = dict[str, str]
+ORG = "alpha-clinic"
 
 
 @pytest.fixture
@@ -97,3 +98,40 @@ def test_a_repeated_request_for_a_new_draft_returns_the_first(
     # A new key is a deliberate second draft.
     other = new_draft(client, billing, v.patient["id"], "inv-" + uuid.uuid4().hex)
     assert other.status_code == 201 and other.json()["id"] != first.json()["id"]
+
+
+def test_clinical_lists_page_the_same_way(client: TestClient, org_a: H) -> None:
+    from tests.clinical_helpers import rx_body
+
+    visit = make_visit(client, org_a, stage="consult")
+    lab = make_staff(client, org_a, "lab-page@alpha-clinic.example.com", "lab_technician", ORG)[0]
+    placed = []
+    for i in range(5):
+        o = post(
+            client,
+            visit.doctor,
+            f"/encounters/{visit.enc_id}/orders",
+            {"category": "LAB", "name": f"Test {i}", "reason": "Review"},
+        ).json()
+        placed.append(post(client, visit.doctor, f"/orders/{o['id']}/place").json()["id"])
+    for _ in range(5):
+        r = post(
+            client, lab, f"/orders/{placed[0]}/results", {"test_name": "Hb", "value_text": "ok"}
+        )
+        assert r.status_code == 201, r.text
+    for i in range(3):
+        r = post(
+            client, visit.doctor, f"/encounters/{visit.enc_id}/prescriptions", rx_body(f"Drug {i}")
+        )
+        assert r.status_code == 201, r.text
+
+    pid = visit.patient["id"]
+    for who, url, expected in (
+        (lab, "/orders", 5),
+        (visit.doctor, f"/patients/{pid}/results", 5),
+        (visit.doctor, f"/patients/{pid}/prescriptions", 3),
+        (visit.doctor, f"/patients/{pid}/encounters", 1),
+    ):
+        everything = [r["id"] for r in get(client, who, url, limit=200).json()]
+        assert len(everything) == expected, url
+        assert [i for p in pages(client, who, url, 2) for i in p] == everything, url

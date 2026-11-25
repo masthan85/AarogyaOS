@@ -236,8 +236,11 @@ export type RxItemInput = {
 // Both take a request key: a double tap or a retry returns what the first request made.
 export const createPrescription = (encId: string, items: RxItemInput[], key?: string) =>
   api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items }, idempotencyKey: key });
-export const getPatientPrescriptions = (patientId: string) =>
-  api.request(`/patients/${patientId}/prescriptions`, z.array(prescriptionSchema));
+export const getPatientPrescriptions = (patientId: string, page: { limit?: number; before?: string } = {}) =>
+  api.request(
+    `/patients/${patientId}/prescriptions${qs({ limit: page.limit ? String(page.limit) : undefined, before: page.before })}`,
+    z.array(prescriptionSchema),
+  );
 export const updatePrescription = (rxId: string, items: RxItemInput[]) =>
   api.request(`/prescriptions/${rxId}`, prescriptionSchema, { method: 'PUT', body: { items } });
 export const safetyCheck = (rxId: string) =>
@@ -409,9 +412,9 @@ export const getUsageLimits = () => api.request('/usage/limits', usagePositionSc
 
 // ---- worklists ----------------------------------------------------------------------------
 
-export const getOrders = (params: { status?: string; category?: string; patient_id?: string }) => {
+export const getOrders = (params: { status?: string; category?: string; patient_id?: string; urgent_first?: boolean; limit?: number }) => {
   const q = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, String(v)));
   return api.request(`/orders?${q.toString()}`, z.array(worklistOrderSchema));
 };
 export type ResultInput = {

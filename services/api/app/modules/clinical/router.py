@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from app.core.context import Principal
 from app.core.deps import TenantDb, require
+from app.core.pagination import Before, PageSize
 from app.modules.clinical import encounters, orders, records
 from app.modules.clinical.facts import verify_fact
 from app.modules.clinical.models import Encounter
@@ -118,8 +119,10 @@ def patient_encounters(
     patient_id: uuid.UUID,
     db: TenantDb,
     principal: Annotated[Principal, Depends(require("encounter:read"))],
+    limit: PageSize = 50,
+    before: Before = None,
 ) -> list[Encounter]:
-    return encounters.list_for_patient(db, principal, patient_id)
+    return encounters.list_for_patient(db, principal, patient_id, limit=limit, before=before)
 
 
 # ---- facts -------------------------------------------------------------------------
@@ -322,8 +325,10 @@ def patient_prescriptions(
     patient_id: uuid.UUID,
     db: TenantDb,
     principal: Annotated[Principal, Depends(require("prescription:read"))],
+    limit: PageSize = 50,
+    before: Before = None,
 ) -> list[PrescriptionOut]:
-    return orders.patient_prescriptions(db, principal, patient_id)
+    return orders.patient_prescriptions(db, principal, patient_id, limit=limit, before=before)
 
 
 # ---- investigations ----------------------------------------------------------------
@@ -358,6 +363,11 @@ def list_orders(
     patient_id: uuid.UUID | None = None,
     category: Annotated[str | None, Query(max_length=10)] = None,
     status: Annotated[str | None, Query(max_length=10)] = None,
+    limit: PageSize = 100,
+    before: Before = None,
+    urgent_first: Annotated[
+        bool, Query(description="Worklist order: STAT, urgent, routine, oldest first in each")
+    ] = False,
 ) -> list[ServiceRequestOut]:
     return orders.list_orders(
         db,
@@ -366,6 +376,9 @@ def list_orders(
         patient_id=patient_id,
         category=category,
         status=status,
+        limit=limit,
+        before=before,
+        urgent_first=urgent_first,
     )
 
 
@@ -400,8 +413,10 @@ def patient_results(
     patient_id: uuid.UUID,
     db: TenantDb,
     _: Annotated[Principal, Depends(require("patient:clinical"))],
+    limit: PageSize = 100,
+    before: Before = None,
 ) -> list[ResultOut]:
-    return orders.patient_results(db, patient_id)
+    return orders.patient_results(db, patient_id, limit=limit, before=before)
 
 
 # ---- follow-ups --------------------------------------------------------------------

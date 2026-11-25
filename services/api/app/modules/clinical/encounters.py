@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.context import Principal
 from app.core.errors import Conflict, Forbidden, NotFound
+from app.core.pagination import newest_first
 from app.modules.audit.service import emit_event, record_audit
 from app.modules.clinical.facts import current_filter
 from app.modules.clinical.models import (
@@ -365,13 +366,13 @@ def detail(session: Session, principal: Principal, encounter_id: uuid.UUID) -> E
 
 
 def list_for_patient(
-    session: Session, principal: Principal, patient_id: uuid.UUID
+    session: Session,
+    principal: Principal,
+    patient_id: uuid.UUID,
+    *,
+    limit: int = 50,
+    before: uuid.UUID | None = None,
 ) -> list[Encounter]:
-    return list(
-        session.scalars(
-            select(Encounter)
-            .where(Encounter.patient_id == patient_id)
-            .order_by(Encounter.started_at.desc())
-            .limit(50)
-        )
-    )
+    stmt = select(Encounter).where(Encounter.patient_id == patient_id)
+    stmt = newest_first(session, stmt, Encounter, Encounter.started_at, before)
+    return list(session.scalars(stmt.limit(limit)))

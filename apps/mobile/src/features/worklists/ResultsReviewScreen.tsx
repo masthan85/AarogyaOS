@@ -9,6 +9,9 @@ import { space, useTheme, type } from '@/design-system/tokens';
 import { formatDateTime } from '@/domain/dates';
 import { describeValue, isCritical, reviewOrder } from '@/domain/worklists';
 
+/** The server's limit (REVIEW_QUEUE_LIMIT); it leaves off only the newest normal results. */
+const REVIEW_LIMIT = 200;
+
 export function ResultsReviewScreen() {
   const t = useTheme();
   const qc = useQueryClient();
@@ -30,6 +33,11 @@ export function ResultsReviewScreen() {
       </Lead>
       <Button title="Cover while away" variant="secondary" onPress={() => router.push('/cover')} />
       {rows.length === 0 ? <EmptyState message="Nothing waiting for your review." /> : null}
+      {rows.length >= REVIEW_LIMIT ? (
+        <Text style={[type.small, { color: t.warning }]}>
+          Showing {REVIEW_LIMIT} results: every critical and abnormal one first. More normal results are waiting and appear as you review these.
+        </Text>
+      ) : null}
       {rows.map((r) => (
         <Card key={r.id} title={r.test_name}>
           <Text style={[type.h2, { color: isCritical(r) ? t.danger : t.text }]}>{describeValue(r)}</Text>
