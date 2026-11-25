@@ -14,6 +14,10 @@ export const meSchema = z.object({
   full_name: z.string(),
   roles: z.array(z.string()),
   permissions: z.array(z.string()),
+  // True until this person sets up two-step sign-in that their clinic requires for their role.
+  mfa_setup_required: z.boolean().default(false),
+  // Organisation policy: stop screenshots and screen recording while signed in.
+  protect_screens: z.boolean().default(true),
 });
 
 export const facilitySchema = z.object({
@@ -493,6 +497,8 @@ export const orgPolicySchema = z.object({
   monthly_speech_minutes_limit: z.number().nullable(),
   monthly_ai_calls_limit: z.number().nullable(),
   usage_alert_percent: z.number(),
+  mfa_required_roles: z.array(z.string()).default([]),
+  protect_screens: z.boolean().default(true),
 });
 const allowanceSchema = z.object({
   used: z.number(),

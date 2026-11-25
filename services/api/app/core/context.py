@@ -30,6 +30,9 @@ class Principal:
     permissions: frozenset[str]
     session_id: uuid.UUID
     is_platform: bool = False
+    # The organisation requires two-step sign-in for one of this person's roles and they have not
+    # set it up. Every permission is refused until they do.
+    needs_mfa_setup: bool = False
     meta: RequestMeta = field(default_factory=lambda: RequestMeta(None, None, None))
 
     def has(self, permission: str) -> bool:

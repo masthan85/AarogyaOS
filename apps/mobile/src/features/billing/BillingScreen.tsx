@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { createInvoice, getInvoices, getToBill } from '@/api/endpoints';
+import { flatten, nextBefore } from '@/api/paging';
 import type { Invoice } from '@/api/schemas';
 import { useAuth } from '@/auth/AuthProvider';
 import { Button, Card, EmptyState, ErrorState, Lead, LoadingState, StatusChip, TabBar } from '@/design-system/components';
@@ -12,6 +13,7 @@ import { space, type, useTheme } from '@/design-system/tokens';
 import { formatRupees, invoiceState } from '@/domain/billing';
 import { formatDateTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
+import { newRequestKey } from '@/domain/requestKey';
 import { PatientSearchScreen } from '@/features/patients/PatientSearchScreen';
 
 type Tab = 'tobill' | 'unpaid' | 'recent';
@@ -37,6 +39,8 @@ function InvoiceRow({ inv }: { inv: Invoice }) {
   );
 }
 
+const PAGE = 50;
+
 export function BillingScreen() {
   const t = useTheme();
   const { me } = useAuth();
@@ -45,15 +49,22 @@ export function BillingScreen() {
   const [tab, setTab] = useState<Tab>(canWrite ? 'tobill' : 'unpaid');
   const [picking, setPicking] = useState(false);
   const toBill = useQuery({ queryKey: ['to-bill'], queryFn: getToBill, enabled: canWrite && tab === 'tobill', gcTime: 0 });
-  const invoices = useQuery({
+  const invoices = useInfiniteQuery({
     queryKey: ['invoices', tab],
-    queryFn: () => getInvoices({ unpaid: tab === 'unpaid' }),
+    queryFn: ({ pageParam }) => getInvoices({ unpaid: tab === 'unpaid', limit: PAGE, before: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => nextBefore(last, PAGE),
     enabled: tab !== 'tobill',
     gcTime: 0,
   });
+  const rows = flatten(invoices.data?.pages);
+  // One key per attempt: a double tap or a retry after a lost reply returns the same draft. The
+  // server scopes keys by patient, so starting an invoice for someone else is never confused.
+  const [startKey, setStartKey] = useState(newRequestKey);
   const start = useMutation({
-    mutationFn: (body: { patient_id: string; encounter_id?: string }) => createInvoice(body),
+    mutationFn: (body: { patient_id: string; encounter_id?: string }) => createInvoice(body, startKey),
     onSuccess: (inv) => {
+      setStartKey(newRequestKey());
       void qc.invalidateQueries({ queryKey: ['to-bill'] });
       router.push(`/billing/${inv.id}`);
     },
@@ -100,10 +111,13 @@ export function BillingScreen() {
           <>
             {invoices.isPending ? <LoadingState /> : null}
             {invoices.isError ? <ErrorState message="Could not load invoices." onRetry={() => void invoices.refetch()} /> : null}
-            {invoices.data?.length === 0 ? (
+            {invoices.isSuccess && rows.length === 0 ? (
               <EmptyState title={tab === 'unpaid' ? 'Nothing unpaid' : 'No invoices yet'} message={tab === 'unpaid' ? 'Every issued invoice is paid.' : 'Invoices appear here once started.'} />
             ) : null}
-            {invoices.data?.map((inv) => <InvoiceRow key={inv.id} inv={inv} />)}
+            {rows.map((inv) => <InvoiceRow key={inv.id} inv={inv} />)}
+            {invoices.hasNextPage ? (
+              <Button title="Show older" variant="ghost" loading={invoices.isFetchingNextPage} onPress={() => void invoices.fetchNextPage()} />
+            ) : null}
             {!canWrite && can(me, 'billing:manage') ? <Button title="Price list and GSTIN" variant="ghost" onPress={() => router.push('/billing/prices')} /> : null}
           </>
         )}

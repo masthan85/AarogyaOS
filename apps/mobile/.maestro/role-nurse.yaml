@@ -1,0 +1,9 @@
+# The nurse signs in, is offered "Patients" and not "Results to review" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: nurse@demo.example.com
+      SEES: "Patients"
+      NEVER: "Results to review"

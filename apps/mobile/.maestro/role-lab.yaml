@@ -1,0 +1,9 @@
+# The lab signs in, is offered "Orders and results" and not "Billing" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: lab@demo.example.com
+      SEES: "Orders and results"
+      NEVER: "Billing"

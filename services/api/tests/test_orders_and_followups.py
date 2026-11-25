@@ -166,6 +166,39 @@ def test_review_queue_shows_critical_first_and_only_my_orders(
     assert [r["interpretation"] for r in queue] == ["CRITICAL_HIGH", "NORMAL"]
 
 
+def test_an_old_critical_result_is_never_pushed_off_the_review_queue(
+    client: TestClient, v: Visit, lab: H
+) -> None:
+    o = placed(client, v)
+    body = {"test_name": "HbA1c", "ref_high": "5.6", "critical_high": "12"}
+    post(client, lab, f"/orders/{o['id']}/results", {**body, "value_numeric": "13"})
+    for _ in range(205):  # more normal results since than the queue shows at once
+        post(client, lab, f"/orders/{o['id']}/results", {**body, "value_numeric": "5.0"})
+    queue = get(client, v.doctor, "/results/awaiting-review").json()
+    assert queue[0]["interpretation"] == "CRITICAL_HIGH"
+    assert len(queue) == 200
+
+
+def test_the_worklist_puts_urgent_orders_first_however_long_it_is(
+    client: TestClient, v: Visit, lab: H
+) -> None:
+    def order(name: str, priority: str) -> str:
+        o = post(
+            client,
+            v.doctor,
+            f"/encounters/{v.enc_id}/orders",
+            {"category": "LAB", "name": name, "reason": "Review", "priority": priority},
+        )
+        assert o.status_code == 201, o.text
+        return str(post(client, v.doctor, f"/orders/{o.json()['id']}/place").json()["id"])
+
+    stat = order("Troponin", "STAT")  # the oldest order on the list
+    routine = [order(f"Routine {i}", "ROUTINE") for i in range(4)]
+    urgent = order("Potassium", "URGENT")
+    rows = get(client, lab, "/orders", status="ORDERED", urgent_first="true", limit=3).json()
+    assert [r["id"] for r in rows] == [stat, urgent, routine[0]]
+
+
 def test_cancel_rules(client: TestClient, v: Visit, lab: H) -> None:
     o = placed(client, v)
     cancelled = post(client, v.doctor, f"/orders/{o['id']}/cancel", {"reason": "Not needed now"})

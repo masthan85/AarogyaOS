@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { ScrollView, Text, View } from 'react-native';
 
 import { getAiUsage, getAuditLogs, getSpeechUsage, getUsageLimits } from '@/api/endpoints';
+import { flatten, nextBefore } from '@/api/paging';
 import { useAuth } from '@/auth/AuthProvider';
-import { Card, EmptyState, LoadingState, SectionTitle, StatusChip } from '@/design-system/components';
+import { Button, Card, EmptyState, LoadingState, SectionTitle, StatusChip } from '@/design-system/components';
 import { space, useTheme, type } from '@/design-system/tokens';
 import { allowanceLine, describeAction } from '@/domain/admin';
 import { formatDateTime } from '@/domain/dates';
@@ -11,6 +12,8 @@ import { can } from '@/domain/permissions';
 import { sentence } from '@/domain/text';
 
 const rupees = (paise: number | null) => (paise === null ? 'cost not configured' : `₹${(paise / 100).toFixed(2)}`);
+
+const PAGE = 50;
 
 export function ActivityScreen() {
   const t = useTheme();
@@ -20,7 +23,14 @@ export function ActivityScreen() {
   const ai = useQuery({ queryKey: ['usage-ai'], queryFn: getAiUsage, enabled: canUsage, gcTime: 0 });
   const limits = useQuery({ queryKey: ['usage-limits'], queryFn: getUsageLimits, enabled: canUsage, gcTime: 0 });
   const pressed = limits.data && [limits.data.speech_minutes, limits.data.ai_calls].some((a) => a.state === 'NEAR' || a.state === 'REACHED');
-  const audit = useQuery({ queryKey: ['audit'], queryFn: () => getAuditLogs(50), gcTime: 0 });
+  const audit = useInfiniteQuery({
+    queryKey: ['audit'],
+    queryFn: ({ pageParam }) => getAuditLogs(PAGE, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => nextBefore(last, PAGE),
+    gcTime: 0,
+  });
+  const entries = flatten(audit.data?.pages);
   if (audit.isPending) return <LoadingState label="Loading activity…" />;
 
   return (
@@ -59,10 +69,10 @@ export function ActivityScreen() {
       ) : null}
 
       <SectionTitle>Recent activity</SectionTitle>
-      <Text style={[type.small, { color: t.textMuted }]}>Who did what, never what was said or written. The latest 50 entries.</Text>
-      {audit.data?.length ? (
+      <Text style={[type.small, { color: t.textMuted }]}>Who did what, never what was said or written. Newest first.</Text>
+      {entries.length ? (
         <Card>
-          {audit.data.map((a, i) => (
+          {entries.map((a, i) => (
             <View
               key={a.id}
               style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm, paddingVertical: space.sm, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: t.border }}>
@@ -76,6 +86,9 @@ export function ActivityScreen() {
             </View>
           ))}
         </Card>
+      ) : null}
+      {audit.hasNextPage ? (
+        <Button title="Show older" variant="ghost" loading={audit.isFetchingNextPage} onPress={() => void audit.fetchNextPage()} />
       ) : null}
     </ScrollView>
   );

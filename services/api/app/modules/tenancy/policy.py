@@ -37,6 +37,13 @@ class OrgPolicy(BaseModel):
     monthly_ai_calls_limit: int | None = Field(default=None, ge=0, le=10_000_000)
     # Administrators are shown a warning once usage passes this share of an allowance.
     usage_alert_percent: int = Field(default=80, ge=1, le=100)
+    # Roles whose members must use two-step sign-in. Someone in one of these roles without it can
+    # sign in, but can do nothing except set it up (app/core/deps.py).
+    mfa_required_roles: list[str] = []
+    # Stop screenshots and screen recording of the app on staff devices (Android blocks both; iOS
+    # hides the app from recordings). On by default; a clinic may turn it off, for example to
+    # capture screens for training.
+    protect_screens: bool = True
 
     @model_validator(mode="after")
     def _consistent(self) -> "OrgPolicy":
@@ -44,7 +51,17 @@ class OrgPolicy(BaseModel):
             raise ValueError("Audio cannot be retained when recording is disabled")
         if self.ai_suggestions_enabled and not self.ai_processing_enabled:
             raise ValueError("AI suggestions need AI processing to be enabled")
+        from app.modules.identity.permissions import ROLES
+
+        unknown = [r for r in self.mfa_required_roles if r not in ROLES or ROLES[r][1]]
+        if unknown:
+            raise ValueError(f"Unknown role for two-step sign-in: {', '.join(unknown)}")
+        self.mfa_required_roles = sorted(set(self.mfa_required_roles))
         return self
+
+
+def mfa_required(policy: OrgPolicy, roles: frozenset[str] | set[str]) -> bool:
+    return any(r in policy.mfa_required_roles for r in roles)
 
 
 def load_policy(session: Session, org_id: uuid.UUID) -> OrgPolicy:

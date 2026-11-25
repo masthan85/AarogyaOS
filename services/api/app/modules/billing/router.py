@@ -17,7 +17,7 @@ from app.modules.billing.service import (
     ToBillOut,
     VoidIn,
 )
-from app.modules.ops.idempotency import Key, claim
+from app.modules.ops.idempotency import Key, claim, created_before, remember
 
 router = APIRouter(tags=["billing"])
 Reader = Annotated[Principal, Depends(require("billing:read"))]
@@ -36,13 +36,28 @@ def list_invoices(
     status: Annotated[str | None, Query(pattern="^(DRAFT|ISSUED|VOID)$")] = None,
     patient_id: uuid.UUID | None = None,
     unpaid: bool = False,
+    limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    before: Annotated[
+        uuid.UUID | None, Query(description="Id of the last invoice already received")
+    ] = None,
 ) -> list[InvoiceOut]:
-    return service.list_invoices(db, status=status, patient_id=patient_id, unpaid=unpaid)
+    return service.list_invoices(
+        db, status=status, patient_id=patient_id, unpaid=unpaid, limit=limit, before=before
+    )
 
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=201)
-def create_invoice(body: DraftIn, db: TenantDb, principal: Writer) -> InvoiceOut:
-    return service.create_draft(db, principal, body)
+def create_invoice(
+    body: DraftIn, db: TenantDb, principal: Writer, idempotency_key: Key = None
+) -> InvoiceOut:
+    # A retried request returns the draft the first one made. Drafts not tied to a visit have no
+    # other guard against a double tap; drafts for a visit are also limited to one by the service.
+    scope = f"invoice:{body.patient_id}"
+    if not claim(db, principal, scope, idempotency_key):
+        return service.get(db, created_before(db, principal, scope, idempotency_key))
+    inv = service.create_draft(db, principal, body)
+    remember(db, principal, scope, idempotency_key, inv.id)
+    return inv
 
 
 @router.get("/invoices/{invoice_id}", response_model=InvoiceOut)

@@ -1,0 +1,9 @@
+# The reception signs in, is offered "Patients" and not "Pharmacy" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: reception@demo.example.com
+      SEES: "Patients"
+      NEVER: "Pharmacy"

@@ -138,7 +138,7 @@ Today the repository supports a development Docker Compose stack (Postgres with 
 | Topic | State |
 |---|---|
 | Modular monolith, synchronous SQLAlchemy | Chosen deliberately (ADR-0001, ADR-0003). Heavy work such as audio runs in the same process; revisit only with measured need |
-| Single worker per container | Required by in-memory live transcript hub and duplicate-connection guard (ADR-0011) |
+| Single worker per container without Redis | Required by the in-memory live transcript hub and duplicate-connection guard (ADR-0011); with `AAROGYA_REDIS_URL` both are shared and several workers may run |
 | Rate limits are per worker | Documented limitation; behind a proxy that hides client addresses all users share one login bucket |
 | Audio store is local disk | Production needs an S3-compatible encrypted store with a managed key; not built |
 | Redis container present but unused | Placeholder for the shared hub and limiter; remove or implement |

@@ -398,12 +398,23 @@ def reconcile_stale(session: Session, ia: ClinicalInteraction) -> None:
 
 
 def interrupt_after_restart(session: Session) -> int:
-    """Called once when the API starts. Live transcript state lived in the previous process, so a
-    recording it was serving cannot still be running: say so instead of leaving it marked active.
+    """Called once when the API starts. A recording still marked active whose connection no process
+    holds any more cannot still be running: say so instead of leaving it marked active. With live
+    state shared in Redis, recordings that another running instance is serving are left alone.
     Final segments already saved stay; the clinician decides whether to start recording again."""
+    active = list(
+        session.scalars(
+            select(ClinicalInteraction.id).where(ClinicalInteraction.status == "ACTIVE")
+        )
+    )
+    held = live.claimed(active)
+    orphaned = [i for i in active if i not in held]
+    if not orphaned:
+        session.rollback()
+        return 0
     result = session.execute(
         update(ClinicalInteraction)
-        .where(ClinicalInteraction.status == "ACTIVE")
+        .where(ClinicalInteraction.id.in_(orphaned), ClinicalInteraction.status == "ACTIVE")
         .values(status="PAUSED", pause_reason="SERVER_RESTART")
     )
     session.commit()

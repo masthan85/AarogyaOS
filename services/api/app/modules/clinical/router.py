@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from app.core.context import Principal
 from app.core.deps import TenantDb, require
+from app.core.pagination import Before, PageSize
 from app.modules.clinical import encounters, orders, records
 from app.modules.clinical.facts import verify_fact
 from app.modules.clinical.models import Encounter
@@ -46,6 +47,7 @@ from app.modules.clinical.schemas import (
     VitalsIn,
     VoidIn,
 )
+from app.modules.ops.idempotency import Key, claim, created_before, remember
 
 router = APIRouter(tags=["clinical"])
 
@@ -117,8 +119,10 @@ def patient_encounters(
     patient_id: uuid.UUID,
     db: TenantDb,
     principal: Annotated[Principal, Depends(require("encounter:read"))],
+    limit: PageSize = 50,
+    before: Before = None,
 ) -> list[Encounter]:
-    return encounters.list_for_patient(db, principal, patient_id)
+    return encounters.list_for_patient(db, principal, patient_id, limit=limit, before=before)
 
 
 # ---- facts -------------------------------------------------------------------------
@@ -261,9 +265,21 @@ RxWrite = Annotated[Principal, Depends(require("prescription:write"))]
     "/encounters/{encounter_id}/prescriptions", response_model=PrescriptionOut, status_code=201
 )
 def create_prescription(
-    encounter_id: uuid.UUID, body: PrescriptionIn, db: TenantDb, principal: RxWrite
+    encounter_id: uuid.UUID,
+    body: PrescriptionIn,
+    db: TenantDb,
+    principal: RxWrite,
+    idempotency_key: Key = None,
 ) -> PrescriptionOut:
-    return orders.create_prescription(db, principal, encounter_id, body)
+    # A double tap or a retried request returns the draft the first one made, not a second draft.
+    scope = f"prescription:{encounter_id}"
+    if not claim(db, principal, scope, idempotency_key):
+        return orders.prescription_out(
+            db, orders.get_rx(db, created_before(db, principal, scope, idempotency_key))
+        )
+    rx = orders.create_prescription(db, principal, encounter_id, body)
+    remember(db, principal, scope, idempotency_key, rx.id)
+    return rx
 
 
 @router.put("/prescriptions/{rx_id}", response_model=PrescriptionOut)
@@ -309,8 +325,10 @@ def patient_prescriptions(
     patient_id: uuid.UUID,
     db: TenantDb,
     principal: Annotated[Principal, Depends(require("prescription:read"))],
+    limit: PageSize = 50,
+    before: Before = None,
 ) -> list[PrescriptionOut]:
-    return orders.patient_prescriptions(db, principal, patient_id)
+    return orders.patient_prescriptions(db, principal, patient_id, limit=limit, before=before)
 
 
 # ---- investigations ----------------------------------------------------------------
@@ -345,6 +363,11 @@ def list_orders(
     patient_id: uuid.UUID | None = None,
     category: Annotated[str | None, Query(max_length=10)] = None,
     status: Annotated[str | None, Query(max_length=10)] = None,
+    limit: PageSize = 100,
+    before: Before = None,
+    urgent_first: Annotated[
+        bool, Query(description="Worklist order: STAT, urgent, routine, oldest first in each")
+    ] = False,
 ) -> list[ServiceRequestOut]:
     return orders.list_orders(
         db,
@@ -353,6 +376,9 @@ def list_orders(
         patient_id=patient_id,
         category=category,
         status=status,
+        limit=limit,
+        before=before,
+        urgent_first=urgent_first,
     )
 
 
@@ -387,8 +413,10 @@ def patient_results(
     patient_id: uuid.UUID,
     db: TenantDb,
     _: Annotated[Principal, Depends(require("patient:clinical"))],
+    limit: PageSize = 100,
+    before: Before = None,
 ) -> list[ResultOut]:
-    return orders.patient_results(db, patient_id)
+    return orders.patient_results(db, patient_id, limit=limit, before=before)
 
 
 # ---- follow-ups --------------------------------------------------------------------

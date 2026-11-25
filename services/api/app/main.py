@@ -27,7 +27,7 @@ from app.core.observability import (
     refresh_job_gauges,
     render,
 )
-from app.core.ratelimit import RateLimiter
+from app.core.ratelimit import limiter_from_url
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.billing.router import router as billing_router
@@ -48,7 +48,8 @@ from app.modules.scheduling.router import router as scheduling_router
 from app.modules.summaries.router import router as summaries_router
 from app.modules.templates.router import router as templates_router
 from app.modules.tenancy.router import router as tenancy_router
-from app.speech.audio_store import LocalEncryptedAudioStore
+from app.speech import live
+from app.speech.audio_store import audio_store_from_settings
 from app.speech.registry import register, unregister
 from app.speech.sarvam import SarvamSpeechProvider
 
@@ -144,11 +145,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         unregister("sarvam")
     app.state.engine = engine
     app.state.crypto = crypto_from_settings(settings)
-    app.state.audio_store = LocalEncryptedAudioStore(settings.audio_store_path, app.state.crypto)
+    app.state.audio_store = audio_store_from_settings(settings, app.state.crypto)
     app.state.sessionmaker = create_sessionmaker(engine)
 
     app.state.metrics = Metrics()
-    app.state.rate_limiter = RateLimiter()
+    app.state.rate_limiter = limiter_from_url(settings.redis_url)
+    app.state.live = live.configure(settings.redis_url)
     app.add_middleware(RequestContextMiddleware)
     app.add_middleware(MetricsMiddleware, metrics=app.state.metrics)
     app.add_middleware(

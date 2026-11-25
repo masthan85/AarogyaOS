@@ -574,3 +574,39 @@ def test_a_legal_hold_stops_audio_deletion_until_it_is_released(
     assert rel.status_code == 200, rel.text
     assert purge_due_audio(db, store, datetime.now(UTC) + timedelta(days=40)) == 1
     assert not store.exists(key)
+
+
+def test_rotating_the_field_key_re_encrypts_finished_recordings_only(
+    client: TestClient, org_a: H, db: Session, settings: Any
+) -> None:
+    import base64
+
+    from app.core.crypto import FieldCrypto
+    from app.modules.interactions.rotation import rotate_audio
+    from app.speech.audio_store import LocalEncryptedAudioStore
+
+    v = recording_ready(client, org_a, retain_days=7)
+    finished = start_session(client, v)
+    with connect(client, finished, None) as ws:
+        authed(ws, token_of(v.doctor))
+        stream(ws, 2)
+        ws.send_json({"type": "stop"})
+        closes_with(ws)
+    key = audio_rows(db)[0][0]
+    before = b"".join(client.app.state.audio_store.read_chunks(key))  # type: ignore[attr-defined]
+    db.rollback()
+
+    new = base64.b64encode(b"r" * 32).decode()
+    old = settings.field_encryption_key
+    store = LocalEncryptedAudioStore(settings.audio_store_path, FieldCrypto(new, [old]))
+    result = rotate_audio(db, store)
+    assert (result.reencrypted, result.still_recording, result.missing) == (1, 0, 0)
+    new_only = LocalEncryptedAudioStore(settings.audio_store_path, FieldCrypto(new))
+    assert b"".join(new_only.read_chunks(key)) == before
+    assert rotate_audio(db, store).already_current == 1
+
+    # A recording that has not ended may still be written to, so it is left for the next run.
+    db.execute(text("select set_config('app.bypass', 'on', false)"))
+    db.execute(text("update clinical_interactions set status = 'PAUSED'"))
+    db.commit()
+    assert rotate_audio(db, store).still_recording == 1

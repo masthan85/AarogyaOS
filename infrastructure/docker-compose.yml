@@ -16,6 +16,7 @@ services:
       retries: 10
 
   redis:
+    # Holds rate limits shared by every API process (AAROGYA_REDIS_URL).
     image: redis:7
     ports: ["6379:6379"]
 
@@ -41,6 +42,7 @@ services:
       AAROGYA_FIELD_ENCRYPTION_KEY: ${AAROGYA_FIELD_ENCRYPTION_KEY:?set in .env}
       AAROGYA_SPEECH_PROVIDER: ${AAROGYA_SPEECH_PROVIDER:-}
       AAROGYA_AUDIO_STORE_PATH: /var/lib/aarogya/audio
+      AAROGYA_REDIS_URL: redis://redis:6379/0
       # Optional providers, all off unless set (see docs/SARVAM.md). SARVAM_API_KEY is accepted too, so a
       # .env written during Sarvam set-up works as it is.
       AAROGYA_SARVAM_API_KEY: ${AAROGYA_SARVAM_API_KEY:-${SARVAM_API_KEY:-}}
@@ -53,6 +55,7 @@ services:
       - audio:/var/lib/aarogya/audio
     depends_on:
       migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
     ports: ["8000:8000"]
 
 volumes:

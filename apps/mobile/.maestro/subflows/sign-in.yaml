@@ -1,0 +1,22 @@
+# Signs in to the demo clinic with EMAIL and PASSWORD, both passed by the calling flow. It types
+# into one field and moves on with the keyboard's Next key, as a person would: an open keyboard
+# covers the lower fields, so tapping them would land on the keyboard instead.
+appId: in.aarogyaos.app
+---
+- launchApp:
+    clearState: true
+# A freshly booted emulator can show "... isn't responding" for its own launcher. Not the app's.
+- runFlow:
+    when:
+      visible: ".*isn't responding.*"
+    commands:
+      - tapOn: "Wait"
+      - launchApp
+- tapOn:
+    id: "login-organisation"
+- inputText: "demo-clinic"
+- pressKey: Enter
+- inputText: ${EMAIL}
+- pressKey: Enter
+- inputText: ${PASSWORD}
+- pressKey: Enter

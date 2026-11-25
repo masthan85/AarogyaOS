@@ -86,6 +86,15 @@ class FieldCrypto:
                 continue
         raise ValueError("Could not decrypt: wrong key or altered data")
 
+    def bytes_need_rotation(self, blob: bytes, *, context: str) -> bool:
+        """True if a blob was written with an older key. Fails if no configured key reads it."""
+        try:
+            AESGCM(self._keys[0].enc).decrypt(blob[:12], blob[12:], context.encode())
+            return False
+        except InvalidTag:
+            self.decrypt_bytes(blob, context=context)  # raises if no key at all can read it
+            return True
+
     def blind_index(self, value: str, *, context: str) -> str:
         return self._index(self._keys[0], value, context)
 

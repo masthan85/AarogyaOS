@@ -1,0 +1,9 @@
+# The admin signs in, is offered "Administration" and not "Patients" (mirrors e2e/tests/roles.spec.ts).
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: subflows/role.yaml
+    env:
+      EMAIL: admin@demo.example.com
+      SEES: "Administration"
+      NEVER: "Patients"

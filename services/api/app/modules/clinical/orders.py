@@ -2,11 +2,12 @@ import uuid
 from datetime import UTC, date, datetime
 
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from app.core.context import Principal
 from app.core.errors import AppError, Conflict, Forbidden, NotFound
+from app.core.pagination import newest_first
 from app.modules.audit.service import emit_event, record_audit
 from app.modules.clinical import reference_ranges as rr
 from app.modules.clinical import seal
@@ -96,6 +97,10 @@ def prescription_out(session: Session, rx: Prescription) -> PrescriptionOut:
     out = PrescriptionOut.model_validate(rx)
     out.items = [PrescriptionItemOut.model_validate(i) for i in _items(session, rx.id)]
     return out
+
+
+def get_rx(session: Session, rx_id: uuid.UUID) -> Prescription:
+    return _get_rx(session, rx_id)
 
 
 def _get_rx(session: Session, rx_id: uuid.UUID, *, lock: bool = False) -> Prescription:
@@ -255,12 +260,18 @@ def get_prescription(session: Session, principal: Principal, rx_id: uuid.UUID) -
 
 
 def patient_prescriptions(
-    session: Session, principal: Principal, patient_id: uuid.UUID
+    session: Session,
+    principal: Principal,
+    patient_id: uuid.UUID,
+    *,
+    limit: int = 50,
+    before: uuid.UUID | None = None,
 ) -> list[PrescriptionOut]:
     stmt = select(Prescription).where(Prescription.patient_id == patient_id)
     if not principal.has("prescription:write"):
         stmt = stmt.where(Prescription.status == "SIGNED")
-    rows = session.scalars(stmt.order_by(Prescription.created_at.desc()).limit(50)).all()
+    stmt = newest_first(session, stmt, Prescription, Prescription.created_at, before)
+    rows = session.scalars(stmt.limit(limit)).all()
     return [prescription_out(session, r) for r in rows]
 
 
@@ -381,6 +392,9 @@ def list_orders(
     patient_id: uuid.UUID | None,
     category: str | None,
     status: str | None,
+    limit: int = 100,
+    before: uuid.UUID | None = None,
+    urgent_first: bool = False,
 ) -> list[ServiceRequestOut]:
     stmt = select(ServiceRequest)
     scope = _tech_scope(principal)
@@ -397,7 +411,18 @@ def list_orders(
         stmt = stmt.where(ServiceRequest.category == category)
     if status:
         stmt = stmt.where(ServiceRequest.status == status)
-    rows = session.scalars(stmt.order_by(ServiceRequest.created_at.desc()).limit(100)).all()
+    if urgent_first:
+        # A worklist: STAT, then urgent, then routine, oldest first in each, ranked before the
+        # limit so the orders left off a long list are the most recent routine ones.
+        rank = case(
+            (ServiceRequest.priority == "STAT", 0),
+            (ServiceRequest.priority == "URGENT", 1),
+            else_=2,
+        )
+        stmt = stmt.order_by(rank, ServiceRequest.created_at, ServiceRequest.id)
+    else:
+        stmt = newest_first(session, stmt, ServiceRequest, ServiceRequest.created_at, before)
+    rows = session.scalars(stmt.limit(limit)).all()
     return [_order_out(session, r) for r in rows]
 
 
@@ -470,10 +495,21 @@ def review_result(session: Session, principal: Principal, result_id: uuid.UUID) 
     return ResultOut.model_validate(res)
 
 
+REVIEW_QUEUE_LIMIT = 200
+
+
 def results_awaiting_review(session: Session, principal: Principal) -> list[ResultOut]:
     """Abnormal-first list of unreviewed results for orders this doctor placed, plus those of any
     colleague who has currently asked this doctor to cover."""
     covered = covering_for(session, principal.user_id)
+    # Ranked in the query, before the limit, the way the app shows it: critical, then abnormal or
+    # uninterpreted, then normal, oldest first in each. However many are waiting, only the newest
+    # normal results can be the ones left off the list.
+    rank = case(
+        (InvestigationResult.interpretation.in_(["CRITICAL_LOW", "CRITICAL_HIGH"]), 0),
+        (InvestigationResult.interpretation == "NORMAL", 2),
+        else_=1,
+    )
     rows = session.execute(
         select(InvestigationResult, ServiceRequest.ordered_by)
         .join(ServiceRequest, ServiceRequest.id == InvestigationResult.service_request_id)
@@ -481,26 +517,24 @@ def results_awaiting_review(session: Session, principal: Principal) -> list[Resu
             InvestigationResult.reviewed_at.is_(None),
             ServiceRequest.ordered_by.in_([principal.user_id, *covered]),
         )
-        .order_by(InvestigationResult.reported_at.desc())
-        .limit(100)
+        .order_by(rank, InvestigationResult.reported_at, InvestigationResult.id)
+        .limit(REVIEW_QUEUE_LIMIT)
     ).all()
-    rank = {"CRITICAL_LOW": 0, "CRITICAL_HIGH": 0, "LOW": 1, "HIGH": 1}
     out = []
     for res, ordered_by in rows:
         item = ResultOut.model_validate(res)
         if ordered_by is not None and ordered_by != principal.user_id:
             item.covering_for = covered.get(ordered_by)
         out.append(item)
-    return sorted(out, key=lambda r: rank.get(r.interpretation, 2))
+    return out
 
 
-def patient_results(session: Session, patient_id: uuid.UUID) -> list[ResultOut]:
-    rows = session.scalars(
-        select(InvestigationResult)
-        .where(InvestigationResult.patient_id == patient_id)
-        .order_by(InvestigationResult.reported_at.desc())
-        .limit(100)
-    ).all()
+def patient_results(
+    session: Session, patient_id: uuid.UUID, *, limit: int = 100, before: uuid.UUID | None = None
+) -> list[ResultOut]:
+    stmt = select(InvestigationResult).where(InvestigationResult.patient_id == patient_id)
+    stmt = newest_first(session, stmt, InvestigationResult, InvestigationResult.reported_at, before)
+    rows = session.scalars(stmt.limit(limit)).all()
     return [ResultOut.model_validate(r) for r in rows]
 
 

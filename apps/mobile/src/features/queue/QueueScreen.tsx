@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, FlatList, Text, View } from 'react-native';
+import { useState } from 'react';
 
 import { ApiError } from '@/api/client';
 import { getQueue, startConsultation, walkIn } from '@/api/endpoints';
@@ -10,6 +11,7 @@ import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '
 import { space, useTheme, useWide, type } from '@/design-system/tokens';
 import { formatTime } from '@/domain/dates';
 import { can } from '@/domain/permissions';
+import { newRequestKey } from '@/domain/requestKey';
 import { useFacility } from '@/features/facility/useFacility';
 
 export function QueueScreen() {
@@ -35,9 +37,11 @@ export function QueueScreen() {
     },
     onError: fail,
   });
+  // One key per patient being checked in: pressing twice, or retrying after a lost reply, gives one token.
+  const [walkInKey] = useState(newRequestKey);
   const addWalkIn = useMutation({
     mutationFn: (priority: 'ROUTINE' | 'URGENT') =>
-      walkIn({ patient_id: walkInPatientId as string, facility_id: facilityId as string, priority }),
+      walkIn({ patient_id: walkInPatientId as string, facility_id: facilityId as string, priority }, walkInKey),
     onSuccess: refresh,
     onError: fail,
   });

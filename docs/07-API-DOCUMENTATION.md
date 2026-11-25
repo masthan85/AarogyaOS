@@ -109,6 +109,8 @@ The earlier appointment-level `start-consultation` and `complete` endpoints and 
 | `POST /cover` | `result:review` | `{to_user_id, starts_on, ends_on}`; at most 31 days, not more than a year ahead |
 | `POST /cover/{id}/end` | `result:review` | Either side may end it |
 
+`GET /results/awaiting-review` returns up to 200 results ranked in the database: critical, then abnormal or uninterpreted, then normal, oldest first in each, so only the newest normal results can be left off. `GET /orders?urgent_first=true` (used for the laboratory and radiology worklists) ranks STAT, then urgent, then routine, oldest first in each, before `limit`, and does not page.
+
 While an arrangement is active, `GET /results/awaiting-review` for the covering doctor also returns the other doctor's results, each marked `covering_for`. Reviews are audited with `on_behalf_of`.
 
 ## Transcript corrections (migration 0009)
@@ -121,7 +123,7 @@ While an arrangement is active, `GET /results/awaiting-review` for the covering 
 
 ## Rate limits
 
-`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Per worker process (see `16-SECURITY.md`).
+`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Shared across processes when `AAROGYA_REDIS_URL` is set, otherwise per process (see `16-SECURITY.md`).
 
 ## Handover
 
@@ -141,8 +143,8 @@ Append-only (database trigger). Records the decision and who made it; there is n
 | Method and path | Permission | Notes |
 |---|---|---|
 | `GET /billing/to-bill` | `billing:write` | Visits finished in the last 7 days with no invoice (a void one does not count): patient name, MRN, doctor, time. Nothing clinical |
-| `GET /invoices` | `billing:read` | `?status=DRAFT\|ISSUED\|VOID`, `?patient_id=`, `?unpaid=true` (issued with a balance) |
-| `POST /invoices` | `billing:write` | `{patient_id, encounter_id?}`; one live invoice per visit |
+| `GET /invoices` | `billing:read` | `?status=DRAFT\|ISSUED\|VOID`, `?patient_id=`, `?unpaid=true` (issued with a balance), `?limit=` (1 to 200, default 100), `?before=` (paging, below) |
+| `POST /invoices` | `billing:write` | `{patient_id, encounter_id?}`; one live invoice per visit; accepts `Idempotency-Key` |
 | `GET /invoices/{id}` | `billing:read` | Lines, payments, `total_paise`, `paid_paise`, `balance_paise` |
 | `PUT /invoices/{id}/lines` | `billing:write` | Replaces the charges of a draft (up to 30; whole paise; quantity 1 to 999) |
 | `POST /invoices/{id}/issue` | `billing:write` | Needs a charge and a total above zero; assigns `INV-000001` style numbers per organisation and freezes the invoice |
@@ -446,7 +448,10 @@ Authenticator-app TOTP (RFC 6238: SHA-1, six digits, 30 seconds, one step either
 
 ## Repeated requests
 
-`POST /invoices/{id}/payments`, `/credit-notes` and `/refunds` accept an optional `Idempotency-Key` header of 8 to 100 characters. Send a new key for each intended action and the same key when retrying it. The first request with a key does the work; a repeat returns the invoice as it stands and records nothing. A request that is refused does not use up its key. Keys are scoped to the user, the invoice and the kind of action, and are deleted after two days.
+`POST /invoices`, `POST /invoices/{id}/payments`, `/credit-notes` and `/refunds`, `POST /walk-ins` and `POST /encounters/{id}/prescriptions` accept an optional `Idempotency-Key` header of 8 to 100 characters. Send a new key for each intended action and the same key when retrying it. The first request with a key does the work; a repeat records nothing and returns the invoice as it stands, or the visit, draft invoice or draft prescription the first request created. A repeat that arrives while the first is still being saved gets 409 and should be retried. A request that is refused does not use up its key. Keys are scoped to the user, the invoice and the kind of action, and are deleted after two days.
+
+`GET /invoices`, `GET /audit-logs`, `GET /orders`, and a patient's `/prescriptions`, `/results` and `/encounters` are newest first and page by keyset, with `limit` up to 200. To get the next page, pass `before=<id of the last row received>`; a page shorter than `limit` is the last one. Rows added while someone is paging never cause a row to be skipped or shown twice. An id that is not found (including one from another organisation) returns 400 with `invalid_cursor`. `GET /audit-logs` still accepts `offset` for older clients.
 
 A request refused because a monthly allowance is used up returns 409 with `"title": "usage_limit_reached"`.
 
+A person whose role the clinic requires to use two-step sign-in, and who has not set it up, gets 403 with `"title": "mfa_setup_required"` from every endpoint that needs a permission. `GET /auth/me` returns `mfa_setup_required` and `protect_screens` so the app can show the set-up screen and apply screen protection.

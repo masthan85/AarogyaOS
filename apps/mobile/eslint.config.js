@@ -11,10 +11,6 @@ module.exports = defineConfig([
     rules: {
       // Apostrophes and quotes in <Text> render literally in React Native; escaping adds nothing.
       'react/no-unescaped-entities': 'off',
-      // Existing screens set state in effects and update one ref during render. Reported as
-      // warnings until each is reviewed on a device; new code should not add to them.
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
     },
   },
   {
@@ -23,6 +19,8 @@ module.exports = defineConfig([
     rules: {
       'import/first': 'off',
       'import/no-duplicates': 'off',
+      // jest.mock factories run before imports, so they must load modules with require().
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ]);

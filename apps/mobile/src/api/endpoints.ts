@@ -151,7 +151,7 @@ export const walkIn = (body: {
   facility_id: string;
   practitioner_id?: string;
   priority?: 'ROUTINE' | 'URGENT';
-}) => api.request('/walk-ins', appointmentSchema, { method: 'POST', body });
+}, key?: string) => api.request('/walk-ins', appointmentSchema, { method: 'POST', body, idempotencyKey: key });
 export const getQueue = (facilityId: string, practitionerId?: string) =>
   api.request(
     `/queue${qs({ facility_id: facilityId, practitioner_id: practitionerId })}`,
@@ -233,10 +233,14 @@ export type RxItemInput = {
   duration_days?: number;
   instructions?: string;
 };
-export const createPrescription = (encId: string, items: RxItemInput[]) =>
-  api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items } });
-export const getPatientPrescriptions = (patientId: string) =>
-  api.request(`/patients/${patientId}/prescriptions`, z.array(prescriptionSchema));
+// Both take a request key: a double tap or a retry returns what the first request made.
+export const createPrescription = (encId: string, items: RxItemInput[], key?: string) =>
+  api.request(`/encounters/${encId}/prescriptions`, prescriptionSchema, { method: 'POST', body: { items }, idempotencyKey: key });
+export const getPatientPrescriptions = (patientId: string, page: { limit?: number; before?: string } = {}) =>
+  api.request(
+    `/patients/${patientId}/prescriptions${qs({ limit: page.limit ? String(page.limit) : undefined, before: page.before })}`,
+    z.array(prescriptionSchema),
+  );
 export const updatePrescription = (rxId: string, items: RxItemInput[]) =>
   api.request(`/prescriptions/${rxId}`, prescriptionSchema, { method: 'PUT', body: { items } });
 export const safetyCheck = (rxId: string) =>
@@ -400,16 +404,17 @@ export const approveKnowledgeDoc = (id: string) =>
 export const retireKnowledgeDoc = (id: string) =>
   api.request(`/knowledge/documents/${id}/retire`, knowledgeDocSchema, { method: 'POST', body: {} });
 
-export const getAuditLogs = (limit = 50) => api.request(`/audit-logs${qs({ limit: String(limit) })}`, z.array(auditLogSchema));
+export const getAuditLogs = (limit = 50, before?: string) =>
+  api.request(`/audit-logs${qs({ limit: String(limit), before })}`, z.array(auditLogSchema));
 export const getSpeechUsage = () => api.request('/usage/speech', z.array(speechUsageSchema));
 export const getAiUsage = () => api.request('/usage/ai', z.array(aiUsageSchema));
 export const getUsageLimits = () => api.request('/usage/limits', usagePositionSchema);
 
 // ---- worklists ----------------------------------------------------------------------------
 
-export const getOrders = (params: { status?: string; category?: string; patient_id?: string }) => {
+export const getOrders = (params: { status?: string; category?: string; patient_id?: string; urgent_first?: boolean; limit?: number }) => {
   const q = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => v && q.set(k, v));
+  Object.entries(params).forEach(([k, v]) => v && q.set(k, String(v)));
   return api.request(`/orders?${q.toString()}`, z.array(worklistOrderSchema));
 };
 export type ResultInput = {
@@ -451,11 +456,15 @@ export const recordDispensing = (rxId: string, body: { status: 'DISPENSED' | 'PA
 
 export type PaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'INSURER' | 'OTHER';
 export const getToBill = () => api.request('/billing/to-bill', z.array(toBillSchema));
-export const getInvoices = (params: { unpaid?: boolean; status?: string }) =>
-  api.request(`/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status })}`, z.array(invoiceSchema));
+/** Lists that page pass `before`, the id of the last row already shown, to get the next older page. */
+export const getInvoices = (params: { unpaid?: boolean; status?: string; limit?: number; before?: string }) =>
+  api.request(
+    `/invoices${qs({ unpaid: params.unpaid ? 'true' : undefined, status: params.status, limit: params.limit ? String(params.limit) : undefined, before: params.before })}`,
+    z.array(invoiceSchema),
+  );
 export const getInvoice = (id: string) => api.request(`/invoices/${id}`, invoiceSchema);
-export const createInvoice = (body: { patient_id: string; encounter_id?: string }) =>
-  api.request('/invoices', invoiceSchema, { method: 'POST', body });
+export const createInvoice = (body: { patient_id: string; encounter_id?: string }, key?: string) =>
+  api.request('/invoices', invoiceSchema, { method: 'POST', body, idempotencyKey: key });
 export const setInvoiceLines = (id: string, lines: { description: string; quantity: number; unit_price_paise: number; tax_rate_bp: number }[]) =>
   api.request(`/invoices/${id}/lines`, invoiceSchema, { method: 'PUT', body: { lines } });
 export const issueInvoice = (id: string) => api.request(`/invoices/${id}/issue`, invoiceSchema, { method: 'POST', body: {} });

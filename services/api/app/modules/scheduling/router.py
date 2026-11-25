@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.context import Principal
 from app.core.deps import TenantDb, require
+from app.modules.ops.idempotency import Key, claim, created_before, remember
 from app.modules.scheduling import service
 from app.modules.scheduling.schemas import (
     AppointmentCreate,
@@ -128,8 +129,16 @@ def check_in(
 
 
 @router.post("/walk-ins", response_model=AppointmentOut, status_code=201)
-def walk_in(body: WalkInCreate, db: TenantDb, principal: QueueManage) -> AppointmentOut:
-    return service.walk_in(db, principal, body)
+def walk_in(
+    body: WalkInCreate, db: TenantDb, principal: QueueManage, idempotency_key: Key = None
+) -> AppointmentOut:
+    # A double tap or a retried request returns the visit the first one created.
+    scope = f"walk-in:{body.patient_id}"
+    if not claim(db, principal, scope, idempotency_key):
+        return service.appointment_out(db, created_before(db, principal, scope, idempotency_key))
+    out = service.walk_in(db, principal, body)
+    remember(db, principal, scope, idempotency_key, out.id)
+    return out
 
 
 @router.get("/queue", response_model=list[QueueItem])

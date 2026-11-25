@@ -257,6 +257,10 @@ def _to_out(
     )
 
 
+def appointment_out(session: Session, appointment_id: uuid.UUID) -> AppointmentOut:
+    return _appointment_out(session, appointment_id)
+
+
 def _appointment_out(session: Session, appointment_id: uuid.UUID) -> AppointmentOut:
     row = session.execute(_base_query().where(Appointment.id == appointment_id)).first()
     if row is None:
@@ -521,10 +525,23 @@ def check_in(
         raise Conflict("Only today's appointments can be checked in")
     appt.checked_in_at = _now()
     appt.status = "WAITING"
+    _flush_one_visit(session)
     entry = _issue_token(session, appt, priority)
     _event(session, principal, "PATIENT_CHECKED_IN", appt, {"token": entry.token_number})
     session.commit()
     return _appointment_out(session, appt.id)
+
+
+def _flush_one_visit(session: Session) -> None:
+    """Write the visit; the database refuses a second active visit for the same patient, which
+    also settles two check-ins racing each other."""
+    try:
+        with session.begin_nested():
+            session.flush()
+    except IntegrityError as exc:
+        if "uq_appointments_one_active_visit" not in str(exc.orig):
+            raise
+        raise Conflict("The patient is already checked in") from None
 
 
 def walk_in(session: Session, principal: Principal, body: WalkInCreate) -> AppointmentOut:
@@ -563,7 +580,7 @@ def walk_in(session: Session, principal: Principal, body: WalkInCreate) -> Appoi
         checked_in_at=now,
     )
     session.add(appt)
-    session.flush()
+    _flush_one_visit(session)
     entry = _issue_token(session, appt, body.priority)
     _event(
         session,

@@ -20,7 +20,7 @@ One release, in order. The same steps apply whatever platform you use.
 
 1. Build the API image from `services/api` and tag it with the release.
 2. Back up the database. Run the migration step once, as a separate job with the same image and the application's database role: `python -m alembic upgrade head`, then `python -m app.cli seed`. The seed step copies the permission catalogue into the database and must run on every release, because new permissions are added in code. The compose file's `migrate` service is the model for this. Do not migrate at container start, since several replicas would race (ADR-0011).
-3. Roll out the API containers. `GET /ready` returns 503 `migrations_pending` until the schema matches the image, so a rollout that skipped step 2 never receives traffic. Keep one uvicorn worker per container and route a recording's WebSocket and its transcript polling to the same container (sticky sessions).
+3. Roll out the API containers. `GET /ready` returns 503 `migrations_pending` until the schema matches the image, so a rollout that skipped step 2 never receives traffic. Without Redis, keep one uvicorn worker in one container. With `AAROGYA_REDIS_URL` set, live state is shared and no sticky routing is needed.
 4. Make sure the scheduled jobs exist (below), then check `/health`, `/ready` and, with the token, `/metrics`.
 5. Release the mobile build that matches the API. The API does not version its endpoints beyond `/api/v1`; keep mobile and API changes backward compatible across one release, or roll them out together.
 
@@ -66,7 +66,7 @@ flowchart TB
     A1 & A2 -->|"only when enabled"| VEND["Sarvam, Anthropic or a self-hosted model"]
 ```
 
-Three pieces of this diagram do not exist in the code: the object store (retained audio uses a local encrypted directory), the Redis-backed hub and limiter (live transcripts, the duplicate-connection guard and rate limits are per process), and sticky routing configuration. Until they exist, run one container, or accept the limits listed in `OPERATIONS.md`.
+With `AAROGYA_REDIS_URL` set, live transcripts, the duplicate-connection guard and rate limits are shared, so the API containers need no sticky routing and the instance lock is off by default; this is tested with several instances against one Redis, not yet on a platform. The object store is `AAROGYA_AUDIO_STORE=s3` (any S3-compatible service); give each container a persistent volume for `AAROGYA_AUDIO_STORE_PATH`, where open recordings are spooled. See `OPERATIONS.md` for what a restart still interrupts.
 
 ## In front of the API
 
@@ -85,6 +85,6 @@ None of this has been done:
 - A penetration test and a threat model of the audio gateway.
 - A restore drill passed in the target environment, and the RPO and RTO agreed.
 - The microphone module and the speech provider run on real devices with real Indian-language audio, following `DEVICE_TEST_PLAN.md`.
-- An object store for audio, a shared rate limiter and live-transcript store, TLS and a WAF, monitoring and alerting, and an on-call process.
+- An object-store bucket for audio and a Redis for shared live state (both supported in code), TLS and a WAF, monitoring and alerting, and an on-call process.
 
 These items are tracked, with owners and acceptance criteria, in `13-PRODUCT-BACKLOG.md`.

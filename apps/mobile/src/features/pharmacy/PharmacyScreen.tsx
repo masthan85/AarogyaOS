@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { getPatientDispensings, getPatientPrescriptions, recordDispensing } from '@/api/endpoints';
+import { flatten, nextBefore } from '@/api/paging';
 import { useAuth } from '@/auth/AuthProvider';
 import type { PatientHit } from '@/api/schemas';
 import { Button, Card, EmptyState, ErrorState, LoadingState, StatusChip } from '@/design-system/components';
@@ -13,11 +14,20 @@ import { can } from '@/domain/permissions';
 import { dispenseState } from '@/domain/worklists';
 import { PatientSearchScreen } from '@/features/patients/PatientSearchScreen';
 
+const RX_PAGE = 20;
+
 function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: () => void }) {
   const t = useTheme();
   const { me } = useAuth();
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ['pharmacy-rx', patient.id], queryFn: () => getPatientPrescriptions(patient.id), gcTime: 0 });
+  const q = useInfiniteQuery({
+    queryKey: ['pharmacy-rx', patient.id],
+    queryFn: ({ pageParam }) => getPatientPrescriptions(patient.id, { limit: RX_PAGE, before: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => nextBefore(last, RX_PAGE),
+    gcTime: 0,
+  });
+  const prescriptions = flatten(q.data?.pages);
   const given = useQuery({ queryKey: ['pharmacy-given', patient.id], queryFn: () => getPatientDispensings(patient.id), gcTime: 0 });
   const record = useMutation({
     mutationFn: (v: { id: string; status: 'DISPENSED' | 'PARTIALLY_DISPENSED' | 'NOT_DISPENSED' }) => recordDispensing(v.id, { status: v.status }),
@@ -38,8 +48,8 @@ function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: ()
       </Text>
       {q.isPending ? <LoadingState /> : null}
       {q.isError ? <ErrorState message="Could not load prescriptions." onRetry={() => void q.refetch()} /> : null}
-      {q.data?.length === 0 ? <EmptyState message="No signed prescriptions for this patient." /> : null}
-      {q.data?.map((rx) => (
+      {q.isSuccess && prescriptions.length === 0 ? <EmptyState message="No signed prescriptions for this patient." /> : null}
+      {prescriptions.map((rx) => (
         <Card key={rx.id}>
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             <StatusChip
@@ -71,6 +81,9 @@ function PrescriptionList({ patient, onBack }: { patient: PatientHit; onBack: ()
           ))}
         </Card>
       ))}
+      {q.hasNextPage ? (
+        <Button title="Show older" variant="ghost" loading={q.isFetchingNextPage} onPress={() => void q.fetchNextPage()} />
+      ) : null}
     </ScrollView>
   );
 }

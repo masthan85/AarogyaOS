@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -223,18 +223,18 @@ function IssuedView({ inv, canWrite, onChanged }: { inv: Invoice; canWrite: bool
   const { me } = useAuth();
   const canAdjust = can(me, 'billing:adjust');
   const org = useQuery({ queryKey: ['organisation'], queryFn: getOrganisation });
-  const [amount, setAmount] = useState(String(inv.balance_paise / 100));
+  const [amountEdit, setAmount] = useState<string | null>(null);
+  const amount = amountEdit ?? String(inv.balance_paise / 100);
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [reference, setReference] = useState('');
   const [reason, setReason] = useState('');
   const [voiding, setVoiding] = useState(false);
-  useEffect(() => setAmount(String(inv.balance_paise / 100)), [inv.balance_paise]);
   const paise = parseRupees(amount);
   // One key per intended payment: a retry after a lost reply reuses it, so it is recorded once.
   const [requestKey, setRequestKey] = useState(newRequestKey);
   const pay = useMutation({
     mutationFn: () => payInvoice(inv.id, { amount_paise: paise as number, method, reference: reference.trim() || undefined }, requestKey),
-    onSuccess: () => { setReference(''); setRequestKey(newRequestKey()); onChanged(); },
+    onSuccess: () => { setReference(''); setAmount(null); setRequestKey(newRequestKey()); onChanged(); },
     onError: fail('Could not record the payment'),
   });
   const cancel = useMutation({ mutationFn: () => voidInvoice(inv.id, reason.trim()), onSuccess: onChanged, onError: fail('Could not void the invoice') });

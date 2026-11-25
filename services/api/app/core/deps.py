@@ -108,6 +108,11 @@ def build_principal(db: Session, claims: TokenClaims, meta: RequestMeta) -> Prin
     is_platform = any(r[1] for r in rows)
     if (claims.org_id is None) != is_platform:
         raise Unauthorized("Account unavailable")
+    needs_mfa_setup = False
+    if not user.mfa_enabled and user.organisation_id is not None:
+        from app.modules.tenancy.policy import load_policy, mfa_required
+
+        needs_mfa_setup = mfa_required(load_policy(db, user.organisation_id), roles)
     return Principal(
         user_id=user.id,
         org_id=user.organisation_id,
@@ -117,6 +122,7 @@ def build_principal(db: Session, claims: TokenClaims, meta: RequestMeta) -> Prin
         permissions=frozenset(r[2] for r in rows if r[2]),
         session_id=claims.session_id,
         is_platform=is_platform,
+        needs_mfa_setup=needs_mfa_setup,
         meta=meta,
     )
 
@@ -136,6 +142,13 @@ def require(permission: str) -> Callable[..., Principal]:
     """Backend authorisation gate. Denials are audited in their own transaction."""
 
     def dependency(principal: PrincipalDep, sm: SessionMakerDep) -> Principal:
+        if principal.needs_mfa_setup:
+            # Only signing out, reading who you are and setting up two-step sign-in stay open: those
+            # routes take the plain principal, not a permission.
+            raise Forbidden(
+                "Your clinic requires two-step sign-in for your role. Set it up to continue.",
+                code="mfa_setup_required",
+            )
         if not principal.has(permission):
             audit_session = sm()
             try:

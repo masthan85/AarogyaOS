@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   type TextInputProps,
   View,
 } from 'react-native';
@@ -22,8 +23,11 @@ export function Button({
   variant = 'primary',
   size = 'md',
   block,
+  testID,
 }: {
   title: string;
+  /** A stable handle for device tests (Maestro), where the label alone is ambiguous. */
+  testID?: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -42,7 +46,10 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: !!off, busy: !!loading }}
+      accessibilityLabel={title}
+      testID={testID}
+      aria-disabled={off || undefined}
+      aria-busy={loading || undefined}
       onPress={onPress}
       disabled={off}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
@@ -63,14 +70,16 @@ export function Button({
 export function TextField({
   label,
   error,
+  inputRef,
   ...props
-}: TextInputProps & { label: string; error?: string }) {
+}: TextInputProps & { label: string; error?: string; inputRef?: Ref<TextInputInstance> }) {
   const t = useTheme();
   const wide = useWide();
   return (
     <View style={{ gap: space.xs, width: '100%', maxWidth: wide ? layout.field : undefined }}>
       <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text>
       <TextInput
+        ref={inputRef}
         accessibilityLabel={label}
         placeholderTextColor={t.textMuted}
         style={[
@@ -208,7 +217,7 @@ export function ChoiceChips<T extends string>({
               <Pressable
                 key={o.value}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                aria-selected={selected}
                 onPress={() => onChange(o.value)}
                 style={{
                   flex: 1,
@@ -232,7 +241,7 @@ export function ChoiceChips<T extends string>({
               <Pressable
                 key={o.value}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                aria-selected={selected}
                 onPress={() => onChange(o.value)}
                 style={{
                   minHeight: MIN_TOUCH,
@@ -299,7 +308,7 @@ export function MultiChips<T extends string | number>({
             <Pressable
               key={String(o.value)}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected }}
+              aria-checked={selected}
               onPress={() => onChange(selected ? value.filter((v) => v !== o.value) : [...value, o.value])}
               style={{
                 minHeight: MIN_TOUCH,
@@ -393,7 +402,7 @@ export function TabBar<T extends string>({
           <Pressable
             key={tab.value}
             accessibilityRole="tab"
-            accessibilityState={{ selected }}
+            aria-selected={selected}
             accessibilityLabel={tab.badge ? `${tab.label}, ${tab.badge} waiting` : tab.label}
             onPress={() => onChange(tab.value)}
             style={{

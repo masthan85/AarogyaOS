@@ -23,16 +23,19 @@ This is the evidence-based inventory of what exists. Status words are used stric
 | Health, readiness, metrics, security headers, size cap | Working (tested) | `test_operations.py` |
 | Contract check between the app's schemas and the API's response fields | Working (tested) | `contract.test.ts` and `test_contract.py` (field names only) |
 | Scheduled jobs with locking and ledger | Working (tested) | `test_operations.py`. No scheduler is shipped |
-| Rate limiting (login, search) | Partial | `test_ratelimit.py`. Per worker process only |
+| Rate limiting (login, search) | Verified | `test_ratelimit.py`, including two API instances sharing one Redis limit. Per process when `AAROGYA_REDIS_URL` is not set |
 | Encrypted backup and restore drill | Working (checked by hand) | Run against a development database; a tampered backup was rejected. Not automated |
 | Load test | Working (checked by hand) | One run: about 147 requests per second, no errors, on one machine, excluding login, AI and audio |
 | Docker image and compose stack | Built, not run live | No Docker daemon was available |
 | Repeated payment, credit note and refund requests recorded once (`Idempotency-Key`) | Working (tested) | `test_release_gates.py`, including four identical requests racing. Not yet on draft invoices, prescriptions or walk-ins |
 | Provider approval list checked at start-up in production, fallback included | Working (tested) | `test_release_gates.py`. Records a decision; does not prove an agreement exists |
-| One live instance (advisory lock, `standby` readiness, audio refused elsewhere) | Working (tested) | `test_release_gates.py`. Not exercised on a real platform |
+| One live instance (advisory lock, `standby` readiness, audio refused elsewhere), or several sharing Redis | Working (tested) | `test_release_gates.py`, `test_live_state.py`. Not exercised on a real platform |
 | Recordings marked interrupted after a restart | Working (tested) | `test_release_gates.py` |
 | Monthly speech and AI allowances per organisation | Working (tested) | `test_release_gates.py`. No outbound alert: the usage screen or a monitor must be watched |
 | Connection banner in the app; nothing queued offline | Built, partly checked | Client behaviour in `client.test.ts`. In a browser the banner appeared when the server was stopped and cleared when it returned. Not exercised on a device |
+| Two-step sign-in required by role, chosen by the clinic; QR enrolment | Working (tested) | `test_mfa_policy.py`; set-up screen in `MfaRequiredScreen.test.tsx` and checked in a browser |
+| Screenshot and screen-recording protection (`protect_screens`, on by default) | Built, partly checked | Setting tested in `test_mfa_policy.py`; the native effect has not been seen on a device, and browsers cannot block screenshots |
+| One active visit per patient enforced by the database; repeated walk-in and prescription requests return the first record | Working (tested) | `test_duplicates.py`, including four walk-ins racing |
 
 ## Front desk
 
@@ -70,7 +73,7 @@ This is the evidence-based inventory of what exists. Status words are used stric
 |---|---|---|
 | Eight consent purposes, versioned wording, guardians, withdrawal | Working (tested) | `test_consent.py`. Wording is unreviewed templates |
 | Recording sessions, explicit start and stop, consent re-checks | Working (tested) | `test_interactions.py` |
-| Audio WebSocket gateway, limits, retention, purge | Working (tested) | `test_gateway.py`. Live partial transcripts are in process memory |
+| Audio WebSocket gateway, limits, retention, purge | Working (tested) | `test_gateway.py`, `test_live_state.py`, `test_s3_audio_store.py`. Live partials and the one-connection claim are shared in Redis when configured, otherwise in process memory. Retained audio goes to local disk or S3-compatible storage, encrypted either way |
 | Speech provider layer with fallback, development provider | Working (tested) | `test_speech_package.py` |
 | Sarvam streaming speech-to-text | Built, not run live (partly) | `test_sarvam.py` against a fake server. One live run with a short English clip connected and returned segments. Accuracy on Indian languages, code-mixed speech and drug names is unmeasured |
 | Microphone capture on a device | Built, not run live | Unit-tested against fakes (`gateway.test.ts`, `capture.test.ts`). Never on a device: see `DEVICE_TEST_PLAN.md` |

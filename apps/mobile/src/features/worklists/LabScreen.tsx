@@ -47,6 +47,8 @@ function ResultEntry({ order, onDone }: { order: WorklistOrder; onDone: () => vo
   );
 }
 
+const WORKLIST_LIMIT = 200;
+
 export function LabScreen() {
   const t = useTheme();
   const { me } = useAuth();
@@ -56,7 +58,8 @@ export function LabScreen() {
   const [open, setOpen] = useState<string>();
   const q = useQuery({
     queryKey: ['orders-worklist', category],
-    queryFn: () => getOrders({ status: 'ORDERED', category }),
+    // Ranked on the server, STAT first and oldest first, so a long list never hides urgent work.
+    queryFn: () => getOrders({ status: 'ORDERED', category, urgent_first: true, limit: WORKLIST_LIMIT }),
     gcTime: 0,
     refetchInterval: 30_000,
   });
@@ -76,6 +79,11 @@ export function LabScreen() {
       {q.isPending ? <LoadingState label="Loading orders…" /> : null}
       {q.isError ? <ErrorState message="Could not load orders." onRetry={() => void q.refetch()} /> : null}
       {q.data?.length === 0 ? <EmptyState message="No orders waiting for a result." /> : null}
+      {q.data?.length === WORKLIST_LIMIT ? (
+        <Text style={[type.small, { color: t.warning }]}>
+          Showing the {WORKLIST_LIMIT} most urgent and oldest orders. More are waiting: they appear as these are completed.
+        </Text>
+      ) : null}
       {q.data
         ? byPriority(q.data).map((o) => (
             <Card key={o.id} title={o.name}>

@@ -20,11 +20,11 @@ def main(argv: list[str]) -> int:
         if command == "purge-audio":
             from app.core.crypto import crypto_from_settings
             from app.modules.interactions.retention import purge_due_audio
-            from app.speech.audio_store import LocalEncryptedAudioStore
+            from app.speech.audio_store import audio_store_from_settings
 
-            store = LocalEncryptedAudioStore(
-                settings.audio_store_path, crypto_from_settings(settings)
-            )
+            store = audio_store_from_settings(settings, crypto_from_settings(settings))
+            if hasattr(store, "upload_pending"):
+                print(f"Audio uploads retried: {store.upload_pending()}")
             print(f"Audio files removed: {purge_due_audio(session, store)}")
             return 0
         if command == "run-job":
@@ -39,13 +39,27 @@ def main(argv: list[str]) -> int:
             return 0 if run.status in ("OK", "SKIPPED") else 1
         if command == "rotate-field-key":
             from app.core.crypto import crypto_from_settings
+            from app.modules.interactions.rotation import rotate_audio
             from app.modules.patients.rotation import rotate_identifiers
+            from app.speech.audio_store import audio_store_from_settings
 
             crypto = crypto_from_settings(settings)
             done = rotate_identifiers(session, crypto)
             print(f"Identifiers re-encrypted under key {crypto.key_id}: {done}.")
             print("No identifier needs an older key any more.")
-            print("Retained audio is not re-encrypted; keep older keys listed while it exists.")
+            audio = rotate_audio(session, audio_store_from_settings(settings, crypto))
+            print(
+                f"Retained audio re-encrypted: {audio.reencrypted}; already current: "
+                f"{audio.already_current}; file missing: {audio.missing}."
+            )
+            if audio.still_recording:
+                print(
+                    f"{audio.still_recording} recording(s) have not ended and were left as they "
+                    "are. "
+                    "Keep the older key listed and run this again once they have."
+                )
+                return 1
+            print("Older keys can now be removed from AAROGYA_FIELD_ENCRYPTION_PREVIOUS_KEYS.")
             return 0
         if command == "demo-seed":
             from app.demo_seed import run as seed_demo

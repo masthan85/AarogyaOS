@@ -58,4 +58,7 @@ The layout was checked in a browser at phone and tablet sizes (`DESIGN_REVIEW.md
 | Set the system font to its largest size | Text wraps; nothing is cut off and every button can still be reached |
 | Put the app beside another app in split view on an iPad | It uses the phone layout and stays usable |
 | Use a tablet with a hardware keyboard | Tab moves between fields in order |
+| With screen protection on (Organisation settings), take a screenshot on Android | It is refused, and the app is blank in the recent-apps view |
+| Start a screen recording on an iPhone or iPad | The app shows blank in the recording |
+| Scan the two-step sign-in QR code with Google Authenticator and Microsoft Authenticator | The account is added and its codes are accepted |
 

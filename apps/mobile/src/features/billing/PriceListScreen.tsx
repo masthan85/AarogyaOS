@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, Text } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -14,14 +14,16 @@ const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 function Settings() {
   const t = useTheme();
   const q = useQuery({ queryKey: ['billing-settings'], queryFn: getBillingSettings, gcTime: 0 });
-  const [gstin, setGstin] = useState('');
-  const [name, setName] = useState('');
-  useEffect(() => { if (q.data) { setGstin(q.data.gstin ?? ''); setName(q.data.legal_name ?? ''); } }, [q.data]);
+  // Unsaved edits sit on top of the saved values, so a refetch never wipes them.
+  const [gstinEdit, setGstin] = useState<string | null>(null);
+  const [nameEdit, setName] = useState<string | null>(null);
+  const gstin = gstinEdit ?? q.data?.gstin ?? '';
+  const name = nameEdit ?? q.data?.legal_name ?? '';
   const g = gstin.trim().toUpperCase();
   const bad = g !== '' && !GSTIN.test(g);
   const save = useMutation({
     mutationFn: () => saveBillingSettings({ gstin: g || null, legal_name: name.trim() || null }),
-    onSuccess: () => void q.refetch(),
+    onSuccess: () => { setGstin(null); setName(null); void q.refetch(); },
     onError: fail('Could not save'),
   });
   if (q.isPending) return <LoadingState />;

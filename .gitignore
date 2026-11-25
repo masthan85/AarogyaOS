@@ -29,3 +29,13 @@ npm-debug.log*
 # local copies of the docker settings (may hold your API keys)
 infrastructure/*.local.env
 *.egg-info/
+.coverage
+coverage.xml
+htmlcov/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+e2e/web/
+dump.rdb

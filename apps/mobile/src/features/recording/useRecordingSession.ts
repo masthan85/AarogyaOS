@@ -162,7 +162,9 @@ export function useRecordingSession(opts: Options) {
     }
   }, [move, teardownStream]);
 
-  pauseRef.current = pause;
+  useEffect(() => {
+    pauseRef.current = pause;
+  }, [pause]);
 
   const resume = useCallback(async () => {
     const id = idRef.current;

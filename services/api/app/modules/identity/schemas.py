@@ -29,6 +29,10 @@ class MeResponse(BaseModel):
     full_name: str
     roles: list[str]
     permissions: list[str]
+    # True until this person sets up two-step sign-in that their clinic requires for their role.
+    mfa_setup_required: bool = False
+    # Whether the app should stop screenshots and screen recording (organisation policy).
+    protect_screens: bool = True
 
 
 class UserCreate(BaseModel):

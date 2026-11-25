@@ -56,7 +56,6 @@ router = APIRouter(tags=["recording"])
 
 MAX_FRAME_BYTES = AudioFormat().max_frame_bytes
 AUTH_TIMEOUT_SECONDS = 5.0
-_connected: set[uuid.UUID] = set()  # one live connection per session (per process)
 
 
 class Refusal(Exception):
@@ -87,6 +86,7 @@ class Ctx:
     first_seq: int
     offset_ms: int
     asset_id: uuid.UUID | None
+    claim: str = ""  # this connection's hold on the session (app/speech/live.py)
 
 
 def _run(fn: Any, *args: Any) -> Any:
@@ -107,6 +107,8 @@ def _authenticate(app: FastAPI, token: str, interaction_id: uuid.UUID, host: str
             raise Refusal(4401, "not authenticated") from exc
         if principal.org_id is None:
             raise Refusal(4403, "not allowed")
+        if principal.needs_mfa_setup:
+            raise Refusal(4403, "two-step sign-in required")
         try:
             ia = service.visible(db, principal, interaction_id)
         except NotFound as exc:
@@ -258,7 +260,7 @@ async def audio_gateway(ws: WebSocket, interaction_id: uuid.UUID) -> None:
         return await _close(ws, 4403, "origin not allowed")
     lock = getattr(app.state, "instance_lock", None)
     if lock is not None and not await _run(lock.held):
-        # Live transcript state is in this process's memory: a second instance must not record.
+        # Live state is in this process's memory (no Redis): a second instance must not record.
         return await _close(ws, 4503, "instance not active")
     try:
         first = await asyncio.wait_for(ws.receive_json(), AUTH_TIMEOUT_SECONDS)
@@ -283,14 +285,17 @@ async def audio_gateway(ws: WebSocket, interaction_id: uuid.UUID) -> None:
         log.exception("gateway authentication failed")
         return await _close(ws, 1011, "internal error")
 
-    if interaction_id in _connected:
+    # One connection per session, whichever API process it reaches.
+    claim = await _run(live.claim, interaction_id)
+    if claim is None:
         return await _close(ws, 4409, "already connected")
-    _connected.add(interaction_id)
+    ctx = replace(ctx, claim=claim)
     try:
         await ws.send_json({"type": "ready", "format": AudioFormat().model_dump()})
         await _stream(app, ws, ctx)
     finally:
-        _connected.discard(interaction_id)
+        with anyio.CancelScope(shield=True):
+            await _run(live.release, interaction_id, claim)
 
 
 async def _stream(app: FastAPI, ws: WebSocket, ctx: Ctx) -> None:
@@ -335,8 +340,17 @@ async def _stream(app: FastAPI, ws: WebSocket, ctx: Ctx) -> None:
             await queue.put(None)
 
     async def monitor() -> None:
+        renewed = asyncio.get_running_loop().time()
         while True:
             await asyncio.sleep(settings.speech_monitor_interval_seconds)
+            now = asyncio.get_running_loop().time()
+            if now - renewed >= live.RENEW_EVERY_SECONDS:
+                renewed = now
+                if not await _run(live.renew, ctx.interaction_id, ctx.claim):
+                    # The hold lapsed and another connection took the session: this one stops.
+                    flags.server_stop = "CONNECTION_REPLACED"
+                    await queue.put(None)
+                    return
             reason = await _run(_check, app, ctx, flags.fresh)
             flags.fresh = False
             if reason:
@@ -349,15 +363,14 @@ async def _stream(app: FastAPI, ws: WebSocket, ctx: Ctx) -> None:
             yield frame
 
     async def on_partial(seg: RecognisedSegment) -> None:
-        live.set_partial(
-            ctx.interaction_id, live.LivePartial(seg.text, seg.speaker_id, seg.language)
-        )
+        partial = live.LivePartial(seg.text, seg.speaker_id, seg.language)
+        await _run(live.set_partial, ctx.interaction_id, partial)
 
     async def on_final(seg: RecognisedSegment, provider: SpeechProvider) -> None:
         nonlocal seq
         current, seq = seq, seq + 1
         await _run(_persist, app, ctx, seg, current, provider)
-        live.clear(ctx.interaction_id)
+        await _run(live.clear, ctx.interaction_id)
 
     tasks = [asyncio.create_task(reader()), asyncio.create_task(monitor())]
     try:
@@ -376,7 +389,7 @@ async def _stream(app: FastAPI, ws: WebSocket, ctx: Ctx) -> None:
             await asyncio.gather(*tasks, return_exceptions=True)
             if writer is not None:
                 writer.close()
-            live.clear(ctx.interaction_id)
+            await _run(live.clear, ctx.interaction_id)
             await _run(
                 lambda: _finish(
                     app,
