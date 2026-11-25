@@ -182,6 +182,7 @@ jobs:
           script: |
             curl --retry 20 --retry-delay 1 --retry-all-errors -sf http://localhost:8000/ready
             adb install -r android/app/build/outputs/apk/release/app-release.apk
+            adb shell settings put global hide_error_dialogs 1
             maestro test .maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro-debug" || (adb shell uiautomator dump /sdcard/ui.xml >/dev/null; echo "Screen at failure:"; adb shell cat /sdcard/ui.xml | grep -o 'text="[^"]*"\|content-desc="[^"]*"\|resource-id="[^"]*"' | grep -v '=""' ; exit 1)
       - if: failure()
         run: cat "$RUNNER_TEMP/api.log"

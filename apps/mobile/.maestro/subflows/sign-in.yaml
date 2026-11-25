@@ -4,6 +4,13 @@ appId: in.aarogyaos.app
 ---
 - launchApp:
     clearState: true
+# A freshly booted emulator can show "... isn't responding" for its own launcher. Not the app's.
+- runFlow:
+    when:
+      visible: ".*isn't responding.*"
+    commands:
+      - tapOn: "Wait"
+      - launchApp
 - tapOn:
     id: "login-organisation"
 - inputText: "demo-clinic"
