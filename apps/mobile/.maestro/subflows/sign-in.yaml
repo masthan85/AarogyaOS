@@ -1,5 +1,6 @@
-# Signs in to the demo clinic with EMAIL and PASSWORD, both passed by the calling flow. Inputs are
-# found by test id: tapping a field's visible label does not move focus to it.
+# Signs in to the demo clinic with EMAIL and PASSWORD, both passed by the calling flow. It types
+# into one field and moves on with the keyboard's Next key, as a person would: an open keyboard
+# covers the lower fields, so tapping them would land on the keyboard instead.
 appId: in.aarogyaos.app
 ---
 - launchApp:
@@ -14,13 +15,8 @@ appId: in.aarogyaos.app
 - tapOn:
     id: "login-organisation"
 - inputText: "demo-clinic"
-- tapOn:
-    id: "login-email"
+- pressKey: Enter
 - inputText: ${EMAIL}
-- tapOn:
-    id: "login-password"
+- pressKey: Enter
 - inputText: ${PASSWORD}
-# Back closes the keyboard on Android; these inputs offer no standard dismiss action.
-- pressKey: back
-- tapOn:
-    id: "sign-in"
+- pressKey: Enter

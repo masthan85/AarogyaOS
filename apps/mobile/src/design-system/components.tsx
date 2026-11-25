@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   type TextInputProps,
   View,
 } from 'react-native';
@@ -46,8 +47,8 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       testID={testID}
-      aria-disabled={!!off}
-      aria-busy={!!loading}
+      aria-disabled={off || undefined}
+      aria-busy={loading || undefined}
       onPress={onPress}
       disabled={off}
       style={({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => [
@@ -68,14 +69,16 @@ export function Button({
 export function TextField({
   label,
   error,
+  inputRef,
   ...props
-}: TextInputProps & { label: string; error?: string }) {
+}: TextInputProps & { label: string; error?: string; inputRef?: Ref<TextInputInstance> }) {
   const t = useTheme();
   const wide = useWide();
   return (
     <View style={{ gap: space.xs, width: '100%', maxWidth: wide ? layout.field : undefined }}>
       <Text style={[type.small, { color: t.text, fontWeight: '600' }]}>{label}</Text>
       <TextInput
+        ref={inputRef}
         accessibilityLabel={label}
         placeholderTextColor={t.textMuted}
         style={[

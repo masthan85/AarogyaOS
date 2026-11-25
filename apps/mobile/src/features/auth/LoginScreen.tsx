@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, type TextInputInstance, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
@@ -25,6 +25,9 @@ export function LoginScreen() {
   const [askForCode, setAskForCode] = useState(false);
   const [code, setCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // The keyboard's Next key moves on to the following field, and Go on the password signs in.
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
   const { width } = useWindowDimensions();
   const wide = width >= layout.wide;
   const {
@@ -94,6 +97,8 @@ export function LoginScreen() {
                 <TextField
                   label="Organisation"
                   testID="login-organisation"
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailRef.current?.focus()}
                   placeholder="sunrise-clinic"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -110,6 +115,9 @@ export function LoginScreen() {
                 <TextField
                   label="Email"
                   testID="login-email"
+                  inputRef={emailRef}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                   autoCapitalize="none"
                   autoComplete="email"
                   keyboardType="email-address"
@@ -128,6 +136,9 @@ export function LoginScreen() {
                 <TextField
                   label="Password"
                   testID="login-password"
+                  inputRef={passwordRef}
+                  returnKeyType="go"
+                  onSubmitEditing={() => void onSubmit()}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoComplete="password"
