@@ -176,12 +176,13 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
+          profile: pixel_6
           disable-animations: true
           working-directory: apps/mobile
           script: |
             curl --retry 20 --retry-delay 1 --retry-all-errors -sf http://localhost:8000/ready
             adb install -r android/app/build/outputs/apk/release/app-release.apk
-            maestro test .maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro-debug"
+            maestro test .maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro-debug" || (adb shell uiautomator dump /sdcard/ui.xml >/dev/null; echo "Screen at failure:"; adb shell cat /sdcard/ui.xml | grep -o 'text="[^"]*"\|content-desc="[^"]*"\|resource-id="[^"]*"' | grep -v '=""' ; exit 1)
       - if: failure()
         run: cat "$RUNNER_TEMP/api.log"
       - if: failure()
