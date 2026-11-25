@@ -139,6 +139,8 @@ python-dotenv==1.2.4
     #   uvicorn
 pyyaml==6.0.3
     # via uvicorn
+redis==8.2.0
+    # via aarogyaos-api (pyproject.toml)
 ruff==0.17.4
     # via aarogyaos-api (pyproject.toml)
 sarvamai==0.1.45

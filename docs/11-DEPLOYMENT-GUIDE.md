@@ -66,7 +66,7 @@ flowchart TB
     A1 & A2 -->|"only when enabled"| VEND["Sarvam, Anthropic or a self-hosted model"]
 ```
 
-Three pieces of this diagram do not exist in the code: the object store (retained audio uses a local encrypted directory), the Redis-backed hub and limiter (live transcripts, the duplicate-connection guard and rate limits are per process), and sticky routing configuration. Until they exist, run one container, or accept the limits listed in `OPERATIONS.md`.
+Three pieces of this diagram do not exist in the code: the object store (retained audio uses a local encrypted directory), the Redis-backed hub (live transcripts and the duplicate-connection guard are per process; rate limits are shared once `AAROGYA_REDIS_URL` is set), and sticky routing configuration. Until they exist, run one container, or accept the limits listed in `OPERATIONS.md`.
 
 ## In front of the API
 

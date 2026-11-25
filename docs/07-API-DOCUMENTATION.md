@@ -121,7 +121,7 @@ While an arrangement is active, `GET /results/awaiting-review` for the covering 
 
 ## Rate limits
 
-`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Per worker process (see `16-SECURITY.md`).
+`POST /auth/login`: 60 per minute per client address. `GET /patients/search`: 60 per minute per user. Over the limit: `429` with `retry_after_seconds`. Shared across processes when `AAROGYA_REDIS_URL` is set, otherwise per process (see `16-SECURITY.md`).
 
 ## Handover
 

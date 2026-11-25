@@ -23,7 +23,7 @@ This is the evidence-based inventory of what exists. Status words are used stric
 | Health, readiness, metrics, security headers, size cap | Working (tested) | `test_operations.py` |
 | Contract check between the app's schemas and the API's response fields | Working (tested) | `contract.test.ts` and `test_contract.py` (field names only) |
 | Scheduled jobs with locking and ledger | Working (tested) | `test_operations.py`. No scheduler is shipped |
-| Rate limiting (login, search) | Partial | `test_ratelimit.py`. Per worker process only |
+| Rate limiting (login, search) | Verified | `test_ratelimit.py`, including two API instances sharing one Redis limit. Per process when `AAROGYA_REDIS_URL` is not set |
 | Encrypted backup and restore drill | Working (checked by hand) | Run against a development database; a tampered backup was rejected. Not automated |
 | Load test | Working (checked by hand) | One run: about 147 requests per second, no errors, on one machine, excluding login, AI and audio |
 | Docker image and compose stack | Built, not run live | No Docker daemon was available |

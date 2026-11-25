@@ -16,7 +16,7 @@ flowchart LR
 
 ## Authentication
 
-Passwords use Argon2id. Access tokens are short-lived JWTs (15 minutes by default) carrying user id, organisation id and session id. Refresh tokens are opaque, stored hashed, rotated on every use, and grouped in families; presenting a token that has already been rotated revokes the family. Accounts lock for 15 minutes after five failed attempts. Login is rate limited per client address. Two-step sign-in with an authenticator app (TOTP) and recovery codes is available per user but not mandatory; there is no policy yet to require it for chosen roles, and there is no federation with an identity provider (the token interface is kept neutral so one can be added). On the phone, tokens live in the platform secure store, and a biometric unlock can be required to open a stored session. Signing out clears the secure store and every cached query.
+Passwords use Argon2id. Access tokens are short-lived JWTs (15 minutes by default) carrying user id, organisation id and session id. Refresh tokens are opaque, stored hashed, rotated on every use, and grouped in families; presenting a token that has already been rotated revokes the family. Accounts lock for 15 minutes after five failed attempts. Login is rate limited per client address. Two-step sign-in with an authenticator app (TOTP) and recovery codes is available per user, and a clinic can require it for chosen roles (`mfa_required_roles`), in which case a person in that role can do nothing but set it up until they have. There is no federation with an identity provider (the token interface is kept neutral so one can be added). On the phone, tokens live in the platform secure store, and a biometric unlock can be required to open a stored session. Signing out clears the secure store and every cached query.
 
 A clinic can require two-step sign-in for chosen roles (Organisation settings). Someone in a required role who has not set it up can sign in, read who they are and set it up, and nothing else: every permission check refuses with `mfa_setup_required`, and so does the audio socket. Once on, it cannot be switched off while the clinic requires it; an administrator can still reset it for a person who has lost their phone. Enrolment shows a QR code, with the key in text as a fallback.
 
@@ -62,7 +62,7 @@ The audio WebSocket refuses a browser whose `Origin` is not in the allowed list 
 
 ## Rate limiting
 
-Login is limited per client address and patient search per user (60 a minute each by default; `0` turns a limit off). The limiter lives in each worker's memory, so with several workers the real limit is higher, a restart clears it, and behind a proxy that hides client addresses all users share one login bucket. Accounts also lock after repeated failures and every search is audited. A shared limiter is planned (A-10).
+Login is limited per client address and patient search per user (60 a minute each by default; `0` turns a limit off). With `AAROGYA_REDIS_URL` set, the window is kept in Redis with one atomic script per check and Redis's own clock, so the limit holds across every process and container and survives API restarts. Without it the limiter lives in each process's memory, so with several processes the real limit is higher and a restart clears it. If Redis cannot be reached the request is allowed and a warning is logged: the limiter is a brake, and accounts still lock after repeated failures and every search is audited. Behind a proxy that hides client addresses all users share one login bucket, so pass the real address (`--proxy-headers`).
 
 ## Financial integrity
 
@@ -81,9 +81,9 @@ Payments, credit notes and refunds accept an `Idempotency-Key`, so a request rep
 | No penetration test, threat model review or independent code review | Unknown vulnerabilities | A-07 |
 | Two-step sign-in exists but is optional and has no QR enrolment or role-based requirement | Weaker authentication where it is not turned on | A-20 (follow-up) |
 | No facility or care-team scoping, no break-glass | Any clinician in an organisation can open any of its patients (audited) | A-12 |
-| Per-process rate limits; patient search can enumerate by three-letter prefixes, twenty results at a time, limited only by the rate limit and the audit | Enumeration by an authorised user | A-10 |
+| Rate limits are per process unless Redis is configured; patient search can enumerate by three-letter prefixes, twenty results at a time, limited only by the rate limit and the audit | Enumeration by an authorised user | A-10 |
 | No TLS, WAF or secret manager in the repository; nothing deployed | Production protections are all still to be built | A-06 |
-| Audio store is local disk; audio is not re-encrypted on key rotation | Retention is unsafe to enable in production | A-11, B-10 |
+| Audio store is local disk | Retention is unsafe to enable in production | A-11 |
 | No screenshot blocking; clipboard holds clinical text for up to a minute after "copy visit" | Local leakage on the device | B-17 |
 | Seals fall back to a key derived from the field encryption key unless `AAROGYA_SEAL_KEYS` is set | Rotating without the old key breaks verification of older seals | B-13 (set the dedicated key) |
 | No vulnerability disclosure process or security contact | Researchers have nowhere to report | B-19 |

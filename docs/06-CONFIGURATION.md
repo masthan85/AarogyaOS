@@ -20,6 +20,7 @@ Two behaviours are worth knowing before you start. If a variable is absent, its 
 | `AAROGYA_MAX_FAILED_LOGINS` | 5 | Failed attempts before an account locks (minimum 3) |
 | `AAROGYA_LOCKOUT_MINUTES` | 15 | Lock duration |
 | `AAROGYA_CORS_ORIGINS` | `[]` | JSON list of allowed origins. A wildcard is refused in production |
+| `AAROGYA_REDIS_URL` | empty | Redis for login and search rate limits shared by every API process, for example `redis://redis:6379/0`. Empty keeps limits in each process. If Redis cannot be reached, requests are allowed and a warning is logged |
 | `AAROGYA_LOGIN_ATTEMPTS_PER_MINUTE_PER_IP` | 60 | Per worker process; 0 turns the limit off |
 | `AAROGYA_PATIENT_SEARCHES_PER_MINUTE_PER_USER` | 60 | Per worker process; 0 turns the limit off |
 | `AAROGYA_MAX_REQUEST_BYTES` | 5000000 | Request body cap, 10 000 to 50 000 000 |

@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     max_failed_logins: int = Field(default=5, ge=3)
     lockout_minutes: int = Field(default=15, ge=1)
     cors_origins: list[str] = []
+    # Shared store for rate limits across API processes. Empty: limits are kept per process.
+    redis_url: str = ""
     log_level: str = "INFO"
     # Bearer token for GET /metrics. Empty: the endpoint is disabled in production and open in dev.
     metrics_token: str = ""

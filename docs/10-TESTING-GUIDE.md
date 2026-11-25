@@ -58,7 +58,7 @@ API coverage is measured in CI (`pytest --cov`) and was 94% of lines in November
 - `tests/test_migrations.py` upgrades a populated database from revision 0012 and rolls 0016 and 0017 back and forward. Migrations before 0015 are not all reversible and their downgrades are not tested.
 - FHIR bundles are validated with the `fhir.resources` R4B models, not with the HL7 validator; there is no profile validation.
 - The load test has been run once, on a development machine, without login, AI or audio.
-- Multi-worker behaviour (the in-memory live transcript hub and rate limiters) is untested because it is known not to work across processes.
+- Multi-worker behaviour of the live transcript hub and the duplicate-connection guard is untested because they are known not to work across processes. Shared rate limits are tested against Redis when `AAROGYA_TEST_REDIS_URL` is set, as it is in CI.
 - The backup and restore-drill scripts have been run by hand, not in CI.
 - No automated prompt-injection corpus beyond a handful of cases.
 

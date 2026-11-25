@@ -27,7 +27,7 @@ from app.core.observability import (
     refresh_job_gauges,
     render,
 )
-from app.core.ratelimit import RateLimiter
+from app.core.ratelimit import limiter_from_url
 from app.modules.ai.router import router as ai_router
 from app.modules.audit.router import router as audit_router
 from app.modules.billing.router import router as billing_router
@@ -148,7 +148,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessionmaker = create_sessionmaker(engine)
 
     app.state.metrics = Metrics()
-    app.state.rate_limiter = RateLimiter()
+    app.state.rate_limiter = limiter_from_url(settings.redis_url)
     app.add_middleware(RequestContextMiddleware)
     app.add_middleware(MetricsMiddleware, metrics=app.state.metrics)
     app.add_middleware(
