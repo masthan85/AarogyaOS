@@ -76,6 +76,10 @@ npx playwright test
 
 `e2e/tests/seed.spec.ts` signs in as the demo doctor and is the starting point for the Playwright test agents in `.claude/agents/`: the planner explores the app and writes a plan to `specs/`, the generator turns a plan into tests under `e2e/tests/`, and the healer runs a failing test and repairs it. They use the `playwright-test` MCP server defined in `.mcp.json`, which runs the pinned Playwright in `e2e/node_modules`, so run `npm ci` in `e2e` before starting Claude Code. `.claude/skills/playwright-cli/` lets Claude drive a browser from the command line with `playwright-cli`, which is installed separately (`npm install -g @playwright/cli@latest`).
 
+## Native app flows
+
+`apps/mobile/.maestro/` holds Maestro flows that mirror the browser smoke tests on Android and iOS: each demo role signs in and sees its own sections, and a wrong password is refused. They have been written but not yet run on a device or emulator, so expect to adjust them on the first run. `apps/mobile/.maestro/README.md` explains how to run them against a development build.
+
 ## Manual verification checklists
 
 `DEVICE_TEST_PLAN.md` covers the microphone and Sarvam on real devices, with acceptance criteria for a pilot. `SARVAM.md` lists the live checks for translation, read-aloud and chat. `CLINICAL_SAFETY.md` lists, per hazard, the control that should be tested and what is still open. `OPERATIONS.md` describes the restore drill, which should be run monthly once there is a real environment.

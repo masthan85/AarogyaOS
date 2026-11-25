@@ -1,0 +1,16 @@
+# Signs in to the demo clinic. Needs EMAIL; PASSWORD defaults to the published demo password.
+appId: in.aarogyaos.app
+env:
+  ORGANISATION: demo-clinic
+  PASSWORD: Demo-pass-2026!
+---
+- launchApp:
+    clearState: true
+- tapOn: "Organisation"
+- inputText: ${ORGANISATION}
+- tapOn: "Email"
+- inputText: ${EMAIL}
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: "Sign in"

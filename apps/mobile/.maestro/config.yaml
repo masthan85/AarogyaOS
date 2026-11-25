@@ -1,0 +1,4 @@
+# Maestro flows for the native app, against a development build pointed at a test API with the
+# demo clinic (demo accounts and invented patients only). See .maestro/README.md.
+flows:
+  - "*.yaml"

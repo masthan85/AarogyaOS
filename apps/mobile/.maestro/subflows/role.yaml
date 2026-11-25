@@ -1,0 +1,16 @@
+# One role's smoke check: home appears, the role's main section is offered, a forbidden one is not,
+# and the main section opens without an error message.
+appId: in.aarogyaos.app
+---
+- runFlow:
+    file: sign-in.yaml
+    env:
+      EMAIL: ${EMAIL}
+- extendedWaitUntil:
+    visible: "Today at a glance|The day at the clinic"
+    timeout: 20000
+- assertVisible: ${SEES}
+- assertNotVisible: ${NEVER}
+- tapOn: ${SEES}
+- waitForAnimationToEnd
+- assertNotVisible: "Could not load.*"
